@@ -1,11 +1,13 @@
 <script setup lang="ts">
     const runtimeConfig = useRuntimeConfig()
     const devMode = ref(runtimeConfig.public.devMode);
+    const defaultUserName = ref(runtimeConfig.public.defaultUserName);
+    const defaultUserPassword = ref(runtimeConfig.public.defaultUserPassword);
 
     const { loggedIn, user, fetch: refreshSession } = useUserSession()
     const credentials = reactive({
-        email: devMode.value ? 'helaili@github.com' : '',
-        password: devMode.value ? 'Eurocats2025' : '',
+        email: devMode.value ? defaultUserName.value : '',
+        password: devMode.value ? defaultUserPassword.value : '',
     })
     const loginError = ref(false)
     const formValid = ref(false)
@@ -37,7 +39,7 @@
                 required
                 :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
                 class="mb-4"
-            ></v-text-field>
+            />
             <v-text-field
                 v-model="credentials.password"
                 label="Password"
@@ -47,7 +49,7 @@
                 required
                 :rules="[v => !!v || 'Password is required', v => v.length >= 6 || 'Password must be at least 6 characters']"
                 class="mb-4"
-            ></v-text-field>
+            />
             <v-btn 
                 :disabled="!formValid" 
                 type="submit" 
