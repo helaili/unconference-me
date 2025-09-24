@@ -1,6 +1,7 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
-  import { ref } from 'vue'
-  import { reactive, computed } from 'vue'
+  import { ref, reactive, computed } from 'vue'
+  import type { User as UnconferenceUser }  from '~/types/user'
 
   interface NavItem {
     icon: string
@@ -9,7 +10,8 @@
     adminOnly: boolean
   }
 
-  const { user, clear: clearSession } = useUserSession()
+  const { user } = useUserSession() as { user: Ref<UnconferenceUser | null> }
+  const { clear: clearSession } = useUserSession()
 
   const drawer = ref(false)
   const navItems = reactive<NavItem[]>([
@@ -20,15 +22,9 @@
       adminOnly: false
     },
     {
-      icon: 'mdi-trophy',
-      title: 'Top Topics',
-      to: '/leaderboard',
-      adminOnly: false
-    },
-    {
       icon: 'mdi-cog',
       title: 'Settings',
-      to: '/settings',
+      to: '/adminSettings',
       adminOnly: true
     }
   ])
@@ -56,10 +52,10 @@
           <AppTitle/>
         </template>
       </v-app-bar-title>
-      <v-spacer></v-spacer>
+      <v-spacer/>
       <AuthState>
-        <template #default="{ loggedIn, clear }">
-          <v-btn v-if="loggedIn" data-testid="logout-button" @click="signOut('/')" append-icon="mdi-logout">Logout</v-btn>
+        <template #default="{ loggedIn }">
+          <v-btn v-if="loggedIn" data-testid="logout-button" append-icon="mdi-logout" @click="signOut('/')">Logout</v-btn>
         </template>
       </AuthState>
     </v-app-bar>

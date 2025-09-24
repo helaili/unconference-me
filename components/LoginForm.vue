@@ -29,7 +29,7 @@
 
 <template>
     <v-card class="pa-5" max-width="400" min-width="300">
-        <v-form @submit.prevent="login" ref="loginForm" v-model="formValid">
+        <v-form ref="loginForm" v-model="formValid" @submit.prevent="login">
             <v-text-field
                 v-model="credentials.email"
                 label="Email"
@@ -37,7 +37,7 @@
                 data-testid="email-input"
                 placeholder="Email"
                 required
-                :rules="[v => !!v || 'Email is required', v => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
+                :rules="[(v: string) => !!v || 'Email is required', (v: string) => /.+@.+\..+/.test(v) || 'E-mail must be valid']"
                 class="mb-4"
             />
             <v-text-field
@@ -47,7 +47,7 @@
                 data-testid="password-input"
                 placeholder="Password"
                 required
-                :rules="[v => !!v || 'Password is required', v => v.length >= 6 || 'Password must be at least 6 characters']"
+                :rules="[(v: string) => !!v || 'Password is required', (v: string) => v.length >= 6 || 'Password must be at least 6 characters']"
                 class="mb-4"
             />
             <v-btn 

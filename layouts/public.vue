@@ -1,3 +1,4 @@
+<!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { ref } from 'vue'
 
@@ -34,9 +35,9 @@ async function signOut() {
       <v-spacer/>
       <AuthState>
         <template #default="{ loggedIn }">
-          <v-btn v-if="loggedIn" data-testid="workspace-button" @click="goToDashboard()" append-icon="mdi-view-dashboard">Dashboard</v-btn>
-          <v-btn v-if="loggedIn" data-testid="logout-button" @click="signOut()" append-icon="mdi-logout">Logout</v-btn>
-          <v-btn v-else  data-testid="login-button" @click="signIn()" append-icon="mdi-login">Login</v-btn>
+          <v-btn v-if="loggedIn" data-testid="workspace-button" append-icon="mdi-view-dashboard" @click="goToDashboard()">Dashboard</v-btn>
+          <v-btn v-if="loggedIn" data-testid="logout-button" append-icon="mdi-logout" @click="signOut()">Logout</v-btn>
+          <v-btn v-else  data-testid="login-button" append-icon="mdi-login" @click="signIn()">Login</v-btn>
         </template>
         <template #placeholder>
           <button disabled>Loading...</button>

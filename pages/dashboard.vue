@@ -1,10 +1,10 @@
 <!-- eslint-disable vue/multi-word-component-names -->
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { User as UnconferenceUser }  from '~/types/user'
 
-const { user } = useUserSession()
+const { user } = useUserSession() as { user: Ref<UnconferenceUser | null> }
 const isAdmin = computed(() => user.value?.role === 'Admin')
-
 </script>
 
 <template>

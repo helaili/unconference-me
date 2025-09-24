@@ -4,6 +4,7 @@ declare module '@nuxt/schema' {
       devMode: boolean
       defaultUserName: string
       defaultUserPassword: string
+      authUrl: string
     }
   }
 }

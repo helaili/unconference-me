@@ -5,7 +5,6 @@ import logger from './utils/logger'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  //...
   build: {
     transpile: ['vuetify'],
   },
@@ -40,7 +39,7 @@ export default defineNuxtConfig({
   modules: [
     (_options, nuxt) => {
       nuxt.hooks.hook('vite:extendConfig', (config) => {
-        // @ts-expect-error
+        // @ts-expect-error  -- config.plugins is defined
         config.plugins.push(vuetify({ autoImport: true }))
       })
     },
@@ -65,9 +64,7 @@ export default defineNuxtConfig({
       devMode: process.env.APP_ENV === 'development',
       defaultUserName: process.env.DEFAULT_USER_NAME, 
       defaultUserPassword: process.env.DEFAULT_USER_PASSWORD,
-      authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
-      maxVotesPerTopic: parseInt(process.env.NUXT_MAX_VOTES_PER_TOPIC || '12'),
-      topTopicsCount: parseInt(process.env.NUXT_TOP_TOPICS_COUNT || '10')
+      authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login'
     }
   },
   vite: {
