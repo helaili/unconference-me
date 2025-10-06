@@ -39,20 +39,22 @@ jobs:
 
       - name: Build app
         run: npm run build
+      
+      - name: Check .output exists
+        run: |
+          ls -la
+          if [ ! -d ".output" ]; then
+            echo ".output directory not found!"
+            exit 1
+          fi
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-build
           path: .output
-      
-      - name: Check .output exists
-        run: |
-          if [ ! -d ".output" ]; then
-            echo ".output directory not found!"
-            ls -la
-            exit 1
-          fi
+          if-no-files-found: error
+          include-hidden-files: true
 
   create-or-delete-slot:
     if: always()
