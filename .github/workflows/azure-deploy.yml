@@ -133,11 +133,11 @@ jobs:
     environment:
       name: staging
     steps:
-      - uses: actions/checkout@v4
       - name: Download build artifact
         uses: actions/download-artifact@v5
         with:
           name: app-build
+          path: ~/.output
       - name: Display structure of downloaded files
         run: |
           pwd
