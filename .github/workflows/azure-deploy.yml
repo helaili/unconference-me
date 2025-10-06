@@ -101,9 +101,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: app-build
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Set slot name
         id: slot
         run: echo "slot=staging-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
@@ -130,9 +132,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: app-build
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -156,9 +160,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Download build artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: app-build
+      - name: Display structure of downloaded files
+        run: ls -R
       - name: Azure Login
         uses: azure/login@v2
         with:
