@@ -42,8 +42,8 @@ jobs:
       
       - name: Check .output exists
         run: |
-          ls -la
           if [ ! -d ".output" ]; then
+            ls -la
             echo ".output directory not found!"
             exit 1
           fi
@@ -72,7 +72,11 @@ jobs:
       - name: Set slot name
         id: slot
         run: |
-          echo "slot=staging-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "slot=staging-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "slot=staging" >> $GITHUB_OUTPUT
+          fi
       - name: Create or Delete Slot
         run: |
           SLOT="${{ steps.slot.outputs.slot }}"
