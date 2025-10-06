@@ -43,8 +43,6 @@ jobs:
       - name: Check .output exists
         run: |
           if [ ! -d ".output" ]; then
-            |
-              pwd
               ls -la
             echo ".output directory not found!"
             exit 1
