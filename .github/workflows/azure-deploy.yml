@@ -49,6 +49,8 @@ jobs:
   create-or-delete-slot:
     if: always()
     runs-on: ubuntu-latest
+    environment:
+      name: staging
     needs: build
     steps:
       - name: Azure Login
