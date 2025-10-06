@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a Nuxt.js web application for managing the **GitHub Eurocats Unconference 2025** event. The application allows attendees to register, view event details, and participate in unconference discussions scheduled for May 21st-22nd, 2025 at Societe Generale in Paris La Defense.
+This is a Nuxt.js web application for managing unconference events. The application allows attendees to register, view event details, and participate in unconference discussions.
 
 ## Technology Stack
 
@@ -48,7 +48,7 @@ This is a Nuxt.js web application for managing the **GitHub Eurocats Unconferenc
 
 ## Authentication & Authorization
 
-The application uses a custom authentication system with the following features:
+The application uses a custom authentication system for test environments and GitHub OAuth in production, with the following features:
 
 - **Authentication Middleware**: Applied to all pages except index, login, and register
 - **Role-Based Access**: Admin pages (admin, settings) require Admin role
