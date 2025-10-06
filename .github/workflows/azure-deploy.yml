@@ -107,6 +107,12 @@ jobs:
       - name: Set slot name
         id: slot
         run: echo "slot=staging-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
       - name: Deploy to Azure Web App (PR Staging Slot)
         uses: azure/webapps-deploy@v3
         with:
@@ -127,6 +133,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-build
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
       - name: Deploy to Azure Web App (Main Staging Slot)
         uses: azure/webapps-deploy@v3
         with:
@@ -147,6 +159,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-build
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
       - name: Deploy to Azure Web App (Production)
         uses: azure/webapps-deploy@v3
         with:
