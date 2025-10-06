@@ -1,4 +1,13 @@
 /**
+ * Topic schedule represents a single scheduling instance of a topic
+ * A popular topic can be scheduled in multiple rounds
+ */
+export interface TopicSchedule {
+  roundNumber: number // Which round this topic is scheduled for
+  groupNumber: number // Which discussion group in the round
+}
+
+/**
  * Topic model represents a discussion topic proposed for an unconference event
  */
 export interface Topic {
@@ -12,8 +21,7 @@ export interface Topic {
   
   // Status and scheduling
   status: 'proposed' | 'approved' | 'scheduled' | 'completed' | 'rejected'
-  roundNumber?: number // Which round this topic is scheduled for
-  groupNumber?: number // Which discussion group in the round
+  schedules?: TopicSchedule[] // Topics can be scheduled in multiple rounds if popular
   
   // Metadata
   createdAt: Date

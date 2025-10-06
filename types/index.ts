@@ -14,6 +14,7 @@ export type {
 // Topic types
 export type { 
   Topic, 
+  TopicSchedule,
   TopicMetadata 
 } from './topic'
 

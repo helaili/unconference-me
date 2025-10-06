@@ -52,14 +52,18 @@ Represents a discussion topic proposed for an unconference event.
 **Key Fields:**
 - `proposedBy`: Participant ID who proposed the topic
 - `status`: Current status (proposed, approved, scheduled, completed, rejected)
-- `roundNumber`: Which round this topic is scheduled for (optional until scheduled)
-- `groupNumber`: Which discussion group in the round (optional until scheduled)
+- `schedules`: Array of scheduling instances (optional). Popular topics can be scheduled in multiple rounds.
+
+**TopicSchedule:**
+- `roundNumber`: Which round this topic is scheduled for
+- `groupNumber`: Which discussion group in the round
 
 **Usage:**
 ```typescript
 import type { Topic } from '~/types/topic'
 import { topicSchema } from '~/types/schemas'
 
+// Topic scheduled in a single round
 const topic: Topic = {
   id: '1',
   eventId: '1',
@@ -67,13 +71,31 @@ const topic: Topic = {
   description: 'Discussion on how to effectively use GitHub Copilot',
   proposedBy: 'participant-123',
   status: 'scheduled',
-  roundNumber: 1,
-  groupNumber: 5,
+  schedules: [
+    { roundNumber: 1, groupNumber: 5 }
+  ],
   createdAt: new Date(),
   updatedAt: new Date(),
   metadata: {
     tags: ['github', 'ai', 'productivity']
   }
+}
+
+// Popular topic scheduled in multiple rounds
+const popularTopic: Topic = {
+  id: '2',
+  eventId: '1',
+  title: 'AI and the Future of Development',
+  description: 'Popular topic scheduled in multiple rounds',
+  proposedBy: 'participant-456',
+  status: 'scheduled',
+  schedules: [
+    { roundNumber: 1, groupNumber: 3 },
+    { roundNumber: 3, groupNumber: 7 },
+    { roundNumber: 5, groupNumber: 2 }
+  ],
+  createdAt: new Date(),
+  updatedAt: new Date()
 }
 ```
 

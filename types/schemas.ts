@@ -53,6 +53,11 @@ export const topicMetadataSchema = z.object({
   customMetadata: z.record(z.any()).optional()
 })
 
+export const topicScheduleSchema = z.object({
+  roundNumber: z.number().int().positive(),
+  groupNumber: z.number().int().positive()
+})
+
 export const topicSchema = z.object({
   id: z.string(),
   eventId: z.string(),
@@ -60,8 +65,7 @@ export const topicSchema = z.object({
   description: z.string().optional(),
   proposedBy: z.string(),
   status: z.enum(['proposed', 'approved', 'scheduled', 'completed', 'rejected']),
-  roundNumber: z.number().int().positive().optional(),
-  groupNumber: z.number().int().positive().optional(),
+  schedules: z.array(topicScheduleSchema).optional(),
   createdAt: z.date(),
   updatedAt: z.date(),
   metadata: topicMetadataSchema.optional()
