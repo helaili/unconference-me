@@ -43,7 +43,9 @@ jobs:
       - name: Check .output exists
         run: |
           if [ ! -d ".output" ]; then
-            ls -la
+            |
+              pwd
+              ls -la
             echo ".output directory not found!"
             exit 1
           fi
@@ -105,7 +107,9 @@ jobs:
         with:
           name: app-build
       - name: Display structure of downloaded files
-        run: ls -al
+        run: |
+          pwd
+          ls -al
       - name: Set slot name
         id: slot
         run: echo "slot=staging-pr-${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
@@ -136,7 +140,9 @@ jobs:
         with:
           name: app-build
       - name: Display structure of downloaded files
-        run: ls -al
+        run: |
+          pwd
+          ls -al
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -164,7 +170,9 @@ jobs:
         with:
           name: app-build
       - name: Display structure of downloaded files
-        run: ls -al
+        run: |
+          pwd
+          ls -al
       - name: Azure Login
         uses: azure/login@v2
         with:
