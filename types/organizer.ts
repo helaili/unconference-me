@@ -38,7 +38,7 @@ export interface OrganizerPermissions {
   canRemoveParticipants?: boolean
   
   // Topic management
-  canApprovTopics?: boolean
+  canApproveTopics?: boolean
   canRejectTopics?: boolean
   canScheduleTopics?: boolean
   

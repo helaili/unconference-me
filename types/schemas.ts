@@ -112,7 +112,7 @@ export const organizerPermissionsSchema = z.object({
   canDeleteEvent: z.boolean().optional(),
   canApproveParticipants: z.boolean().optional(),
   canRemoveParticipants: z.boolean().optional(),
-  canApprovTopics: z.boolean().optional(),
+  canApproveTopics: z.boolean().optional(),
   canRejectTopics: z.boolean().optional(),
   canScheduleTopics: z.boolean().optional(),
   canManageAssignments: z.boolean().optional(),
