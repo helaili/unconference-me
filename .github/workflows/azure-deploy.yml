@@ -8,7 +8,7 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: 20.x
+  NODE_VERSION: 22.x
   AZURE_WEBAPP_NAME: ${{ vars.AZURE_WEBAPP_NAME }}
   AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
   AZURE_WEBAPP_STAGING_SLOT: staging
@@ -45,6 +45,14 @@ jobs:
         with:
           name: app-build
           path: .output
+      
+      - name: Check .output exists
+        run: |
+          if [ ! -d ".output" ]; then
+            echo ".output directory not found!"
+            ls -la
+            exit 1
+          fi
 
   create-or-delete-slot:
     if: always()
