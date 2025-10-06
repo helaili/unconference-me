@@ -1,0 +1,91 @@
+name: Create Azure WebApp and Export Publish Profiles
+
+on:
+  workflow_dispatch:
+    inputs:
+      webapp_name:
+        description: "Azure Web App name"
+        default: "unconference-me"
+        required: true
+      resource_group:
+        description: "Azure Resource Group"
+        default: "unconference-me"
+        required: true
+      region:
+        description: "Azure Region (e.g., westeurope, eastus)"
+        required: true
+      slot_name:
+        description: "Staging Slot Name"
+        required: true
+        default: "staging"
+
+permissions:
+  id-token: write
+  contents: read
+
+# See https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure-openid-connect for details on setting up OIDC with GitHub and Azure
+env:
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create Resource Group (if needed)
+        run: |
+          az group create --name "${{ github.event.inputs.resource_group }}" --location "${{ github.event.inputs.region }}"
+      - name: Create App Service Plan (if needed)
+        run: |
+          az appservice plan create --name "${{ github.event.inputs.webapp_name }}-plan" --resource-group "${{ github.event.inputs.resource_group }}" --sku B1 --is-linux || echo "Plan may already exist"
+      - name: Create Web App (if needed)
+        run: |
+          az webapp create \
+            --name "${{ github.event.inputs.webapp_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --plan "${{ github.event.inputs.webapp_name }}-plan" \
+            --runtime "NODE|20-lts" \
+            --https-only true || echo "Webapp may already exist"
+      - name: Create Staging Slot (if needed)
+        run: |
+          az webapp deployment slot create \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --name "${{ github.event.inputs.webapp_name }}" \
+            --slot "${{ github.event.inputs.slot_name }}" || echo "Slot may already exist"
+      - name: Download Publish Profile for Production
+        run: |
+          az webapp deployment list-publishing-profiles \
+            --name "${{ github.event.inputs.webapp_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --xml > publish-profile-prod.xml
+      - name: Download Publish Profile for Staging Slot
+        run: |
+          az webapp deployment list-publishing-profiles \
+            --name "${{ github.event.inputs.webapp_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --slot "${{ github.event.inputs.slot_name }}" \
+            --xml > publish-profile-staging.xml
+      - name: Display Production Publish Profile (copy this to AZURE_WEBAPP_PUBLISH_PROFILE_PROD)
+        run: cat publish-profile-prod.xml
+      - name: Display Staging Publish Profile (copy this to AZURE_WEBAPP_PUBLISH_PROFILE)
+        run: cat publish-profile-staging.xml
+      - name: Set Outputs for Publish Profiles
+        id: set-outputs
+        run: |
+          echo "prod_profile<<EOF" >> $GITHUB_OUTPUT
+          cat publish-profile-prod.xml >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "staging_profile<<EOF" >> $GITHUB_OUTPUT
+          cat publish-profile-staging.xml >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+    outputs:
+      prod_profile: ${{ steps.set-outputs.outputs.prod_profile }}
+      staging_profile: ${{ steps.set-outputs.outputs.staging_profile }}
