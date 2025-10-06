@@ -29,6 +29,7 @@ env:
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_PLAN_SKU: P0V3
   
 jobs:
   provision:
@@ -48,7 +49,7 @@ jobs:
           az group create --name "${{ github.event.inputs.resource_group }}" --location "${{ github.event.inputs.region }}"
       - name: Create App Service Plan (if needed)
         run: |
-          az appservice plan create --name "${{ github.event.inputs.webapp_name }}-plan" --resource-group "${{ github.event.inputs.resource_group }}" --sku B1 --is-linux || echo "Plan may already exist"
+          az appservice plan create --name "${{ github.event.inputs.webapp_name }}-plan" --resource-group "${{ github.event.inputs.resource_group }}" --sku ${{ env.AZURE_PLAN_SKU }} --is-linux || echo "Plan may already exist"
       - name: Create Web App (if needed)
         run: |
           az webapp create \
