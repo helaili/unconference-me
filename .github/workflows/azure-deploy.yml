@@ -104,6 +104,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: app-build
+          path: ~/.output
       - name: Display structure of downloaded files
         run: |
           pwd
