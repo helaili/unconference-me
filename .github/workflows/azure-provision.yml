@@ -38,6 +38,8 @@ jobs:
     environment:
       name: production
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -65,19 +67,13 @@ jobs:
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --name "${{ github.event.inputs.webapp_name }}" \
             --slot "${{ github.event.inputs.slot_name }}" || echo "Slot may already exist"
+
       - name: Download Publish Profile for Production
         run: |
           az webapp deployment list-publishing-profiles \
             --name "${{ github.event.inputs.webapp_name }}" \
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --xml > publish-profile-prod.xml
-      - name: Download Publish Profile for Staging Slot
-        run: |
-          az webapp deployment list-publishing-profiles \
-            --name "${{ github.event.inputs.webapp_name }}" \
-            --resource-group "${{ github.event.inputs.resource_group }}" \
-            --slot "${{ github.event.inputs.slot_name }}" \
-            --xml > publish-profile-staging.xml
       - name: Display Production Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE_PROD)
         run: cat publish-profile-prod.xml
       - name: Store the production publish profile as an Actions secret
@@ -86,6 +82,14 @@ jobs:
           file-path: 'publish-profile-prod.xml'
           secret-name: 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD'
           github-token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
+
+      - name: Download Publish Profile for Staging Slot
+        run: |
+          az webapp deployment list-publishing-profiles \
+            --name "${{ github.event.inputs.webapp_name }}" \
+            --resource-group "${{ github.event.inputs.resource_group }}" \
+            --slot "${{ github.event.inputs.slot_name }}" \
+            --xml > publish-profile-staging.xml
       - name: Display Staging Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE)
         run: cat publish-profile-staging.xml
       - name: Store the staging publish profile as an Actions secret
@@ -94,15 +98,3 @@ jobs:
           file-path: 'publish-profile-staging.xml'
           secret-name: 'AZURE_WEBAPP_PUBLISH_PROFILE'
           github-token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-      - name: Set Outputs for Publish Profiles
-        id: set-outputs
-        run: |
-          echo "prod_profile<<EOF" >> $GITHUB_OUTPUT
-          cat publish-profile-prod.xml >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "staging_profile<<EOF" >> $GITHUB_OUTPUT
-          cat publish-profile-staging.xml >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-    outputs:
-      prod_profile: ${{ steps.set-outputs.outputs.prod_profile }}
-      staging_profile: ${{ steps.set-outputs.outputs.staging_profile }}
