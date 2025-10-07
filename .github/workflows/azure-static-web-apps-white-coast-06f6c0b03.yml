@@ -50,14 +50,14 @@ jobs:
           APP_ENV: development
           DEFAULT_USER_NAME: helaili@github.com
           DEFAULT_USER_PASSWORD: changeme
+          RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
+          STATIC_WEB_APP_NAME: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
         run: |
-          RG="${{ env.AZURE_RESOURCE_GROUP }}"
-          APP="${{ env.AZURE_STATIC_WEBAPP_NAME }}"
 
           az staticwebapp appsettings set \
-            --name "$APP" \
-            --environment-name  "Production" \
-            --resource-group "$RG" \
+            --name "$STATIC_WEB_APP_NAME" \
+            --environment-name  "default" \
+            --resource-group "$RESOURCE_GROUP" \
             --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD APP_ENV=$APP_ENV DEFAULT_USER_NAME=$DEFAULT_USER_NAME DEFAULT_USER_PASSWORD=$DEFAULT_USER_PASSWORD NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB
       - name: Build And Deploy
         id: builddeploy
