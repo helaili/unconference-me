@@ -29,10 +29,11 @@ jobs:
   get_deployment_token:
     runs-on: ubuntu-latest
     name: Get Deployment Token Job
+    environment:
+      name: production
     outputs:
       api_token: ${{ steps.get_token.outputs.token }}
     steps:
-      - uses: actions/checkout@v5
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -66,12 +67,6 @@ jobs:
           client-id: ${{ env.AZURE_CLIENT_ID }}
           tenant-id: ${{ env.AZURE_TENANT_ID }}
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-      - name: Get The Static Web App Deployment Token
-        id: get_token
-        run: |
-          apiToken=$(az staticwebapp secrets list --name $AZURE_STATIC_WEBAPP_NAME --resource-group $AZURE_RESOURCE_GROUP --query "properties.apiKey" -o tsv)
-          echo "::add-mask::$apiToken"
-          echo "token=$apiToken" >> "$GITHUB_OUTPUT"
       - name: Set Environment Variables
         env:
           NUXT_AUTH_GITHUB: ${{ env.NUXT_AUTH_GITHUB }}
