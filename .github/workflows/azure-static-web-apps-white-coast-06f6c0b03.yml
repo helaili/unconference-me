@@ -42,10 +42,13 @@ jobs:
           subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
       - name: Get The Static Web App Deployment Token
         id: get_token
+        env:
+          RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
+          STATIC_WEB_APP_NAME: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
         run: |
           apiToken=$(az staticwebapp secrets list --name $AZURE_STATIC_WEBAPP_NAME --resource-group $AZURE_RESOURCE_GROUP --query "properties.apiKey" -o tsv)
-          echo "::add-mask::$apiToken"
-          echo "token=$apiToken" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::${apiToken}"
+          echo "token=${apiToken}" >> "$GITHUB_OUTPUT"
 
   build_and_deploy_job:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
