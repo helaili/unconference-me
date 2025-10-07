@@ -10,7 +10,7 @@ on:
       - main
 
 env:
-  NODE_VERSION: 22.x
+  NODE_VERSION: 20.x
   AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -53,7 +53,6 @@ jobs:
           RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
           STATIC_WEB_APP_NAME: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
         run: |
-
           az staticwebapp appsettings set \
             --name "$STATIC_WEB_APP_NAME" \
             --environment-name  "default" \
