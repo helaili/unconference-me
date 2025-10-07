@@ -138,10 +138,6 @@ jobs:
         with:
           name: app-build
           path: .output
-      - name: Display structure of downloaded files
-        run: |
-          pwd
-          ls -al
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -163,15 +159,11 @@ jobs:
     environment:
       name: production
     steps:
-      - uses: actions/checkout@v4
       - name: Download build artifact
         uses: actions/download-artifact@v5
         with:
           name: app-build
-      - name: Display structure of downloaded files
-        run: |
-          pwd
-          ls -al
+          path: .output
       - name: Azure Login
         uses: azure/login@v2
         with:
