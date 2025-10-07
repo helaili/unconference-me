@@ -1,5 +1,6 @@
 <script setup lang="ts">
-  const title = ref('Eurocats 2025 Unconference')
+  const runtimeConfig = useRuntimeConfig()
+  const title = ref(runtimeConfig.public.eventName || 'Unconference.me');
 
   async function goHome() {
     await navigateTo('/')  

@@ -73,7 +73,8 @@ export default defineNuxtConfig({
       devMode: process.env.APP_ENV === 'development',
       defaultUserName: process.env.DEFAULT_USER_NAME, 
       defaultUserPassword: process.env.DEFAULT_USER_PASSWORD,
-      authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login'
+      authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
+      eventName: "Universe User Group 2025"
     }
   },
   vite: {
