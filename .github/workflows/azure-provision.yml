@@ -81,52 +81,19 @@ jobs:
       - name: Display Production Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE_PROD)
         run: cat publish-profile-prod.xml
       - name: Store the production publish profile as an Actions secret
-        uses: actions/github-script@v8
+        uses: ./.github/actions/store-secret
         with:
+          file-path: 'publish-profile-prod.xml'
+          secret-name: 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD'
           github-token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-          script: |
-            require('child_process').execSync('npm install libsodium-wrappers', {stdio: 'inherit'});
-            const sodium = require('libsodium-wrappers');
-            await sodium.ready;
-            
-            const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD';
-            const secretValue = require('fs').readFileSync('publish-profile-prod.xml', 'utf8');
-            
-            // Fetch the public key for the repository
-            const { data: publicKey } = await github.rest.actions.getRepoPublicKey({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-
-            // Encrypt the secret value using sodium
-            const encryptedValue = sodium.crypto_box_seal(
-              secretValue,
-              Buffer.from(publicKey.key, 'base64')
-            );
-            await github.rest.actions.createOrUpdateRepoSecret({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              secret_name: secretName,
-              encrypted_value: Buffer.from(encryptedValue).toString('base64'),
-              key_id: publicKey.key_id,
-              visibility: 'private'
-            });
       - name: Display Staging Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE)
         run: cat publish-profile-staging.xml
       - name: Store the staging publish profile as an Actions secret
-        uses: actions/github-script@v8
+        uses: ./.github/actions/store-secret
         with:
+          file-path: 'publish-profile-staging.xml'
+          secret-name: 'AZURE_WEBAPP_PUBLISH_PROFILE'
           github-token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
-          script: |
-            const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE';
-            const secretValue = require('fs').readFileSync('publish-profile-staging.xml', 'utf8');
-            await github.rest.actions.createOrUpdateRepoSecret({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              secret_name: secretName,
-              encrypted_value: Buffer.from(secretValue).toString('base64'),
-              visibility: 'private'
-            });
       - name: Set Outputs for Publish Profiles
         id: set-outputs
         run: |
