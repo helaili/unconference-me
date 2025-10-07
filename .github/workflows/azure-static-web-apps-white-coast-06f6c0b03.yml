@@ -16,6 +16,8 @@ env:
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
   AZURE_STATIC_WEBAPP_NAME: ${{ vars.AZURE_STATIC_WEBAPP_NAME }}
   AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+  GITHUBAPP_CLIENT_ID: ${{ secrets.GITHUBAPP_CLIENT_ID }}
+  GITHUBAPP_CLIENT_SECRET: ${{ secrets.GITHUBAPP_CLIENT_SECRET }}
 
 permissions:
   id-token: write
@@ -50,6 +52,8 @@ jobs:
           APP_ENV: development
           DEFAULT_USER_NAME: helaili@github.com
           DEFAULT_USER_PASSWORD: changeme
+          GITHUBAPP_CLIENT_ID: ${{ env.GITHUBAPP_CLIENT_ID }}
+          GITHUBAPP_CLIENT_SECRET: ${{ env.GITHUBAPP_CLIENT_SECRET }}
           RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
           STATIC_WEB_APP_NAME: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
         run: |
@@ -57,7 +61,10 @@ jobs:
             --name "$STATIC_WEB_APP_NAME" \
             --environment-name  "default" \
             --resource-group "$RESOURCE_GROUP" \
-            --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD APP_ENV=$APP_ENV DEFAULT_USER_NAME=$DEFAULT_USER_NAME DEFAULT_USER_PASSWORD=$DEFAULT_USER_PASSWORD NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB
+            --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD APP_ENV=$APP_ENV \
+                            DEFAULT_USER_NAME=$DEFAULT_USER_NAME DEFAULT_USER_PASSWORD=$DEFAULT_USER_PASSWORD \
+                            NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB \
+                            GITHUBAPP_CLIENT_ID=$GITHUBAPP_CLIENT_ID GITHUBAPP_CLIENT_SECRET=$GITHUBAPP_CLIENT_SECRET
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1

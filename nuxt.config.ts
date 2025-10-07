@@ -60,8 +60,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     oauth: {
       github: {
-        clientId: process.env.GITHUB_CLIENT_ID,
-        clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        clientId: process.env.GITHUBAPP_CLIENT_ID,
+        clientSecret: process.env.GITHUBAPP_CLIENT_SECRET,
         apiURL: process.env.GITHUB_API_URL ? process.env.GITHUB_API_URL : 'https://api.github.com',
         authorizationURL: process.env.AUTH_GITHUB_URL ? process.env.AUTH_GITHUB_URL : 'https://github.com/login/oauth/authorize',
         tokenURL: process.env.GITHUB_TOKEN_URL ? process.env.GITHUB_TOKEN_URL : 'https://github.com/login/oauth/access_token',
@@ -77,6 +77,9 @@ export default defineNuxtConfig({
     }
   },
   vite: {
+    server: {
+      allowedHosts: ['.localhost', 'unconference-me.ngrok.dev']
+    },
     vue: {
       template: {
         transformAssetUrls,

@@ -1,7 +1,6 @@
 import { z } from 'zod'
+import type { User } from '../../../types/user'
 import logger from '../../../utils/logger'
-import { promises as fs } from 'fs'
-import { join } from 'path'
 
 const bodySchema = z.object({
   email: z.string().email(),
@@ -10,25 +9,26 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const { email, password } = await readValidatedBody(event, bodySchema.parse)
-  const config = useRuntimeConfig()
-  const usersFilePath = join(process.cwd(), config.usersFilePath)
-
-  logger.info(`User file path: ${usersFilePath}`)
+  const users: User[] = [
+    {
+      firstname: "Alain",
+      lastname: "Helaili",
+      email: "helaili@github.com",
+      password: "changeme",
+      role: "Admin"
+    }
+  ]
   
-  // Read users from JSON file
-  const usersData = await fs.readFile(usersFilePath, 'utf-8')
-  const users = JSON.parse(usersData)
-
   // Find user by email
-  const user = users.find((u: any) => u.Email.toLowerCase() === email.toLowerCase())
+  const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
 
-  if (user && user.Password === password) {
+  if (user && user.password === password) {
     // set the user session in the cookie
     const session = await setUserSession(event, {
       user: {
-        name: `${user.Firstname} ${user.Lastname}`,
-        email: user.Email,
-        role: user.Role
+        name: `${user.firstname} ${user.lastname}`,
+        email: user.email,
+        role: user.role
       }
     })
     logger.debug(`User session set for user ${(session as any)?.user?.name} (${(session as any)?.user?.email}) with role ${(session as any)?.user?.role}`)
