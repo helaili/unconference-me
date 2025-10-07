@@ -3,9 +3,13 @@
   "type": "module",
   "private": false,
   "version": "0.1.0",
+  "engines": {
+    "node": ">=20.19.5"
+  },
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
+    "dev:azure": "npx nuxi build --preset=azure && npx @azure/static-web-apps-cli start .output/public --api-location .output/server",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
