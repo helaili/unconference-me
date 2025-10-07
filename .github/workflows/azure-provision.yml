@@ -77,10 +77,36 @@ jobs:
             --resource-group "${{ github.event.inputs.resource_group }}" \
             --slot "${{ github.event.inputs.slot_name }}" \
             --xml > publish-profile-staging.xml
-      - name: Display Production Publish Profile (copy this to AZURE_WEBAPP_PUBLISH_PROFILE_PROD)
+      - name: Display Production Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE_PROD)
         run: cat publish-profile-prod.xml
-      - name: Display Staging Publish Profile (copy this to AZURE_WEBAPP_PUBLISH_PROFILE)
+      - name: Store the production publish profile as an Actions secret
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD';
+            const secretValue = require('fs').readFileSync('publish-profile-prod.xml', 'utf8');
+            await github.actions.createOrUpdateRepoSecret({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              secret_name: secretName,
+              encrypted_value: Buffer.from(secretValue).toString('base64'),
+              visibility: 'private'
+            });
+      - name: Display Staging Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE)
         run: cat publish-profile-staging.xml
+      - name: Store the staging publish profile as an Actions secret
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE';
+            const secretValue = require('fs').readFileSync('publish-profile-staging.xml', 'utf8');
+            await github.actions.createOrUpdateRepoSecret({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              secret_name: secretName,
+              encrypted_value: Buffer.from(secretValue).toString('base64'),
+              visibility: 'private'
+            });
       - name: Set Outputs for Publish Profiles
         id: set-outputs
         run: |
