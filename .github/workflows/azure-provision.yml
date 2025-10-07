@@ -23,6 +23,7 @@ on:
 permissions:
   id-token: write
   contents: read
+  actions: write
 
 # See https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure-openid-connect for details on setting up OIDC with GitHub and Azure
 # The federated credentials have the *environment* entity type set to "production" and "staging".
