@@ -13,6 +13,7 @@ on:
         required: true
       region:
         description: "Azure Region (e.g., westeurope, eastus)"
+        default: "northeurope"
         required: true
       slot_name:
         description: "Staging Slot Name"
@@ -85,7 +86,7 @@ jobs:
           script: |
             const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD';
             const secretValue = require('fs').readFileSync('publish-profile-prod.xml', 'utf8');
-            await github.actions.createOrUpdateRepoSecret({
+            await github.rest.actions.createOrUpdateRepoSecret({
               owner: context.repo.owner,
               repo: context.repo.repo,
               secret_name: secretName,
@@ -100,7 +101,7 @@ jobs:
           script: |
             const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE';
             const secretValue = require('fs').readFileSync('publish-profile-staging.xml', 'utf8');
-            await github.actions.createOrUpdateRepoSecret({
+            await github.rest.actions.createOrUpdateRepoSecret({
               owner: context.repo.owner,
               repo: context.repo.repo,
               secret_name: secretName,
