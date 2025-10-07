@@ -87,11 +87,24 @@ jobs:
           script: |
             const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD';
             const secretValue = require('fs').readFileSync('publish-profile-prod.xml', 'utf8');
+            // Fetch the public key for the repository
+            const { data: publicKey } = await github.rest.actions.getRepoPublicKey({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            // Encrypt the secret value using sodium
+            const sodium = require('tweetsodium');
+            const encryptedValue = sodium.seal(
+              Buffer.from(secretValue),
+              Buffer.from(publicKey.key, 'base64')
+            );
             await github.rest.actions.createOrUpdateRepoSecret({
               owner: context.repo.owner,
               repo: context.repo.repo,
               secret_name: secretName,
-              encrypted_value: Buffer.from(secretValue).toString('base64'),
+              encrypted_value: encryptedValue.toString('base64'),
+              key_id: publicKey.key_id,
               visibility: 'private'
             });
       - name: Display Staging Publish Profile (content of AZURE_WEBAPP_PUBLISH_PROFILE)
