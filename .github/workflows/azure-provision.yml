@@ -85,8 +85,9 @@ jobs:
         with:
           github-token: ${{ secrets.REPOSITORY_GITHUB_TOKEN }}
           script: |
-            require('child_process').execSync('npm install tweetsodium', {stdio: 'inherit'});
-            const sodium = require('tweetsodium');
+            require('child_process').execSync('npm install libsodium-wrappers', {stdio: 'inherit'});
+            const sodium = require('libsodium-wrappers');
+            await sodium.ready;
             
             const secretName = 'AZURE_WEBAPP_PUBLISH_PROFILE_PROD';
             const secretValue = require('fs').readFileSync('publish-profile-prod.xml', 'utf8');
@@ -98,15 +99,15 @@ jobs:
             });
 
             // Encrypt the secret value using sodium
-            const encryptedValue = sodium.seal(
-              Buffer.from(secretValue),
+            const encryptedValue = sodium.crypto_box_seal(
+              secretValue,
               Buffer.from(publicKey.key, 'base64')
             );
             await github.rest.actions.createOrUpdateRepoSecret({
               owner: context.repo.owner,
               repo: context.repo.repo,
               secret_name: secretName,
-              encrypted_value: encryptedValue.toString('base64'),
+              encrypted_value: Buffer.from(encryptedValue).toString('base64'),
               key_id: publicKey.key_id,
               visibility: 'private'
             });
