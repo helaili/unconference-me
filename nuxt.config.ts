@@ -8,6 +8,15 @@ export default defineNuxtConfig({
   build: {
     transpile: ['vuetify'],
   },
+  nitro: {
+    azure: {
+      config: {
+        platform: {
+          apiRuntime: 'node:22'
+        }
+      }
+    }
+  },
   hooks: {
     'pages:extend' (pages: NuxtPage[]) {
       function setMiddleware (pages: NuxtPage[]) {
