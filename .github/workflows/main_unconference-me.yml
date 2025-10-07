@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - unconference-me
+name: Production deployment to Azure Web App
 
 on:
   push:
@@ -28,6 +28,8 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
+        env:
+          preset: azure
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
@@ -51,9 +53,9 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_0F6C5B6D81C24C93995DACD969B7E942 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_8BE245F1DE404DB0B3146089F8598E64 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_E14797835F464C6886D2D748C4B1B38B }}
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
