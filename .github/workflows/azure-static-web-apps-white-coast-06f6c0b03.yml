@@ -11,6 +11,12 @@ on:
 
 env:
   NODE_VERSION: 22.x
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_STATIC_WEBAPP_NAME: ${{ vars.AZURE_STATIC_WEBAPP_NAME }}
+  AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+
 
 jobs:
   build_and_deploy_job:
@@ -26,17 +32,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Set Environment Variables
-        uses: Azure/static-web-apps-deploy@v1
+      - name: Azure Login
+        uses: azure/login@v2
         with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_WHITE_COAST_06F6C0B03 }}
-          action: "set-env"
-          env_vars: |
-            NUXT_SESSION_PASSWORD=f2d84c97632041a8ac6c04c760a87583
-            NUXT_AUTH_GITHUB=false
-            APP_ENV=development
-            DEFAULT_USER_NAME=helaili@github.com
-            DEFAULT_USER_PASSWORD=changeme
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+      - name: Set Environment Variables
+        env:
+          NUXT_SESSION_PASSWORD: f2d84c97632041a8ac6c04c760a87583
+          NUXT_AUTH_GITHUB: false
+          APP_ENV: development
+          DEFAULT_USER_NAME: helaili@github.com
+          DEFAULT_USER_PASSWORD: changeme
+        run: |
+          RG="${{ env.AZURE_RESOURCE_GROUP }}"
+          APP="${{ env.AZURE_STATIC_WEBAPP_NAME }}"
+
+          az staticwebapp appsettings set \
+            --name "$APP" \
+            --environment-name  "Production" \
+            --resource-group "$RG" \
+            --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD APP_ENV=$APP_ENV DEFAULT_USER_NAME=$DEFAULT_USER_NAME DEFAULT_USER_PASSWORD=$DEFAULT_USER_PASSWORD NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
