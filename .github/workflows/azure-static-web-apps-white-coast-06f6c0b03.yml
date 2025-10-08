@@ -24,71 +24,64 @@ env:
 permissions:
   id-token: write
   contents: read
+  pull-requests: write
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  build_and_deploy_job_to_production:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    name: Build and Deploy Job to Production
     environment:
       name: production
-      url: ${{ steps.getStaticWebAppUrl.outputs.appUrl }}
+      url: ${{ steps.deploy.outputs.app-url }}
     steps:
-      - uses: actions/checkout@v5
-      - name: Use Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+      - name: Deploy to Azure Static Web App
+        id: deploy
+        uses: ./.github/actions/deploy-static-web-app
         with:
           node-version: ${{ env.NODE_VERSION }}
-      - name: Azure Login
-        uses: azure/login@v2
+          azure-client-id: ${{ env.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ env.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          resource-group: ${{ env.AZURE_RESOURCE_GROUP }}
+          static-web-app-name: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
+          nuxt-session-password: ${{ env.NUXT_SESSION_PASSWORD }}
+          nuxt-auth-github: ${{ env.NUXT_AUTH_GITHUB }}
+          github-client-id: ${{ env.GITHUBAPP_CLIENT_ID }}
+          github-client-secret: ${{ env.GITHUBAPP_CLIENT_SECRET }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          app-location: "/"
+          api-location: ".output/server"
+          output-location: ".output/public"
+          production-branch: "main"
+          
+  build_and_deploy_job_to_pr_environment:
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job to PR Environment
+    environment:
+      name: staging
+      url: ${{ steps.deploy.outputs.app-url }}
+    steps:
+      - name: Deploy to Azure Static Web App
+        id: deploy
+        uses: ./.github/actions/deploy-static-web-app
         with:
-          client-id: ${{ env.AZURE_CLIENT_ID }}
-          tenant-id: ${{ env.AZURE_TENANT_ID }}
-          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
-      - name: Set Environment Variables
-        env:
-          NUXT_AUTH_GITHUB: ${{ env.NUXT_AUTH_GITHUB }}
-          NUXT_SESSION_PASSWORD: ${{ env.NUXT_SESSION_PASSWORD }}
-          GITHUBAPP_CLIENT_ID: ${{ env.GITHUBAPP_CLIENT_ID }}
-          GITHUBAPP_CLIENT_SECRET: ${{ env.GITHUBAPP_CLIENT_SECRET }}
-          RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
-          STATIC_WEB_APP_NAME: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
-        run: |
-          az staticwebapp appsettings set \
-            --name "$STATIC_WEB_APP_NAME" \
-            --environment-name  "default" \
-            --resource-group "$RESOURCE_GROUP" \
-            --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD \
-                            NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB \
-                            GITHUBAPP_CLIENT_ID=$GITHUBAPP_CLIENT_ID GITHUBAPP_CLIENT_SECRET=$GITHUBAPP_CLIENT_SECRET
-      - name: Get The Static Web App Deployment Token
-        id: get_token
-        env:
-          RESOURCE_GROUP: ${{ env.AZURE_RESOURCE_GROUP }}
-          STATIC_WEB_APP_NAME: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
-        run: |
-          apiToken=$(az staticwebapp secrets list --name $AZURE_STATIC_WEBAPP_NAME --resource-group $AZURE_RESOURCE_GROUP --query "properties.apiKey" -o tsv)
-          echo "::add-mask::${apiToken}"
-          echo "token=${apiToken}" >> "$GITHUB_OUTPUT"
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ steps.get_token.outputs.token }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "/" # App source code path
-          api_location: ".output/server" # Api source code path - optional
-          output_location: ".output/public" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
-      - name: Get and Display App URL
-        id: getStaticWebAppUrl
-        run: |
-          appUrl=$(az staticwebapp show --name $AZURE_STATIC_WEBAPP_NAME --resource-group $AZURE_RESOURCE_GROUP --query "defaultHostname" -o tsv)
-          echo "🚀 Your app is deployed at: https://$appUrl"
-          echo "appUrl=https://$appUrl" >> $GITHUB_OUTPUT
+          node-version: ${{ env.NODE_VERSION }}
+          azure-client-id: ${{ env.AZURE_CLIENT_ID }}
+          azure-tenant-id: ${{ env.AZURE_TENANT_ID }}
+          azure-subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+          resource-group: ${{ env.AZURE_RESOURCE_GROUP }}
+          static-web-app-name: ${{ env.AZURE_STATIC_WEBAPP_NAME }}
+          nuxt-session-password: ${{ env.NUXT_SESSION_PASSWORD }}
+          nuxt-auth-github: ${{ env.NUXT_AUTH_GITHUB }}
+          github-client-id: ${{ env.GITHUBAPP_CLIENT_ID }}
+          github-client-secret: ${{ env.GITHUBAPP_CLIENT_SECRET }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          app-location: "/"
+          api-location: ".output/server"
+          output-location: ".output/public"
+          production-branch: "main"
           
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'

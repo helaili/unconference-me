@@ -1,0 +1,133 @@
+name: 'Deploy Azure Static Web App'
+description: 'Deploys a Nuxt.js application to Azure Static Web Apps'
+author: 'helaili'
+
+inputs:
+  node-version:
+    description: 'Node.js version to use'
+    required: true
+    default: '20.x'
+  azure-client-id:
+    description: 'Azure Client ID for authentication'
+    required: true
+  azure-tenant-id:
+    description: 'Azure Tenant ID'
+    required: true
+  azure-subscription-id:
+    description: 'Azure Subscription ID'
+    required: true
+  resource-group:
+    description: 'Azure Resource Group name'
+    required: true
+  static-web-app-name:
+    description: 'Azure Static Web App name'
+    required: true
+  nuxt-session-password:
+    description: 'Nuxt session password'
+    required: true
+  nuxt-auth-github:
+    description: 'Enable GitHub authentication'
+    required: true
+  github-client-id:
+    description: 'GitHub OAuth Client ID'
+    required: true
+  github-client-secret:
+    description: 'GitHub OAuth Client Secret'
+    required: true
+  github-token:
+    description: 'GitHub token for repository access'
+    required: true
+  app-location:
+    description: 'App source code path'
+    required: false
+    default: '/'
+  api-location:
+    description: 'Api source code path'
+    required: false
+    default: '.output/server'
+  output-location:
+    description: 'Built app content directory'
+    required: false
+    default: '.output/public'
+  production-branch:
+    description: 'Production branch name'
+    required: false
+    default: 'main'
+
+outputs:
+  app-url:
+    description: 'The URL of the deployed application'
+    value: ${{ steps.getStaticWebAppUrl.outputs.appUrl }}
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: actions/checkout@v5
+      shell: bash
+      
+    - name: Use Node.js ${{ inputs.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure-client-id }}
+        tenant-id: ${{ inputs.azure-tenant-id }}
+        subscription-id: ${{ inputs.azure-subscription-id }}
+        
+    - name: Set Environment Variables
+      shell: bash
+      env:
+        NUXT_AUTH_GITHUB: ${{ inputs.nuxt-auth-github }}
+        NUXT_SESSION_PASSWORD: ${{ inputs.nuxt-session-password }}
+        GITHUBAPP_CLIENT_ID: ${{ inputs.github-client-id }}
+        GITHUBAPP_CLIENT_SECRET: ${{ inputs.github-client-secret }}
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+      run: |
+        az staticwebapp appsettings set \
+          --name "$STATIC_WEB_APP_NAME" \
+          --resource-group "$RESOURCE_GROUP" \
+          --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD \
+                          NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB \
+                          GITHUBAPP_CLIENT_ID=$GITHUBAPP_CLIENT_ID GITHUBAPP_CLIENT_SECRET=$GITHUBAPP_CLIENT_SECRET
+                          
+    - name: Get The Static Web App Deployment Token
+      id: get_token
+      shell: bash
+      env:
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+      run: |
+        apiToken=$(az staticwebapp secrets list --name $STATIC_WEB_APP_NAME --resource-group $RESOURCE_GROUP --query "properties.apiKey" -o tsv)
+        echo "::add-mask::${apiToken}"
+        echo "token=${apiToken}" >> "$GITHUB_OUTPUT"
+        
+    - name: Build And Deploy
+      id: builddeploy
+      uses: Azure/static-web-apps-deploy@v1
+      with:
+        azure_static_web_apps_api_token: ${{ steps.get_token.outputs.token }}
+        repo_token: ${{ inputs.github-token }}
+        action: "upload"
+        production_branch: ${{ inputs.production-branch }}
+        app_location: ${{ inputs.app-location }}
+        api_location: ${{ inputs.api-location }}
+        output_location: ${{ inputs.output-location }}
+        
+    - name: Get and Display App URL
+      id: getStaticWebAppUrl
+      shell: bash
+      env:
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+      run: |
+        appUrl=$(az staticwebapp show --name $STATIC_WEB_APP_NAME --resource-group $RESOURCE_GROUP --query "defaultHostname" -o tsv)
+        echo "🚀 Your app is deployed at: https://$appUrl"
+        echo "appUrl=https://$appUrl" >> $GITHUB_OUTPUT
+
+branding:
+  icon: 'cloud'
+  color: 'blue'
