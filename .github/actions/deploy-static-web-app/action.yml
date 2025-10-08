@@ -62,6 +62,17 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Debug
+      shell: bash
+      env:
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
+      run: |
+        echo "BRANCH=$BRANCH"
+        echo "HEAD_REF=${{ github.head_ref }}"
+        echo "REF_NAME=${{ github.ref_name }}"
+
     - name: Checkout Repository
       uses: actions/checkout@v5
       
@@ -123,7 +134,7 @@ runs:
       env:
         RESOURCE_GROUP: ${{ inputs.resource-group }}
         STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
-        BRANCH: ${{ github.ref_name }}
+        BRANCH: ${{ github.head_ref || github.ref_name }}
       run: |
         echo "BRANCH=$BRANCH"
         appUrl=$(az staticwebapp environment list --name $STATIC_WEB_APP_NAME --resource-group $RESOURCE_GROUP --query "[?sourceBranch=='$BRANCH'].hostname" -o tsv)
