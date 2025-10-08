@@ -11,11 +11,18 @@ export default defineEventHandler(async (event) => {
   const { email, password } = await readValidatedBody(event, bodySchema.parse)
   const users: User[] = [
     {
-      firstname: "Alain",
-      lastname: "Helaili",
-      email: "helaili@github.com",
+      firstname: "Luke",
+      lastname: "Skywalker",
+      email: "luke@rebels.com",
       password: "changeme",
       role: "Admin"
+    }, 
+    {
+      firstname: "Darth",
+      lastname: "Vador",
+      email: "darth@empire.com",
+      password: "changeme",
+      role: "User"
     }
   ]
   
