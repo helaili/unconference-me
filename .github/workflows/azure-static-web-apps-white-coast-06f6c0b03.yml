@@ -35,6 +35,8 @@ jobs:
       name: production
       url: ${{ steps.deploy.outputs.app-url }}
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
       - name: Deploy to Azure Static Web App
         id: deploy
         uses: ./.github/actions/deploy-static-web-app
@@ -63,6 +65,8 @@ jobs:
       name: staging
       url: ${{ steps.deploy.outputs.app-url }}
     steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v5
       - name: Deploy to Azure Static Web App
         id: deploy
         uses: ./.github/actions/deploy-static-web-app
@@ -106,7 +110,7 @@ jobs:
           echo "token=${apiToken}" >> "$GITHUB_OUTPUT"
       - name: Close Pull Request
         id: closepullrequest
-        uses: Azure/static-web-apps-deploy@v1
+        uses: azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ steps.get_token.outputs.token }}
           action: "close"
