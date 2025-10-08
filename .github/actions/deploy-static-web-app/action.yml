@@ -123,8 +123,10 @@ runs:
       env:
         RESOURCE_GROUP: ${{ inputs.resource-group }}
         STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+        BRANCH: ${{ github.ref_name }}
       run: |
-        appUrl=$(az staticwebapp show --name $STATIC_WEB_APP_NAME --resource-group $RESOURCE_GROUP --query "defaultHostname" -o tsv)
+        echo "BRANCH=$BRANCH"
+        appUrl=$(az staticwebapp environment list --name $STATIC_WEB_APP_NAME --resource-group $RESOURCE_GROUP --query "[?sourceBranch=='$BRANCH'].hostname" -o tsv)
         echo "🚀 Your app is deployed at: https://$appUrl"
         echo "appUrl=https://$appUrl" >> $GITHUB_OUTPUT
 
