@@ -77,7 +77,7 @@
                 data-testid="password-input"
                 placeholder="Password"
                 required
-                :rules="[(v: string) => !!v || 'Password is required', (v: string) => v.length >= 6 || 'Password must be at least 6 characters']"
+                :rules="[(v: string) => !!v || 'Password is required', (v: string) => v.length >= 8 || 'Password must be at least 8 characters']"
                 class="mb-4"
             />
             <v-btn 

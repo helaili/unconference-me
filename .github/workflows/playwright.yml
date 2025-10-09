@@ -4,6 +4,11 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+env:
+  NODE_VERSION: 20.x
+  NUXT_SESSION_PASSWORD: ${{ secrets.NUXT_SESSION_PASSWORD }}
+  NUXT_AUTH_GITHUB: ${{ vars.NUXT_AUTH_GITHUB }}
+
 jobs:
   test:
     timeout-minutes: 30
@@ -19,7 +24,11 @@ jobs:
       run: npx playwright install --with-deps
     - name: Run Playwright tests
       run: npm run test
-    - uses: actions/upload-artifact@v4
+      env:
+        NUXT_SESSION_PASSWORD: ${{ secrets.NUXT_SESSION_PASSWORD }}
+        NUXT_AUTH_GITHUB: ${{ vars.NUXT_AUTH_GITHUB }}
+    - name: Upload Playwright Report
+      uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
         name: playwright-report
