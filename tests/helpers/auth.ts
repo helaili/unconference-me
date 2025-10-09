@@ -7,10 +7,10 @@ export class AuthHelper {
     await this.page.goto('/login', { waitUntil: 'networkidle' });
     await this.page.getByTestId('email-input').locator('input').fill(email);
     await this.page.getByTestId('password-input').locator('input').fill(password);
-    // Wait for the button to be enabled before clicking
-    await expect(this.page.getByTestId('login-submit-button')).toBeEnabled({ timeout: 5000 });
-    // Click the button, but handle potential timeout errors gracefully
     try {
+      // Wait for the button to be enabled before clicking
+      await expect(this.page.getByTestId('login-submit-button')).toBeEnabled({ timeout: 5000 });
+      // Click the button, but handle potential timeout errors gracefully
       await this.page.getByTestId('login-submit-button').click();
     } catch (err: unknown) {
       // If the click failed due to a timeout, quietly continue; rethrow other errors.
