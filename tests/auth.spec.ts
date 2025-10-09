@@ -63,13 +63,6 @@ test.describe('Authentication', () => {
   });
 
   test('should show error for invalid credentials', async ({ page }) => {
-    // Listen for console errors
-    page.on('console', msg => {
-      if (msg.type() === 'error') {
-        console.log('Console error:', msg.text());
-      }
-    });
-
     // Fill with invalid credentials - email that doesn't exist in users array
     await page.getByTestId('email-input').locator('input').fill('nonexistent@test.com');
     await page.getByTestId('password-input').locator('input').fill('wrongpass123');
