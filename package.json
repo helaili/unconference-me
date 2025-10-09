@@ -12,7 +12,11 @@
     "dev:azure": "npx nuxi build --preset=azure && npx @azure/static-web-apps-cli start .output/public --api-location .output/server",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "test": "APP_ENV=test playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:report": "playwright show-report"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -27,6 +31,7 @@
     "zod": "^4.1.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@types/node": "^24.5.2",
     "vite-plugin-vuetify": "^2.1.2",
     "vuetify": "^3.10.2"
