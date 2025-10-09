@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the login page before each test
-    await page.goto('/login');
+    await page.goto('/login', { waitUntil: 'networkidle' });
   });
 
   test('should display login form', async ({ page }) => {
@@ -19,14 +19,15 @@ test.describe('Authentication', () => {
     await expect(page.getByTestId('login-submit-button')).toBeDisabled();
     
     // Check for validation messages (Vuetify shows these as helper text)
-    await page.getByTestId('email-input').locator('input').focus();
+    await page.getByTestId('email-input').locator('input').click();
     await page.getByTestId('email-input').locator('input').blur();
-    await page.getByTestId('password-input').locator('input').focus();
+    await page.getByTestId('password-input').locator('input').click();
     await page.getByTestId('password-input').locator('input').blur();
-    //wait a bit
-    await page.waitForTimeout(5000);
+    
     // click outside to ensure Vuetify validations render helper text
     await page.click('body');
+    
+    await expect(page.locator('text=Please log in')).toBeVisible();
     await expect(page.locator('text=Email is required')).toBeVisible();
     await expect(page.locator('text=Password is required')).toBeVisible();
   });
