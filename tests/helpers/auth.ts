@@ -4,7 +4,7 @@ export class AuthHelper {
   constructor(private page: Page) {}
 
   async loginAs(email: string, password: string) {
-    await this.page.goto('/login');
+    await this.page.goto('/login', { waitUntil: 'networkidle' });
     await this.page.getByTestId('email-input').locator('input').fill(email);
     await this.page.getByTestId('password-input').locator('input').fill(password);
     await this.page.getByTestId('login-submit-button').click();
