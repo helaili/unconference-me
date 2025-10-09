@@ -5,6 +5,17 @@ import logger from './utils/logger'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  app: {
+    head: {
+      title: 'Unconference Me',
+      titleTemplate: '%s - Unconference Me',
+      meta: [
+        { charset: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: 'Manage your unconference events' }
+      ]
+    }
+  },
   build: {
     transpile: ['vuetify'],
   },
@@ -58,6 +69,19 @@ export default defineNuxtConfig({
     //...
   ],
   runtimeConfig: {
+    // Add session configuration for better Safari compatibility
+    // Note: SessionConfig requires a 'password' field; source it from env in prod and provide a dev fallback.
+    session: {
+      // secret used to encrypt/sign sessions; ensure this is set in production via SESSION_PASSWORD
+      password: process.env.NUXT_SESSION_PASSWORD || 'dev-session-password-change-me',
+      cookie: {
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax', // More permissive than 'strict'
+        httpOnly: true,
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        domain: process.env.NODE_ENV === 'development' ? 'localhost' : undefined
+      }
+    },
     oauth: {
       github: {
         clientId: process.env.GITHUBAPP_CLIENT_ID,

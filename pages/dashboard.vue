@@ -5,6 +5,11 @@ import type { User as UnconferenceUser }  from '~/types/user'
 
 const { user } = useUserSession() as { user: Ref<UnconferenceUser | null> }
 const isAdmin = computed(() => user.value?.role === 'Admin')
+
+useSeoMeta({
+  title: 'Dashboard',
+  description: 'Your unconference dashboard'
+})
 </script>
 
 <template>

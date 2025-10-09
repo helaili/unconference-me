@@ -2,6 +2,11 @@
   definePageMeta({
     layout: 'public'
   })
+
+  useSeoMeta({
+    title: 'Welcome',
+    description: 'Welcome to the unconference event management platform'
+  })
 </script>
 
 <template>

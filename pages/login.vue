@@ -2,6 +2,11 @@
     definePageMeta({
         layout: 'public'
     })
+
+    useSeoMeta({
+        title: 'Login',
+        description: 'Login to access your unconference dashboard'
+    })
 </script>
 
 <template>
