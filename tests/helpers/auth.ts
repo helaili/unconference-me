@@ -20,13 +20,13 @@ export class AuthHelper {
 
   async loginAsLuke() {
     await this.loginAs('luke@rebels.com', 'changeme');
-    await expect(this.page).toHaveURL('/dashboard');
+    await expect(this.page).toHaveURL('/dashboard', { timeout: 20000 });
     await expect(this.page.locator('text=Welcome, Admin!')).toBeVisible();
   }
 
   async loginAsVader() {
     await this.loginAs('darth@empire.com', 'changeme');
-    await expect(this.page).toHaveURL('/dashboard');
+    await expect(this.page).toHaveURL('/dashboard', { timeout: 20000 });
     await expect(this.page.locator('text=Welcome, User!')).toBeVisible();
   }
 

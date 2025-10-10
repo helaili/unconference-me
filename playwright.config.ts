@@ -67,11 +67,7 @@ export default defineConfig({
     // Set environment variables for the server
     env: {
       NODE_ENV: 'test',
-      // Suppress Nuxt development logs
-      NUXT_TELEMETRY_DISABLED: '1',
-      // Suppress Nitro logs
-      NITRO_LOG_LEVEL: 'silent',
-      DEBUG: 'app',
+      //DEBUG: 'app',
     },
   },
 });
