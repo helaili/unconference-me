@@ -209,6 +209,7 @@ onMounted(async () => {
         :max-topics-per-participant="maxTopicsPerParticipant"
         :current-topic-count="userTopicCount"
         :editing-topic="editingTopic"
+        :is-admin="isAdmin"
         @submit="handleSubmit"
         @cancel="cancelEdit"
       />

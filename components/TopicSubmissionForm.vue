@@ -6,12 +6,14 @@ interface Props {
   maxTopicsPerParticipant?: number
   currentTopicCount?: number
   editingTopic?: Topic | null
+  isAdmin?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   maxTopicsPerParticipant: 3,
   currentTopicCount: 0,
-  editingTopic: null
+  editingTopic: null,
+  isAdmin: false
 })
 
 const emit = defineEmits<{
@@ -27,7 +29,7 @@ const tags = ref<string[]>(props.editingTopic?.metadata?.tags || [])
 
 const isEditing = computed(() => props.editingTopic !== null)
 const canSubmitMore = computed(() => {
-  return isEditing.value || props.currentTopicCount < props.maxTopicsPerParticipant
+  return props.isAdmin || isEditing.value || props.currentTopicCount < props.maxTopicsPerParticipant
 })
 
 const remainingTopics = computed(() => {
@@ -101,7 +103,7 @@ watch(() => props.editingTopic, (newTopic) => {
         <v-card flat>
           <v-card-text>
             <v-alert
-              v-if="!canSubmitMore"
+              v-if="!canSubmitMore && !isAdmin"
               type="warning"
               variant="tonal"
               class="mb-4"
@@ -110,7 +112,7 @@ watch(() => props.editingTopic, (newTopic) => {
             </v-alert>
             
             <v-alert
-              v-else-if="!isEditing && remainingTopics > 0"
+              v-else-if="!isEditing && remainingTopics > 0 && !isAdmin"
               type="info"
               variant="tonal"
               class="mb-4"
