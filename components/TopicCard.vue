@@ -50,7 +50,7 @@ const handleDelete = () => {
 </script>
 
 <template>
-  <v-card>
+  <v-card class="d-flex flex-column" height="100%">
     <v-card-title class="d-flex align-center">
       <v-icon :icon="statusIcon(topic.status)" :color="statusColor(topic.status)" class="mr-2" />
       {{ topic.title }}
@@ -60,7 +60,7 @@ const handleDelete = () => {
       </v-chip>
     </v-card-title>
     
-    <v-card-text>
+    <v-card-text class="flex-grow-1">
       <p v-if="topic.description" class="mb-3">
         {{ topic.description }}
       </p>

@@ -153,6 +153,7 @@ const handleDelete = (topicId: string) => {
           cols="12"
           md="6"
           lg="4"
+          class="d-flex"
         >
           <TopicCard
             :topic="topic"
@@ -160,6 +161,7 @@ const handleDelete = (topicId: string) => {
             :is-admin="isAdmin"
             @edit="handleEdit"
             @delete="handleDelete"
+            class="flex-grow-1"
           />
         </v-col>
       </v-row>
