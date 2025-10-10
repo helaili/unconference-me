@@ -1,6 +1,7 @@
 import { populateStagingDatabase } from './populate-staging-db'
 import { populateProductionDatabase } from './populate-production-db'
-import { logger } from '../utils/logger'
+import logger  from '../utils/logger'
+import { fileURLToPath } from 'url'
 
 /**
  * Unified database population script
@@ -44,13 +45,18 @@ async function runPopulation(): Promise<void> {
     
     logger.info(`${environment} database population completed successfully`)
   } catch (error) {
-    logger.error(`${environment} database population failed`, { error })
+    logger.error(`${environment} database population failed`, { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
     throw error
   }
 }
 
+const __filename = fileURLToPath(import.meta.url)
+
 // Execute if run directly
-if (require.main === module) {
+if (process.argv[1] === __filename) {
   runPopulation()
     .then(() => {
       logger.info('Database population script completed')

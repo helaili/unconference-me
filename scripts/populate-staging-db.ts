@@ -1,6 +1,8 @@
-import { CosmosClient, Database, Container } from '@azure/cosmos'
+import { CosmosClient } from '@azure/cosmos'
+import type { Database } from '@azure/cosmos'
 import { mockData } from '../tests/helpers/mock-manager'
-import { logger } from '../utils/logger'
+import logger from '../utils/logger'
+import { fileURLToPath } from 'url'
 
 interface CosmosConfig {
   connectionString: string
@@ -8,11 +10,15 @@ interface CosmosConfig {
 }
 
 /**
- * Populate staging CosmosDB database with mock data
+ * Populate staging CosmosDB database with mock data from mock-manager
+ * 
+ * This script takes the data from mock-manager.ts and persists it
+ * into the actual CosmosDB staging database.
  */
+
 export class StagingDatabasePopulator {
   private client: CosmosClient
-  private database: Database
+  private database!: Database
   private config: CosmosConfig
 
   constructor(config: CosmosConfig) {
@@ -64,7 +70,7 @@ export class StagingDatabasePopulator {
 
   async populateAllData(): Promise<void> {
     try {
-      logger.info('Starting staging database population with mock data')
+      logger.info('Starting staging database population with mock data from mock-manager')
       
       // Reset mock data to ensure consistent state
       mockData.resetToDefaults()
@@ -85,7 +91,7 @@ export class StagingDatabasePopulator {
     const container = this.database.container('users')
     const users = mockData.getUsers()
     
-    logger.info(`Populating ${users.length} users`)
+    logger.info(`Populating ${users.length} users into CosmosDB`)
     
     for (const user of users) {
       try {
@@ -93,80 +99,80 @@ export class StagingDatabasePopulator {
           id: user.email, // Use email as document id
           ...user
         })
-        logger.debug(`User '${user.email}' added to staging database`)
+        logger.debug(`User '${user.email}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to add user '${user.email}'`, { error })
+        logger.error(`Failed to persist user '${user.email}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Users population completed')
+    logger.info('Users persisted to database successfully')
   }
 
   private async populateEvents(): Promise<void> {
     const container = this.database.container('events')
     const events = mockData.getEvents()
     
-    logger.info(`Populating ${events.length} events`)
+    logger.info(`Populating ${events.length} events into CosmosDB`)
     
     for (const event of events) {
       try {
         await container.items.upsert({
-          id: event.id,
-          ...event
+          ...event,
+          id: event.id
         })
-        logger.debug(`Event '${event.name}' added to staging database`)
+        logger.debug(`Event '${event.name}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to add event '${event.id}'`, { error })
+        logger.error(`Failed to persist event '${event.id}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Events population completed')
+    logger.info('Events persisted to database successfully')
   }
 
   private async populateParticipants(): Promise<void> {
     const container = this.database.container('participants')
     const participants = mockData.getParticipants()
     
-    logger.info(`Populating ${participants.length} participants`)
+    logger.info(`Populating ${participants.length} participants into CosmosDB`)
     
     for (const participant of participants) {
       try {
         await container.items.upsert({
-          id: participant.id,
-          ...participant
+          ...participant,
+          id: participant.id
         })
-        logger.debug(`Participant '${participant.id}' added to staging database`)
+        logger.debug(`Participant '${participant.id}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to add participant '${participant.id}'`, { error })
+        logger.error(`Failed to persist participant '${participant.id}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Participants population completed')
+    logger.info('Participants persisted to database successfully')
   }
 
   private async populateAssignments(): Promise<void> {
     const container = this.database.container('assignments')
     const assignments = mockData.getAssignments()
     
-    logger.info(`Populating ${assignments.length} assignments`)
+    logger.info(`Populating ${assignments.length} assignments into CosmosDB`)
     
     for (const assignment of assignments) {
       try {
         await container.items.upsert({
-          id: assignment.id,
-          ...assignment
+          ...assignment,
+          id: assignment.id
         })
-        logger.debug(`Assignment '${assignment.id}' added to staging database`)
+        logger.debug(`Assignment '${assignment.id}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to add assignment '${assignment.id}'`, { error })
+        logger.error(`Failed to persist assignment '${assignment.id}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Assignments population completed')
+    logger.info('Assignments persisted to database successfully')
   }
 
   async cleanup(): Promise<void> {
@@ -181,25 +187,57 @@ export class StagingDatabasePopulator {
 
 // Main execution function
 async function populateStagingDatabase(): Promise<void> {
+  // Try different environment variable patterns
+  const endpoint = process.env.COSMOS_DB_ENDPOINT_STAGING
+  const key = process.env.COSMOS_DB_KEY_STAGING
+  const connectionString = process.env.COSMOS_DB_CONNECTION_STRING_STAGING
+  const databaseName = process.env.COSMODB_DATABASE || 'unconference-me'
+
+  let finalConnectionString = ''
+
+  if (connectionString && connectionString.includes('AccountKey=')) {
+    finalConnectionString = connectionString
+  } else if (endpoint && key) {
+    finalConnectionString = `AccountEndpoint=${endpoint};AccountKey=${key};`
+  } else if (connectionString) {
+    // Try to use the partial connection string - might work for some scenarios
+    finalConnectionString = connectionString
+  }
+
   const config: CosmosConfig = {
-    connectionString: process.env.COSMOS_DB_CONNECTION_STRING_STAGING || '',
-    databaseName: process.env.COSMOS_DB_DATABASE_NAME_STAGING || 'unconference-staging'
+    connectionString: finalConnectionString,
+    databaseName: databaseName
   }
 
   // Validate configuration
   if (!config.connectionString) {
     logger.error('Missing required staging database configuration')
+    logger.error('Please set COSMOS_DB_CONNECTION_STRING_STAGING environment variable')
     throw new Error('COSMOS_DB_CONNECTION_STRING_STAGING environment variable is required')
   }
 
+  // Check if connection string looks valid
+  if (!config.connectionString.includes('AccountKey=') || config.connectionString.length < 100) {
+    logger.error('CosmosDB connection string appears to be incomplete or invalid')
+    logger.error(`Connection string length: ${config.connectionString.length}`)
+    logger.error(`Connection string preview: ${config.connectionString.substring(0, 50)}...`)
+    throw new Error('Invalid or incomplete COSMOS_DB_CONNECTION_STRING_STAGING')
+  }
+
+  logger.info('Persisting mock data from mock-manager into staging CosmosDB database')
+  logger.info(`Database: ${config.databaseName}`)
+  
   const populator = new StagingDatabasePopulator(config)
   
   try {
     await populator.initialize()
     await populator.populateAllData()
-    logger.info('Staging database population completed successfully')
+    logger.info('Mock data successfully persisted to staging CosmosDB database')
   } catch (error) {
-    logger.error('Staging database population failed', { error })
+    logger.error('Staging database population failed', { 
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined
+    })
     throw error
   } finally {
     await populator.cleanup()
@@ -207,7 +245,9 @@ async function populateStagingDatabase(): Promise<void> {
 }
 
 // Execute if run directly
-if (require.main === module) {
+const __filename = fileURLToPath(import.meta.url)
+
+if (process.argv[1] === __filename) {
   populateStagingDatabase()
     .then(() => {
       logger.info('Script execution completed')
@@ -215,11 +255,6 @@ if (require.main === module) {
     })
     .catch((error) => {
       logger.error('Script execution failed', { error })
-      process.exit(1)
-    })
-}
-
-export { populateStagingDatabase }
       process.exit(1)
     })
 }
