@@ -1,6 +1,6 @@
 import { z } from 'zod'
-import type { User } from '../../../types/user'
 import logger from '../../../utils/logger'
+import { mockData } from '../../../tests/helpers/mock-manager'
 
 const bodySchema = z.object({
   email: z.email(),
@@ -10,26 +10,11 @@ const bodySchema = z.object({
 export default defineEventHandler(async (event) => {
   try {
     const { email, password } = await readValidatedBody(event, bodySchema.parse)
-    const users: User[] = [
-      {
-        firstname: "Luke",
-        lastname: "Skywalker",
-        email: "luke@rebels.com",
-        password: "changeme",
-        role: "Admin"
-      }, 
-      {
-        firstname: "Darth",
-        lastname: "Vador",
-        email: "darth@empire.com",
-        password: "changeme",
-        role: "User"
-      }
-    ]
+    
     logger.debug(`Attempting login for email: ${email}`)
     
-    // Find user by email
-    const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
+    // Find user by email using mock manager
+    const user = mockData.getUserByEmail(email)
 
     if (!user) {
       logger.warn(`Login attempt with unknown email: ${email}`)

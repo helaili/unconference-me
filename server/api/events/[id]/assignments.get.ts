@@ -1,45 +1,5 @@
-import type { ParticipantAssignment } from '../../../../types/participant'
 import logger from '../../../../utils/logger'
-
-// Mock data - in production, fetch from CosmosDB
-const mockAssignments: ParticipantAssignment[] = [
-  {
-    id: 'assignment-1',
-    participantId: 'participant-1',
-    topicId: 'topic-1',
-    eventId: '1',
-    roundNumber: 1,
-    groupNumber: 1,
-    assignmentMethod: 'manual',
-    status: 'confirmed',
-    createdAt: new Date('2025-10-01T00:00:00Z'),
-    updatedAt: new Date('2025-10-01T00:00:00Z')
-  },
-  {
-    id: 'assignment-2',
-    participantId: 'participant-2',
-    topicId: 'topic-1',
-    eventId: '1',
-    roundNumber: 1,
-    groupNumber: 1,
-    assignmentMethod: 'automatic',
-    status: 'assigned',
-    createdAt: new Date('2025-10-01T00:00:00Z'),
-    updatedAt: new Date('2025-10-01T00:00:00Z')
-  },
-  {
-    id: 'assignment-3',
-    participantId: 'participant-3',
-    topicId: 'topic-2',
-    eventId: '1',
-    roundNumber: 1,
-    groupNumber: 2,
-    assignmentMethod: 'manual',
-    status: 'confirmed',
-    createdAt: new Date('2025-10-01T00:00:00Z'),
-    updatedAt: new Date('2025-10-01T00:00:00Z')
-  }
-]
+import { mockData } from '../../../../tests/helpers/mock-manager'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -47,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const id = getRouterParam(event, 'id')
     
-    logger.info(`Fetching assignments for event ${id} for user: ${session.user?.email}`)
+    logger.info(`Fetching assignments for event ${id} for user: ${session.user}`)
     
     if (!id) {
       throw createError({
@@ -56,8 +16,9 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // In production, fetch from CosmosDB
-    const assignments = mockAssignments.filter(a => a.eventId === id)
+    // Get assignments from mock manager
+    // In production, this would fetch from CosmosDB
+    const assignments = mockData.getAssignmentsByEventId(id)
     
     return {
       success: true,

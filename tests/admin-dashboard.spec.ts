@@ -1,12 +1,14 @@
-import { test, expect } from '@playwright/test';
-import { AuthHelper } from './helpers/auth';
+import { test, expect } from './helpers/mock-test-utils'
+import { AuthHelper } from './helpers/auth'
 
 test.describe('Admin Dashboard', () => {
-  let auth: AuthHelper;
+  let auth: AuthHelper
 
-  test.beforeEach(async ({ page }) => {
-    auth = new AuthHelper(page);
-  });
+  test.beforeEach(async ({ page, mockData }) => {
+    // Ensure we have default mock data for each test
+    mockData.resetToDefaults()
+    auth = new AuthHelper(page)
+  })
 
   test('should display event configuration for admin users', async ({ page }) => {
     // Login as admin (Luke)
@@ -139,11 +141,13 @@ test.describe('Admin Dashboard', () => {
 });
 
 test.describe('Admin Dashboard API Integration', () => {
-  let auth: AuthHelper;
+  let auth: AuthHelper
 
-  test.beforeEach(async ({ page }) => {
-    auth = new AuthHelper(page);
-  });
+  test.beforeEach(async ({ page, mockData }) => {
+    // Ensure we have default mock data for each test
+    mockData.resetToDefaults()
+    auth = new AuthHelper(page)
+  })
 
   test('should fetch event data on dashboard load', async ({ page }) => {
     // Set up interceptors BEFORE logging in
