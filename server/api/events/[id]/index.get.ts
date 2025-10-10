@@ -1,30 +1,5 @@
-import type { Event } from '../../../../types/event'
 import logger from '../../../../utils/logger'
-
-// Mock data - in production, fetch from CosmosDB
-const mockEvent: Event = {
-  id: '1',
-  name: 'Universe User Group 2025',
-  description: 'Annual unconference event for Universe users',
-  location: 'Convene 100 Stockton, Union Square, San Francisco',
-  startDate: new Date('2025-10-27T09:00:00Z'),
-  endDate: new Date('2025-10-27T17:00:00Z'),
-  numberOfRounds: 3,
-  discussionsPerRound: 5,
-  idealGroupSize: 8,
-  minGroupSize: 5,
-  maxGroupSize: 10,
-  status: 'active',
-  createdAt: new Date('2025-01-01T00:00:00Z'),
-  updatedAt: new Date('2025-10-01T00:00:00Z'),
-  settings: {
-    enableTopicRanking: true,
-    enableAutoAssignment: false,
-    maxTopicsPerParticipant: 3,
-    requireApproval: false,
-    maxParticipants: 100
-  }
-}
+import { mockData } from '../../../../tests/helpers/mock-manager'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -32,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const id = getRouterParam(event, 'id')
     
-    logger.info(`Fetching event ${id} for user: ${session.user?.email}`)
+    logger.info(`Fetching event ${id} for user: ${session.user}`)
     
     if (!id) {
       throw createError({
@@ -41,8 +16,11 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // In production, fetch from CosmosDB
-    if (id !== mockEvent.id) {
+    // Get event from mock manager
+    // In production, this would fetch from CosmosDB
+    const eventData = mockData.getEventById(id)
+    
+    if (!eventData) {
       throw createError({
         statusCode: 404,
         statusMessage: 'Event not found'
@@ -51,7 +29,7 @@ export default defineEventHandler(async (event) => {
     
     return {
       success: true,
-      event: mockEvent
+      event: eventData
     }
   } catch (error) {
     logger.error('Error fetching event:', error)
