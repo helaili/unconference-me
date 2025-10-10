@@ -22,6 +22,12 @@
       adminOnly: false
     },
     {
+      icon: 'mdi-comment-text-multiple',
+      title: 'Topics',
+      to: '/topics',
+      adminOnly: false
+    },
+    {
       icon: 'mdi-cog',
       title: 'Settings',
       to: '/adminSettings',

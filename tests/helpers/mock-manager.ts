@@ -1,6 +1,7 @@
 import type { User } from '../../types/user'
 import type { Event } from '../../types/event'
 import type { Participant, ParticipantAssignment } from '../../types/participant'
+import type { Topic } from '../../types/topic'
 
 /**
  * Centralized Mock Data Manager
@@ -15,6 +16,7 @@ export class MockDataManager {
   private _events: Event[] = []
   private _participants: Participant[] = []
   private _assignments: ParticipantAssignment[] = []
+  private _topics: Topic[] = []
 
   private constructor() {
     this.resetToDefaults()
@@ -38,6 +40,7 @@ export class MockDataManager {
     this._events = this.getDefaultEvents()
     this._participants = this.getDefaultParticipants()
     this._assignments = this.getDefaultAssignments()
+    this._topics = this.getDefaultTopics()
   }
 
   /**
@@ -48,6 +51,7 @@ export class MockDataManager {
     this._events = []
     this._participants = []
     this._assignments = []
+    this._topics = []
   }
 
   // ==================== USERS ====================
@@ -366,6 +370,130 @@ export class MockDataManager {
     return true
   }
 
+  // ==================== TOPICS ====================
+
+  private getDefaultTopics(): Topic[] {
+    return [
+      {
+        id: 'topic-1',
+        eventId: '1',
+        title: 'GitHub Copilot Best Practices',
+        description: 'Discussion on how to effectively use GitHub Copilot in daily development workflow',
+        proposedBy: 'participant-1',
+        status: 'approved',
+        createdAt: new Date('2025-09-15T00:00:00Z'),
+        updatedAt: new Date('2025-09-15T00:00:00Z'),
+        metadata: {
+          tags: ['github', 'ai', 'productivity']
+        }
+      },
+      {
+        id: 'topic-2',
+        eventId: '1',
+        title: 'AI and the Future of Development',
+        description: 'Exploring how AI is transforming software development and what it means for developers',
+        proposedBy: 'participant-2',
+        status: 'approved',
+        createdAt: new Date('2025-09-16T00:00:00Z'),
+        updatedAt: new Date('2025-09-16T00:00:00Z'),
+        metadata: {
+          tags: ['ai', 'future', 'development']
+        }
+      },
+      {
+        id: 'topic-3',
+        eventId: '1',
+        title: 'Cloud Native Architecture Patterns',
+        description: 'Discussing modern cloud-native design patterns and best practices',
+        proposedBy: 'participant-1',
+        status: 'approved',
+        createdAt: new Date('2025-09-17T00:00:00Z'),
+        updatedAt: new Date('2025-09-17T00:00:00Z'),
+        metadata: {
+          tags: ['cloud', 'architecture', 'patterns']
+        }
+      },
+      {
+        id: 'topic-4',
+        eventId: '1',
+        title: 'DevSecOps in Practice',
+        description: 'Integrating security into the DevOps pipeline',
+        proposedBy: 'participant-3',
+        status: 'proposed',
+        createdAt: new Date('2025-09-18T00:00:00Z'),
+        updatedAt: new Date('2025-09-18T00:00:00Z'),
+        metadata: {
+          tags: ['security', 'devops']
+        }
+      }
+    ]
+  }
+
+  getTopics(): Topic[] {
+    return [...this._topics]
+  }
+
+  getTopicsByEventId(eventId: string): Topic[] {
+    return this._topics.filter(t => t.eventId === eventId)
+  }
+
+  getTopicsByProposer(proposedBy: string): Topic[] {
+    return this._topics.filter(t => t.proposedBy === proposedBy)
+  }
+
+  getTopicById(id: string): Topic | undefined {
+    return this._topics.find(t => t.id === id)
+  }
+
+  addTopic(topic: Topic): void {
+    this._topics.push(topic)
+  }
+
+  updateTopic(id: string, updates: Partial<Topic>): boolean {
+    const index = this._topics.findIndex(t => t.id === id)
+    if (index === -1) return false
+    
+    const currentTopic = this._topics[index]
+    if (!currentTopic) return false
+    
+    // Ensure required fields are preserved
+    this._topics[index] = {
+      ...currentTopic,
+      ...updates,
+      id: updates.id ?? currentTopic.id,
+      eventId: updates.eventId ?? currentTopic.eventId,
+      title: updates.title ?? currentTopic.title,
+      proposedBy: updates.proposedBy ?? currentTopic.proposedBy,
+      updatedAt: new Date()
+    }
+    return true
+  }
+
+  removeTopic(id: string): boolean {
+    const index = this._topics.findIndex(t => t.id === id)
+    if (index === -1) return false
+    this._topics.splice(index, 1)
+    return true
+  }
+
+  /**
+   * Soft delete a topic by marking it as rejected
+   */
+  softDeleteTopic(id: string): boolean {
+    return this.updateTopic(id, { status: 'rejected' })
+  }
+
+  /**
+   * Count topics by proposer for a specific event
+   */
+  countTopicsByProposer(eventId: string, proposedBy: string): number {
+    return this._topics.filter(
+      t => t.eventId === eventId && 
+           t.proposedBy === proposedBy && 
+           t.status !== 'rejected'
+    ).length
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /**
@@ -376,7 +504,8 @@ export class MockDataManager {
       users: [...this._users],
       events: [...this._events],
       participants: [...this._participants],
-      assignments: [...this._assignments]
+      assignments: [...this._assignments],
+      topics: [...this._topics]
     }
   }
 
@@ -388,6 +517,7 @@ export class MockDataManager {
     this._events = [...snapshot.events]
     this._participants = [...snapshot.participants]
     this._assignments = [...snapshot.assignments]
+    this._topics = [...snapshot.topics]
   }
 
   /**
@@ -398,7 +528,8 @@ export class MockDataManager {
       users: this._users.length,
       events: this._events.length,
       participants: this._participants.length,
-      assignments: this._assignments.length
+      assignments: this._assignments.length,
+      topics: this._topics.length
     }
   }
 }
