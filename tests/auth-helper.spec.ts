@@ -12,7 +12,7 @@ test.describe('Authentication with Helper', () => {
     await auth.loginAsLuke();
     
     // Verify admin-specific content
-    await expect(page.locator('text=You have full access to the dashboard features')).toBeVisible();
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible();
   });
 
   test('should login as Vader (User) using helper', async ({ page }) => {

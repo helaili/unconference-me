@@ -30,7 +30,7 @@ test.describe('Admin Dashboard', () => {
     await expect(page).toHaveURL('/dashboard');
     
     // Wait for event data to load by checking for the event name
-    await expect(page.locator('text=Universe User Group 2025')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Universe User Group 2025').first()).toBeVisible({ timeout: 10000 });
     
     // Check for event status
     await expect(page.locator('text=ACTIVE')).toBeVisible();
@@ -60,11 +60,12 @@ test.describe('Admin Dashboard', () => {
     // Wait for participant statistics to load
     await expect(page.locator('text=Participant Statistics')).toBeVisible({ timeout: 10000 });
     
-    // Check for stat cards
-    await expect(page.locator('text=Total')).toBeVisible();
-    await expect(page.locator('text=Registered')).toBeVisible();
-    await expect(page.locator('text=Confirmed')).toBeVisible();
-    await expect(page.locator('text=Checked In')).toBeVisible();
+    // Check for stat cards using more specific locators within the statistics section
+    const statisticsSection = page.locator('h3:has-text("Participant Statistics")').locator('..')
+    await expect(statisticsSection.locator('.text-caption', { hasText: 'Total' })).toBeVisible();
+    await expect(statisticsSection.locator('.text-caption', { hasText: 'Registered' })).toBeVisible();
+    await expect(statisticsSection.locator('.text-caption', { hasText: 'Confirmed' })).toBeVisible();
+    await expect(statisticsSection.locator('.text-caption', { hasText: 'Checked In' })).toBeVisible();
   });
 
   test('should display assignments grouped by round', async ({ page }) => {
@@ -128,11 +129,12 @@ test.describe('Admin Dashboard', () => {
     await minGroupSizeField.first().fill('10');
     await maxGroupSizeField.first().fill('5');
     
-    // Click save
-    await page.locator('button[type="submit"]:has-text("Save Changes")').click();
-    
     // Should show validation error
     await expect(page.locator('text=Please ensure: Min Group Size ≤ Ideal Group Size ≤ Max Group Size')).toBeVisible();
+    
+    // Save button should be disabled due to validation error
+    const saveButton = page.locator('button[type="submit"]:has-text("Save Changes")');
+    await expect(saveButton).toBeDisabled();
   });
 });
 
@@ -144,15 +146,13 @@ test.describe('Admin Dashboard API Integration', () => {
   });
 
   test('should fetch event data on dashboard load', async ({ page }) => {
-    await auth.loginAsLuke();
-    
-    // Intercept API calls
+    // Set up interceptors BEFORE logging in
     const eventRequest = page.waitForResponse(response => 
       response.url().includes('/api/events/1') && 
       response.status() === 200
     );
     
-    await expect(page).toHaveURL('/dashboard');
+    await auth.loginAsLuke();
     
     // Verify API was called
     const response = await eventRequest;
@@ -163,15 +163,13 @@ test.describe('Admin Dashboard API Integration', () => {
   });
 
   test('should fetch assignments data', async ({ page }) => {
-    await auth.loginAsLuke();
-    
-    // Intercept API calls
+    // Set up interceptors BEFORE logging in
     const assignmentsRequest = page.waitForResponse(response => 
       response.url().includes('/api/events/1/assignments') && 
       response.status() === 200
     );
     
-    await expect(page).toHaveURL('/dashboard');
+    await auth.loginAsLuke();
     
     // Verify API was called
     const response = await assignmentsRequest;
@@ -183,15 +181,13 @@ test.describe('Admin Dashboard API Integration', () => {
   });
 
   test('should fetch participant stats', async ({ page }) => {
-    await auth.loginAsLuke();
-    
-    // Intercept API calls
+    // Set up interceptors BEFORE logging in
     const participantsRequest = page.waitForResponse(response => 
       response.url().includes('/api/events/1/participants') && 
       response.status() === 200
     );
     
-    await expect(page).toHaveURL('/dashboard');
+    await auth.loginAsLuke();
     
     // Verify API was called
     const response = await participantsRequest;

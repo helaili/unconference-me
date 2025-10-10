@@ -74,7 +74,7 @@ onMounted(() => {
 
 <template>
   <v-container>
-    <h1 class="mb-6">Dashboard</h1>
+    <h1 class="mb-6">{{ isAdmin ? 'Admin' : 'User' }} Dashboard</h1>
     
     <div v-if="isAdmin">
       <v-alert
