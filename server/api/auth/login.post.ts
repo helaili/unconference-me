@@ -26,6 +26,7 @@ export default defineEventHandler(async (event) => {
         role: "User"
       }
     ]
+    logger.debug(`Attempting login for email: ${email}`)
     
     // Find user by email
     const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())

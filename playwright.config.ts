@@ -61,5 +61,13 @@ export default defineConfig({
     command: 'npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
+    // Capture server output and display it
+    stdout: 'pipe',
+    stderr: 'pipe',
+    // Set environment variables for the server
+    env: {
+      NODE_ENV: 'test',
+      DEBUG: '*',
+    },
   },
 });
