@@ -20,7 +20,10 @@
     "cosmos:setup:staging": "bash ./scripts/cosmosdb/setup-complete.sh staging",
     "cosmos:setup:production": "bash ./scripts/cosmosdb/setup-complete.sh production",
     "cosmos:status:staging": "bash ./scripts/cosmosdb/manage.sh status staging",
-    "cosmos:status:production": "bash ./scripts/cosmosdb/manage.sh status production"
+    "cosmos:status:production": "bash ./scripts/cosmosdb/manage.sh status production",
+    "populate:staging": "tsx scripts/run-db-population.ts staging",
+    "populate:production": "tsx scripts/run-db-population.ts production",
+    "db:setup": "npm run populate:staging"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -32,12 +35,14 @@
     "vue": "^3.5.21",
     "vue-router": "^4.5.1",
     "winston": "^3.17.0",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "@azure/cosmos": "^4.0.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
     "@types/node": "^24.5.2",
     "vite-plugin-vuetify": "^2.1.2",
-    "vuetify": "^3.10.2"
+    "vuetify": "^3.10.2",
+    "tsx": "^4.0.0"
   }
 }
