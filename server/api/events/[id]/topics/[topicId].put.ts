@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { Topic } from '../../../../../types/topic'
 import logger from '../../../../../utils/logger'
 import { mockData } from '../../../../../tests/helpers/mock-manager'
 
@@ -71,7 +72,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // Update the topic
-    const updates: any = {}
+    const updates: Partial<Topic> = {}
     if (validatedData.title !== undefined) updates.title = validatedData.title
     if (validatedData.description !== undefined) updates.description = validatedData.description
     if (validatedData.status !== undefined) updates.status = validatedData.status

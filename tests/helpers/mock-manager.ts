@@ -453,8 +453,10 @@ export class MockDataManager {
     const index = this._topics.findIndex(t => t.id === id)
     if (index === -1) return false
     
+    const currentTopic = this._topics[index]
+    if (!currentTopic) return false
+    
     // Ensure required fields are preserved
-    const currentTopic = this._topics[index]!
     this._topics[index] = {
       ...currentTopic,
       ...updates,

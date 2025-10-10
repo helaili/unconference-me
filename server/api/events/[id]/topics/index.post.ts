@@ -64,7 +64,7 @@ export default defineEventHandler(async (event) => {
     
     // Create new topic
     const newTopic = {
-      id: `topic-${Date.now()}`,
+      id: `topic-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
       eventId,
       title: validatedData.title,
       description: validatedData.description,
