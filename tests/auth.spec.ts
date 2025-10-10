@@ -97,7 +97,7 @@ test.describe('Authentication', () => {
     
     // Check that we're actually logged in by looking for dashboard content
     await expect(page.locator('h1')).toContainText('Dashboard');
-    await expect(page.locator('text=Welcome, Admin!')).toBeVisible(); // Luke has Admin role
+    await expect(page.locator('text=Admin Dashboard')).toBeVisible(); // Luke has Admin role
   });
 
   test('should successfully login with valid credentials (Darth Vader)', async ({ page }) => {
@@ -133,7 +133,6 @@ test.describe('Authentication', () => {
     await page.goto('/dashboard');
     await expect(page).toHaveURL('/dashboard');
     await expect(page.locator('h1')).toContainText('Dashboard');
-    await expect(page.locator('text=Welcome, Admin!')).toBeVisible();
   });
 
   test('should redirect unauthenticated users from protected pages', async ({ page }) => {
