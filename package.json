@@ -16,7 +16,11 @@
     "test": "APP_ENV=test playwright test",
     "test:headed": "playwright test --headed",
     "test:ui": "playwright test --ui",
-    "test:report": "playwright show-report"
+    "test:report": "playwright show-report",
+    "cosmos:setup:staging": "bash ./scripts/cosmosdb/setup-complete.sh staging",
+    "cosmos:setup:production": "bash ./scripts/cosmosdb/setup-complete.sh production",
+    "cosmos:status:staging": "bash ./scripts/cosmosdb/manage.sh status staging",
+    "cosmos:status:production": "bash ./scripts/cosmosdb/manage.sh status production"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
