@@ -41,6 +41,6 @@ test.describe('Authentication with Helper', () => {
 
   test('should show specific error message for login failure with short password', async ({ page: _page }) => {
     await auth.loginWithInvalidCredentials('nonexistent@test.com', 'badpass');
-    await auth.expectLoginError('Too small: expected string to have >=8 characters');
+    await auth.expectPasswordValidationError('Password must be at least 8 characters');
   });
 });

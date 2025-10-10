@@ -56,7 +56,7 @@ test.describe('Authentication', () => {
     await page.click('body');
     
     // Check for password validation message
-    await expect(page.locator('text=Password must be at least 6 characters')).toBeVisible();
+    await expect(page.locator('text=Password must be at least 8 characters')).toBeVisible();
     
     // Submit button should be disabled
     await expect(page.getByTestId('login-submit-button')).toBeDisabled();
