@@ -29,11 +29,8 @@ test.describe('Admin Dashboard', () => {
     await auth.loginAsLuke();
     await expect(page).toHaveURL('/dashboard');
     
-    // Wait for event data to load
-    await page.waitForTimeout(2000);
-    
-    // Check for event name
-    await expect(page.locator('text=Universe User Group 2025')).toBeVisible();
+    // Wait for event data to load by checking for the event name
+    await expect(page.locator('text=Universe User Group 2025')).toBeVisible({ timeout: 10000 });
     
     // Check for event status
     await expect(page.locator('text=ACTIVE')).toBeVisible();
@@ -43,8 +40,8 @@ test.describe('Admin Dashboard', () => {
     await auth.loginAsLuke();
     await expect(page).toHaveURL('/dashboard');
     
-    // Wait for components to load
-    await page.waitForTimeout(2000);
+    // Wait for Event Configuration to load
+    await expect(page.locator('text=Event Configuration')).toBeVisible({ timeout: 10000 });
     
     // Find and click the Edit button in Event Configuration
     const editButton = page.locator('button:has-text("Edit")').first();
@@ -60,11 +57,8 @@ test.describe('Admin Dashboard', () => {
     await auth.loginAsLuke();
     await expect(page).toHaveURL('/dashboard');
     
-    // Wait for data to load
-    await page.waitForTimeout(2000);
-    
-    // Check for participant stats
-    await expect(page.locator('text=Participant Statistics')).toBeVisible();
+    // Wait for participant statistics to load
+    await expect(page.locator('text=Participant Statistics')).toBeVisible({ timeout: 10000 });
     
     // Check for stat cards
     await expect(page.locator('text=Total')).toBeVisible();
@@ -78,10 +72,7 @@ test.describe('Admin Dashboard', () => {
     await expect(page).toHaveURL('/dashboard');
     
     // Wait for assignments to load
-    await page.waitForTimeout(2000);
-    
-    // Check that assignments are displayed
-    await expect(page.locator('text=Current Assignments')).toBeVisible();
+    await expect(page.locator('text=Current Assignments')).toBeVisible({ timeout: 10000 });
     
     // Assignments should be grouped by round
     await expect(page.locator('text=Round 1')).toBeVisible();
@@ -111,29 +102,31 @@ test.describe('Admin Dashboard', () => {
     await expect(page.locator('h1:has-text("Event Settings")')).toBeVisible();
     
     // Wait for event data to load
-    await page.waitForTimeout(2000);
-    
-    // Should see Event Configuration component
-    await expect(page.locator('text=Event Configuration')).toBeVisible();
+    await expect(page.locator('text=Event Configuration')).toBeVisible({ timeout: 10000 });
   });
 
   test('should validate group size constraints', async ({ page }) => {
     await auth.loginAsLuke();
     await page.goto('/adminSettings');
     
-    // Wait for data to load
-    await page.waitForTimeout(2000);
+    // Wait for Event Configuration to load
+    await expect(page.locator('text=Event Configuration')).toBeVisible({ timeout: 10000 });
     
     // Click Edit button
     const editButton = page.locator('button:has-text("Edit")').first();
     await editButton.click();
     
     // Try to set invalid values (min > max)
-    const minGroupSizeField = page.locator('input[type="number"]').nth(2); // 3rd number field
-    const maxGroupSizeField = page.locator('input[type="number"]').nth(4); // 5th number field
+    // Use label-based selection for better stability
+    const minGroupSizeField = page.locator('input[type="number"]').filter({ hasText: /Minimum Group Size/i }).or(
+      page.getByLabel('Minimum Group Size', { exact: false })
+    ).or(page.locator('input[type="number"]').nth(2));
+    const maxGroupSizeField = page.locator('input[type="number"]').filter({ hasText: /Maximum Group Size/i }).or(
+      page.getByLabel('Maximum Group Size', { exact: false })
+    ).or(page.locator('input[type="number"]').nth(4));
     
-    await minGroupSizeField.fill('10');
-    await maxGroupSizeField.fill('5');
+    await minGroupSizeField.first().fill('10');
+    await maxGroupSizeField.first().fill('5');
     
     // Click save
     await page.locator('button[type="submit"]:has-text("Save Changes")').click();
