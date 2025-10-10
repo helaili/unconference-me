@@ -2,6 +2,12 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import type { NuxtPage } from '@nuxt/schema'
 import logger from './utils/logger'
 
+
+logger.info('Loading nuxt.config.ts')
+logger.info(`App Environment: ${process.env.APP_ENV || 'not set'}`)
+logger.info(`Using GitHub Auth: ${process.env.NUXT_AUTH_GITHUB === 'true'}`)
+
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },

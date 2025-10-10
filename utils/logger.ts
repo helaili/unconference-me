@@ -5,7 +5,7 @@ const logger = createLogger({
   format: format.combine(
     format.timestamp(),
     format.printf(({ timestamp, level, message }) => {
-      return `${timestamp} [${level}]: ${message}`;
+      return `[${level}] [unconference-me] ${timestamp}: ${message}`;
     })
   ),
   transports: [
