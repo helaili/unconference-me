@@ -61,6 +61,7 @@ export default defineEventHandler(async (event) => {
       idealGroupSize: body.idealGroupSize || 8,
       minGroupSize: body.minGroupSize || 5,
       maxGroupSize: body.maxGroupSize || 10,
+      totalCapacity: (body.maxGroupSize || 10) * (body.discussionsPerRound || 5),
       status: body.status || 'active',
       createdAt: new Date('2025-01-01T00:00:00Z'),
       updatedAt: new Date(),
