@@ -123,7 +123,7 @@ test.describe('Authentication', () => {
     await page.getByTestId('login-submit-button').click();
     
     // Wait for redirect
-    await expect(page).toHaveURL('/dashboard', { timeout: 20000 });
+    await expect(page).toHaveURL('/dashboard');
     
     // Navigate to another page and back to verify session persistence
     await page.goto('/');
