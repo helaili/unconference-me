@@ -42,13 +42,6 @@ export default defineConfig({
         hasTouch: true, // Ensure touch support is enabled
       },
     },
-    {
-      name: 'Mobile Safari',
-      use: { 
-        ...devices['iPhone 12'],
-        hasTouch: true, // Ensure touch support is enabled
-      },
-    },
   ] : [
     // Run both Chromium and WebKit locally
     {

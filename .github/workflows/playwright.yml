@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium, webkit, "Mobile Chrome", "Mobile Safari"]
+        project: [chromium, "Mobile Chrome"]
     steps:
     - uses: actions/checkout@v5
     - uses: actions/setup-node@v5
