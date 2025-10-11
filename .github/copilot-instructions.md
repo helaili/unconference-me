@@ -264,6 +264,115 @@ Runtime config is defined in `nuxt.config.ts` with proper defaults for developme
 - Use Vue 3 Composition API (`<script setup>`)
 - Use Vuetify components for UI consistency
 - Maintain proper component organization (components/, pages/, layouts/)
+- **ALWAYS implement mobile-first responsive design principles**
+
+### Mobile Compatibility Requirements (MANDATORY)
+
+**CRITICAL**: All UI components and pages MUST be mobile-compatible and responsive. GitHub Copilot MUST follow these mobile-first guidelines:
+
+#### 1. Responsive Design Patterns
+
+- **Use Vuetify's breakpoint system**: `$vuetify.display.smAndDown`, `$vuetify.display.mdAndUp`
+- **Mobile-first approach**: Design for mobile screens first, then enhance for larger screens
+- **Responsive spacing**: Use `pa-2 pa-md-4` (small padding on mobile, larger on desktop)
+- **Responsive typography**: Use conditional classes like `:class="$vuetify.display.smAndDown ? 'text-h3' : 'text-h2'"`
+- **Touch-friendly targets**: Ensure all interactive elements are at least 44px in height
+
+#### 2. Navigation Patterns
+
+- **Mobile navigation drawer**: Use `temporary` mode on mobile, `rail` mode on desktop
+- **Icon-only buttons on mobile**: Show text labels only on larger screens
+- **Auto-close drawers**: Close navigation drawers after navigation on mobile
+- **Touch-optimized spacing**: Provide adequate spacing between interactive elements
+
+Example mobile navigation pattern:
+```vue
+<v-navigation-drawer 
+  v-model="drawer" 
+  :rail="$vuetify.display.mdAndUp"
+  :expand-on-hover="$vuetify.display.mdAndUp"
+  :temporary="$vuetify.display.smAndDown"
+>
+  <v-list nav>
+    <v-list-item @click="$vuetify.display.smAndDown && (drawer = false)" />
+  </v-list>
+</v-navigation-drawer>
+```
+
+#### 3. Form Layout Requirements
+
+- **Block buttons on mobile**: Use `:block="$vuetify.display.smAndDown"` for primary actions
+- **Stacked button layouts**: Use `flex-column flex-sm-row` for button groups
+- **Comfortable input density**: Use `density="comfortable"` for better touch interaction
+- **Proper spacing**: Use responsive margin/padding classes
+
+Example mobile-friendly form actions:
+```vue
+<v-card-actions class="flex-column flex-sm-row">
+  <v-spacer />
+  <v-btn 
+    variant="outlined"
+    :block="$vuetify.display.smAndDown"
+    class="mb-2 mb-sm-0 mr-sm-2"
+  >
+    Cancel
+  </v-btn>
+  <v-btn 
+    color="primary"
+    :block="$vuetify.display.smAndDown"
+  >
+    Submit
+  </v-btn>
+</v-card-actions>
+```
+
+#### 4. Content Layout Standards
+
+- **Responsive containers**: Use appropriate container classes with responsive padding
+- **Flexible grids**: Use Vuetify's responsive grid system (`cols="12" md="8"`)
+- **Adaptive content**: Adjust content size and spacing based on screen size
+- **Mobile-optimized cards**: Reduce padding and margins on mobile devices
+
+#### 5. Mandatory Mobile Testing
+
+- **Mobile viewports enabled**: Playwright tests include mobile Chrome and Safari
+- **Touch interaction testing**: Test tap, swipe, and scroll behaviors
+- **Responsive layout verification**: Verify layouts work across all screen sizes
+- **Accessibility compliance**: Ensure minimum touch target sizes (44px)
+
+#### 6. Vuetify Configuration Requirements
+
+The Vuetify plugin MUST be configured with mobile-optimized defaults:
+
+```typescript
+const vuetify = createVuetify({
+  display: {
+    mobileBreakpoint: 'sm',
+    thresholds: {
+      xs: 0, sm: 600, md: 960, lg: 1280, xl: 1920,
+    },
+  },
+  defaults: {
+    VBtn: { class: 'text-none' }, // Better mobile readability
+    VTextField: { variant: 'outlined', density: 'comfortable' },
+    // ... other mobile-friendly defaults
+  },
+})
+```
+
+#### 7. Meta Tag Requirements
+
+All pages MUST include proper mobile meta tags:
+
+```typescript
+meta: [
+  { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+  { name: 'format-detection', content: 'telephone=no' },
+  { name: 'mobile-web-app-capable', content: 'yes' },
+  { name: 'apple-mobile-web-app-capable', content: 'yes' },
+  { name: 'theme-color', content: '#1976d2' }
+]
+```
 
 ### Data Service Guidelines (MANDATORY)
 
@@ -335,6 +444,48 @@ async findById(id: string): Promise<Entity | null> {
 - Use `useUserSession()` composable for authentication state
 - Use `useRuntimeConfig()` for accessing configuration
 - Import service instances directly: `import { entityService } from '~/services/entityService'`
+- **Always implement responsive breakpoints using Vuetify's display system**
+- **Use mobile-first design patterns in all components**
+- **Test components across all viewport sizes during development**
+
+### Mobile Component Creation Guidelines
+
+When GitHub Copilot creates new components, it MUST:
+
+1. **Include responsive breakpoints** for all layout elements
+2. **Use mobile-appropriate sizing** for text, buttons, and spacing
+3. **Implement touch-friendly interactions** with proper target sizes
+4. **Add responsive navigation patterns** where applicable
+5. **Test mobile usability** during component development
+6. **Follow accessibility guidelines** for mobile devices
+
+Example responsive component template:
+```vue
+<template>
+  <v-container :class="$vuetify.display.smAndDown ? 'pa-2' : 'pa-4'">
+    <v-row>
+      <v-col cols="12" :md="$vuetify.display.mdAndUp ? '8' : '12'">
+        <v-card :elevation="$vuetify.display.smAndDown ? 1 : 2">
+          <v-card-text :class="$vuetify.display.smAndDown ? 'pa-3' : 'pa-6'">
+            <h2 :class="$vuetify.display.smAndDown ? 'text-h5' : 'text-h4'">
+              Title
+            </h2>
+          </v-card-text>
+          <v-card-actions class="flex-column flex-sm-row">
+            <v-spacer />
+            <v-btn 
+              :block="$vuetify.display.smAndDown"
+              color="primary"
+            >
+              Action
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
+</template>
+```
 
 ### Middleware
 
@@ -397,11 +548,38 @@ npm run dev  # Missing APP_ENV=copilot prefix, service implementation unclear
 
 ## Testing
 
-- Testing infrastructure uses `@nuxt/test-utils`
+- Testing infrastructure uses `@nuxt/test-utils` with Playwright
 - Mock services provide isolated testing environment
-- No existing tests are currently in the repository
+- **Mobile compatibility testing is mandatory** - tests run on both desktop and mobile viewports
 - When adding tests, follow Nuxt testing best practices
 - Test mock services independently of external dependencies
+- **All new features must include mobile compatibility tests**
+
+### Mobile Testing Requirements
+
+- **Playwright mobile configuration**: Tests automatically run on Pixel 5 and iPhone 12 viewports
+- **Touch interaction testing**: Verify tap, swipe, and scroll behaviors work correctly
+- **Responsive layout testing**: Confirm layouts adapt properly across screen sizes
+- **Accessibility testing**: Ensure touch targets meet minimum size requirements (44px)
+- **Performance testing**: Verify mobile performance and loading times
+
+Example mobile test pattern:
+```typescript
+test('should work correctly on mobile', async ({ page }) => {
+  await page.goto('/component-page')
+  
+  // Test mobile-specific interactions
+  await page.tap('button')
+  
+  // Verify responsive layout
+  const element = page.locator('.responsive-element')
+  await expect(element).toBeVisible()
+  
+  // Check touch target sizes
+  const buttonBox = await page.locator('button').boundingBox()
+  expect(buttonBox?.height).toBeGreaterThanOrEqual(44)
+})
+```
 
 ## Key Implementation Details
 

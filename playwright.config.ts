@@ -29,29 +29,43 @@ export default defineConfig({
     // Only run Chromium on CI (GitHub Actions)
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        hasTouch: true, // Enable touch support for CI
+      },
     },
   ] : [
     // Run both Chromium and WebKit locally
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { 
+        ...devices['Desktop Chrome'],
+        hasTouch: true, // Enable touch support for desktop chrome
+      },
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
+      use: { 
+        ...devices['Desktop Safari'],
+        hasTouch: true, // Enable touch support for webkit
+      },
+    },
+    /* Test against mobile viewports. */
+    {
+      name: 'Mobile Chrome',
+      use: { 
+        ...devices['Pixel 5'],
+        hasTouch: true, // Ensure touch support is enabled
+      },
+    },
+    {
+      name: 'Mobile Safari',
+      use: { 
+        ...devices['iPhone 12'],
+        hasTouch: true, // Ensure touch support is enabled
+      },
     },
   ],
-
-  /* Test against mobile viewports. */
-  // {
-  //   name: 'Mobile Chrome',
-  //   use: { ...devices['Pixel 5'] },
-  // },
-  // {
-  //   name: 'Mobile Safari',
-  //   use: { ...devices['iPhone 12'] },
-  // },
 
   /* Test against branded browsers. */
   // {

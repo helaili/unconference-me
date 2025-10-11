@@ -35,16 +35,25 @@ async function signOut() {
       <v-spacer/>
       <AuthState>
         <template #default="{ loggedIn }">
-          <v-btn v-if="loggedIn" data-testid="workspace-button" append-icon="mdi-view-dashboard" @click="goToDashboard()">Dashboard</v-btn>
-          <v-btn v-if="loggedIn" data-testid="logout-button" append-icon="mdi-logout" @click="signOut()">Logout</v-btn>
-          <v-btn v-else  data-testid="login-button" append-icon="mdi-login" @click="signIn()">Login</v-btn>
+          <!-- Mobile: Show icons only for space -->
+          <template v-if="$vuetify.display.smAndDown">
+            <v-btn v-if="loggedIn" data-testid="workspace-button" icon="mdi-view-dashboard" @click="goToDashboard()" />
+            <v-btn v-if="loggedIn" data-testid="logout-button" icon="mdi-logout" @click="signOut()" />
+            <v-btn v-else data-testid="login-button" icon="mdi-login" @click="signIn()" />
+          </template>
+          <!-- Desktop: Show full text -->
+          <template v-else>
+            <v-btn v-if="loggedIn" data-testid="workspace-button" append-icon="mdi-view-dashboard" @click="goToDashboard()">Dashboard</v-btn>
+            <v-btn v-if="loggedIn" data-testid="logout-button" append-icon="mdi-logout" @click="signOut()">Logout</v-btn>
+            <v-btn v-else data-testid="login-button" append-icon="mdi-login" @click="signIn()">Login</v-btn>
+          </template>
         </template>
         <template #placeholder>
           <button disabled>Loading...</button>
         </template>
       </AuthState>
     </v-app-bar>
-    <v-main class="d-flex align-center justify-center" style="min-height: 300px;">
+    <v-main>
       <slot/>
     </v-main>
   </v-app>
