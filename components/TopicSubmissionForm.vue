@@ -152,16 +152,16 @@ watch(() => props.editingTopic, (newTopic) => {
                   label="Add Tags (optional)"
                   placeholder="Enter a tag and press Enter"
                   variant="outlined"
-                  @keydown.enter.prevent="addTag"
                   :disabled="!canSubmitMore && !isEditing"
+                  @keydown.enter.prevent="addTag"
                 >
                   <template #append>
                     <v-btn
                       icon="mdi-plus"
                       size="small"
                       variant="text"
-                      @click="addTag"
                       :disabled="!tagInput.trim()"
+                      @click="addTag"
                     />
                   </template>
                 </v-text-field>
@@ -171,9 +171,9 @@ watch(() => props.editingTopic, (newTopic) => {
                     v-for="tag in tags"
                     :key="tag"
                     closable
-                    @click:close="removeTag(tag)"
                     class="mr-1 mb-1"
                     size="small"
+                    @click:close="removeTag(tag)"
                   >
                     {{ tag }}
                   </v-chip>
@@ -182,11 +182,13 @@ watch(() => props.editingTopic, (newTopic) => {
             </v-form>
           </v-card-text>
           
-          <v-card-actions>
+          <v-card-actions class="flex-column flex-sm-row">
             <v-spacer />
             <v-btn
               v-if="isEditing"
               variant="outlined"
+              :block="$vuetify.display.smAndDown"
+              class="mb-2 mb-sm-0 mr-sm-2"
               @click="handleCancel"
             >
               Cancel
@@ -194,6 +196,7 @@ watch(() => props.editingTopic, (newTopic) => {
             <v-btn
               color="primary"
               :disabled="!isValid || (!canSubmitMore && !isEditing)"
+              :block="$vuetify.display.smAndDown"
               @click="handleSubmit"
             >
               {{ isEditing ? 'Update Topic' : 'Submit Topic' }}

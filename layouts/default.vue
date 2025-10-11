@@ -52,7 +52,11 @@
 <template>
   <v-app id="app">
     <v-app-bar id="app-bar">
-      <v-app-bar-nav-icon id="app-bar-nav-icon" @click.stop="toggleDrawer"/>
+      <v-app-bar-nav-icon 
+        id="app-bar-nav-icon" 
+        style="min-width: 44px; min-height: 44px;"
+        @click.stop="toggleDrawer"
+      />
       <v-app-bar-title data-testid="app-bar-title">
         <template #text>
           <AppTitle/>
@@ -61,7 +65,15 @@
       <v-spacer/>
       <AuthState>
         <template #default="{ loggedIn }">
-          <v-btn v-if="loggedIn" data-testid="logout-button" append-icon="mdi-logout" @click="signOut('/')">Logout</v-btn>
+          <v-btn 
+            v-if="loggedIn" 
+            data-testid="logout-button" 
+            append-icon="mdi-logout" 
+            style="min-height: 44px;"
+            @click="signOut('/')"
+          >
+            Logout
+          </v-btn>
         </template>
       </AuthState>
     </v-app-bar>
@@ -69,19 +81,25 @@
       id="nav-drawer" 
       v-model="drawer" 
       data-testid="nav-drawer"
-      :rail="true"
-      expand-on-hover
+      :rail="$vuetify.display.mdAndUp"
+      :expand-on-hover="$vuetify.display.mdAndUp"
+      :temporary="$vuetify.display.smAndDown"
     >
-    <v-list-item
-      v-for="(item, i) in filteredNavItems"
-      :key="i"
-      :to="item.to"
-      :title="item.title"
-      :prepend-icon="item.icon"
-    />
+      <v-list nav>
+        <v-list-item
+          v-for="(item, i) in filteredNavItems"
+          :key="i"
+          :to="item.to"
+          :title="item.title"
+          :prepend-icon="item.icon"
+          @click="$vuetify.display.smAndDown && (drawer = false)"
+        />
+      </v-list>
     </v-navigation-drawer>
-    <v-main class="d-flex align-center justify-center" style="min-height: 300px;">
-      <slot/>
+    <v-main>
+      <v-container fluid class="pa-2 pa-md-4">
+        <slot/>
+      </v-container>
     </v-main>
   </v-app>
 </template>
