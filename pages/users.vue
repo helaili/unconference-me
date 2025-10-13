@@ -35,6 +35,17 @@ const organizerDialog = ref(false)
 const selectedUser = ref<User | null>(null)
 const organizerRole = ref<'owner' | 'admin' | 'moderator'>('moderator')
 const assigningOrganizer = ref(false)
+const addUserDialog = ref(false)
+const csvUploadDialog = ref(false)
+const newUser = ref({
+  firstname: '',
+  lastname: '',
+  email: ''
+})
+const csvFile = ref<File | null>(null)
+const csvFileInput = ref<HTMLInputElement | null>(null)
+const uploadingCsv = ref(false)
+const addingUser = ref(false)
 
 const fetchUsers = async () => {
   loading.value = true
@@ -161,6 +172,89 @@ const assignOrganizerRole = async () => {
   }
 }
 
+const openAddUserDialog = () => {
+  newUser.value = {
+    firstname: '',
+    lastname: '',
+    email: ''
+  }
+  addUserDialog.value = true
+}
+
+const addUser = async () => {
+  error.value = null
+  addingUser.value = true
+  
+  try {
+    const response = await $fetch('/api/users', {
+      method: 'POST',
+      body: newUser.value
+    })
+    
+    if (response.success) {
+      successMessage.value = `User ${newUser.value.firstname} ${newUser.value.lastname} added successfully!`
+      addUserDialog.value = false
+      await fetchUsers()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error adding user:', err)
+    error.value = err.data?.message || 'Failed to add user'
+  } finally {
+    addingUser.value = false
+  }
+}
+
+const openCsvUploadDialog = () => {
+  csvFile.value = null
+  csvUploadDialog.value = true
+}
+
+const handleFileSelect = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    csvFile.value = target.files[0]
+  }
+}
+
+const uploadCsv = async () => {
+  if (!csvFile.value) {
+    error.value = 'Please select a CSV file'
+    return
+  }
+  
+  error.value = null
+  uploadingCsv.value = true
+  
+  try {
+    const formData = new FormData()
+    formData.append('file', csvFile.value)
+    
+    const response = await $fetch('/api/users/upload-csv', {
+      method: 'POST',
+      body: formData
+    })
+    
+    if (response.success) {
+      successMessage.value = `Successfully imported ${response.count} users from CSV!`
+      csvUploadDialog.value = false
+      await fetchUsers()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error uploading CSV:', err)
+    error.value = err.data?.message || 'Failed to upload CSV'
+  } finally {
+    uploadingCsv.value = false
+  }
+}
+
 onMounted(() => {
   fetchUsers()
 })
@@ -202,7 +296,23 @@ onMounted(() => {
               <v-col>
                 Users ({{ users.length }})
               </v-col>
-              <v-col cols="auto">
+              <v-col cols="auto" class="d-flex gap-2">
+                <v-btn
+                  color="success"
+                  prepend-icon="mdi-account-plus"
+                  @click="openAddUserDialog"
+                  :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+                >
+                  <span v-if="!$vuetify.display.smAndDown">Add User</span>
+                </v-btn>
+                <v-btn
+                  color="info"
+                  prepend-icon="mdi-file-upload"
+                  @click="openCsvUploadDialog"
+                  :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+                >
+                  <span v-if="!$vuetify.display.smAndDown">Import CSV</span>
+                </v-btn>
                 <v-btn
                   color="primary"
                   prepend-icon="mdi-refresh"
@@ -210,7 +320,7 @@ onMounted(() => {
                   :loading="loading"
                   :size="$vuetify.display.smAndDown ? 'small' : 'default'"
                 >
-                  Refresh
+                  <span v-if="!$vuetify.display.smAndDown">Refresh</span>
                 </v-btn>
               </v-col>
             </v-row>
@@ -404,6 +514,124 @@ onMounted(() => {
             @click="assignOrganizerRole"
           >
             Assign Role
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    <!-- Add User Dialog -->
+    <v-dialog
+      v-model="addUserDialog"
+      :max-width="$vuetify.display.smAndDown ? '95%' : '500'"
+    >
+      <v-card>
+        <v-card-title>
+          Add New User
+        </v-card-title>
+        
+        <v-card-text>
+          <v-form @submit.prevent="addUser">
+            <v-text-field
+              v-model="newUser.firstname"
+              label="First Name"
+              variant="outlined"
+              density="comfortable"
+              required
+              class="mb-2"
+            />
+            
+            <v-text-field
+              v-model="newUser.lastname"
+              label="Last Name"
+              variant="outlined"
+              density="comfortable"
+              required
+              class="mb-2"
+            />
+            
+            <v-text-field
+              v-model="newUser.email"
+              label="Email"
+              type="email"
+              variant="outlined"
+              density="comfortable"
+              required
+            />
+          </v-form>
+        </v-card-text>
+        
+        <v-card-actions class="flex-column flex-sm-row">
+          <v-spacer />
+          <v-btn
+            variant="outlined"
+            :block="$vuetify.display.smAndDown"
+            class="mb-2 mb-sm-0 mr-sm-2"
+            @click="addUserDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="success"
+            :block="$vuetify.display.smAndDown"
+            :loading="addingUser"
+            @click="addUser"
+          >
+            Add User
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    <!-- CSV Upload Dialog -->
+    <v-dialog
+      v-model="csvUploadDialog"
+      :max-width="$vuetify.display.smAndDown ? '95%' : '600'"
+    >
+      <v-card>
+        <v-card-title>
+          Import Users from CSV
+        </v-card-title>
+        
+        <v-card-text>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            <strong>CSV Format:</strong><br>
+            Your CSV file should have the following columns:<br>
+            <code>firstname, lastname, email</code>
+          </v-alert>
+          
+          <v-file-input
+            v-model="csvFile"
+            label="Select CSV File"
+            accept=".csv"
+            variant="outlined"
+            density="comfortable"
+            prepend-icon="mdi-file-delimited"
+            @change="handleFileSelect"
+          />
+          
+          <v-alert type="warning" variant="tonal" class="mt-4">
+            Users will be created with Participant role. Send them invitation links to complete registration.
+          </v-alert>
+        </v-card-text>
+        
+        <v-card-actions class="flex-column flex-sm-row">
+          <v-spacer />
+          <v-btn
+            variant="outlined"
+            :block="$vuetify.display.smAndDown"
+            class="mb-2 mb-sm-0 mr-sm-2"
+            @click="csvUploadDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="info"
+            :block="$vuetify.display.smAndDown"
+            :loading="uploadingCsv"
+            :disabled="!csvFile"
+            @click="uploadCsv"
+          >
+            Upload CSV
           </v-btn>
         </v-card-actions>
       </v-card>

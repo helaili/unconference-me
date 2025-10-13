@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
 definePageMeta({
   layout: 'public'
@@ -12,6 +12,7 @@ useSeoMeta({
 
 const route = useRoute()
 const router = useRouter()
+const config = useRuntimeConfig()
 
 const form = ref({
   email: '',
@@ -27,8 +28,14 @@ const error = ref<string | null>(null)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 
-// Extract token and email from URL query parameters
-onMounted(() => {
+// Check if GitHub OAuth is enabled
+const useGitHubAuth = computed(() => config.public.authUrl === '/auth/github')
+
+// Compute the login link based on auth method
+const loginLink = computed(() => config.public.authUrl)
+
+// Extract token and email from URL query parameters and check for existing user
+onMounted(async () => {
   const token = route.query.token as string
   const email = route.query.email as string
   
@@ -37,8 +44,25 @@ onMounted(() => {
   }
   if (email) {
     form.value.email = email
+    // Try to fetch existing user data
+    await fetchUserData(email)
   }
 })
+
+// Fetch existing user data if available
+const fetchUserData = async (email: string) => {
+  try {
+    const response = await $fetch(`/api/users/lookup?email=${encodeURIComponent(email)}`)
+    if (response.success && response.user) {
+      // Pre-fill form with existing data
+      form.value.firstname = response.user.firstname || ''
+      form.value.lastname = response.user.lastname || ''
+    }
+  } catch (err) {
+    // User doesn't exist yet, that's fine
+    console.debug('No existing user data found')
+  }
+}
 
 const passwordRules = [
   (v: string) => !!v || 'Password is required',
@@ -53,6 +77,19 @@ const confirmPasswordRules = [
 const handleRegister = async () => {
   error.value = null
   
+  // If GitHub OAuth is enabled, store invitation info and redirect to GitHub
+  if (useGitHubAuth.value) {
+    // Store invitation email in session storage for OAuth callback
+    if (form.value.invitationToken && form.value.email) {
+      sessionStorage.setItem('invitationEmail', form.value.email)
+      sessionStorage.setItem('invitationToken', form.value.invitationToken)
+    }
+    // Redirect to GitHub OAuth
+    window.location.href = '/auth/github'
+    return
+  }
+  
+  // Local registration with password
   if (form.value.password !== form.value.confirmPassword) {
     error.value = 'Passwords do not match'
     return
@@ -147,6 +184,7 @@ const handleRegister = async () => {
               />
               
               <v-text-field
+                v-if="!useGitHubAuth"
                 v-model="form.password"
                 label="Password"
                 :type="showPassword ? 'text' : 'password'"
@@ -160,6 +198,7 @@ const handleRegister = async () => {
               />
               
               <v-text-field
+                v-if="!useGitHubAuth"
                 v-model="form.confirmPassword"
                 label="Confirm Password"
                 :type="showConfirmPassword ? 'text' : 'password'"
@@ -171,6 +210,15 @@ const handleRegister = async () => {
                 required
                 class="mb-4"
               />
+              
+              <v-alert
+                v-if="useGitHubAuth"
+                type="info"
+                variant="tonal"
+                class="mb-4"
+              >
+                Click Register to authenticate with GitHub
+              </v-alert>
               
               <v-btn
                 type="submit"
@@ -187,7 +235,7 @@ const handleRegister = async () => {
             
             <p class="text-center text-body-2">
               Already have an account?
-              <NuxtLink to="/login" class="text-primary">
+              <NuxtLink :to="loginLink" class="text-primary">
                 Login here
               </NuxtLink>
             </p>
