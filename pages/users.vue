@@ -31,6 +31,10 @@ const successMessage = ref<string | null>(null)
 const generatingToken = ref<string | null>(null)
 const invitationDialog = ref(false)
 const currentInvitation = ref<{ url: string; expiresAt?: Date } | null>(null)
+const organizerDialog = ref(false)
+const selectedUser = ref<User | null>(null)
+const organizerRole = ref<'owner' | 'admin' | 'moderator'>('moderator')
+const assigningOrganizer = ref(false)
 
 const fetchUsers = async () => {
   loading.value = true
@@ -108,6 +112,52 @@ const getRoleBadgeColor = (role?: string) => {
       return 'info'
     default:
       return 'default'
+  }
+}
+
+const openOrganizerDialog = (user: User) => {
+  selectedUser.value = user
+  organizerDialog.value = true
+}
+
+const assignOrganizerRole = async () => {
+  if (!selectedUser.value?.id) return
+  
+  assigningOrganizer.value = true
+  error.value = null
+  
+  try {
+    const response = await $fetch('/api/events/1/organizers', {
+      method: 'POST',
+      body: {
+        userId: selectedUser.value.id,
+        role: organizerRole.value,
+        permissions: {
+          canEditEvent: organizerRole.value === 'owner' || organizerRole.value === 'admin',
+          canApproveParticipants: true,
+          canApproveTopics: true,
+          canScheduleTopics: true,
+          canManageAssignments: organizerRole.value === 'owner' || organizerRole.value === 'admin',
+          canRunAutoAssignment: organizerRole.value === 'owner' || organizerRole.value === 'admin',
+          canViewReports: true
+        }
+      }
+    })
+    
+    if (response.success) {
+      successMessage.value = 'Organizer role assigned successfully!'
+      organizerDialog.value = false
+      await fetchUsers()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error assigning organizer role:', err)
+    error.value = err.data?.message || 'Failed to assign organizer role'
+  } finally {
+    assigningOrganizer.value = false
   }
 }
 
@@ -214,12 +264,25 @@ onMounted(() => {
                       prepend-icon="mdi-email"
                       @click="generateInvitation(user)"
                       :loading="generatingToken === user.id"
+                      class="mr-1"
                     >
                       <span v-if="!$vuetify.display.smAndDown">
                         {{ user.hasInvitation ? 'Regenerate' : 'Generate' }} Link
                       </span>
                       <span v-else>
                         Link
+                      </span>
+                    </v-btn>
+                    <v-btn
+                      v-if="user.role !== 'Admin'"
+                      color="warning"
+                      variant="text"
+                      size="small"
+                      prepend-icon="mdi-shield-account"
+                      @click="openOrganizerDialog(user)"
+                    >
+                      <span v-if="!$vuetify.display.smAndDown">
+                        Make Organizer
                       </span>
                     </v-btn>
                   </td>
@@ -282,6 +345,65 @@ onMounted(() => {
             @click="invitationDialog = false"
           >
             Close
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+    
+    <!-- Organizer Assignment Dialog -->
+    <v-dialog
+      v-model="organizerDialog"
+      :max-width="$vuetify.display.smAndDown ? '95%' : '500'"
+    >
+      <v-card>
+        <v-card-title>
+          Assign Organizer Role
+        </v-card-title>
+        
+        <v-card-text>
+          <p class="mb-4">
+            Assign organizer role to <strong>{{ selectedUser?.firstname }} {{ selectedUser?.lastname }}</strong>
+          </p>
+          
+          <v-select
+            v-model="organizerRole"
+            :items="[
+              { title: 'Moderator', value: 'moderator' },
+              { title: 'Admin', value: 'admin' },
+              { title: 'Owner', value: 'owner' }
+            ]"
+            label="Organizer Role"
+            variant="outlined"
+            density="comfortable"
+          />
+          
+          <v-alert type="info" variant="tonal" class="mt-4">
+            <strong>Role Permissions:</strong>
+            <ul class="mt-2">
+              <li v-if="organizerRole === 'owner'">Full event management access</li>
+              <li v-if="organizerRole === 'admin'">Event editing and participant management</li>
+              <li v-if="organizerRole === 'moderator'">Topic and participant approval</li>
+            </ul>
+          </v-alert>
+        </v-card-text>
+        
+        <v-card-actions class="flex-column flex-sm-row">
+          <v-spacer />
+          <v-btn
+            variant="outlined"
+            :block="$vuetify.display.smAndDown"
+            class="mb-2 mb-sm-0 mr-sm-2"
+            @click="organizerDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="warning"
+            :block="$vuetify.display.smAndDown"
+            :loading="assigningOrganizer"
+            @click="assignOrganizerRole"
+          >
+            Assign Role
           </v-btn>
         </v-card-actions>
       </v-card>
