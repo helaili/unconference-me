@@ -59,18 +59,24 @@ export class MockDataManager {
   private getDefaultUsers(): User[] {
     return [
       {
+        id: 'user-1',
         firstname: "Luke",
         lastname: "Skywalker",
         email: "luke@rebels.com",
         password: "changeme",
-        role: "Admin"
+        role: "Admin",
+        registeredAt: new Date('2025-01-01T00:00:00Z'),
+        lastLoginAt: new Date('2025-10-01T00:00:00Z')
       },
       {
+        id: 'user-2',
         firstname: "Darth",
         lastname: "Vador",
         email: "darth@empire.com",
         password: "changeme",
-        role: "User"
+        role: "User",
+        registeredAt: new Date('2025-01-02T00:00:00Z'),
+        lastLoginAt: new Date('2025-10-01T00:00:00Z')
       }
     ]
   }
@@ -108,6 +114,45 @@ export class MockDataManager {
     if (index === -1) return false
     this._users.splice(index, 1)
     return true
+  }
+
+  getUserById(id: string): User | undefined {
+    return this._users.find(u => u.id === id)
+  }
+
+  getUserByInvitationToken(token: string): User | undefined {
+    return this._users.find(u => u.invitationToken === token)
+  }
+
+  getUserByGithubId(githubId: number): User | undefined {
+    return this._users.find(u => u.githubId === githubId)
+  }
+
+  generateInvitationToken(email: string, eventId?: string): string | null {
+    const user = this.getUserByEmail(email)
+    if (!user) return null
+
+    // Generate a secure random token
+    const token = Math.random().toString(36).substring(2) + Date.now().toString(36)
+    const expiry = new Date()
+    expiry.setDate(expiry.getDate() + 7) // Token valid for 7 days
+
+    this.updateUser(email, {
+      invitationToken: token,
+      invitationTokenExpiry: expiry
+    })
+
+    return token
+  }
+
+  validateInvitationToken(token: string): User | null {
+    const user = this.getUserByInvitationToken(token)
+    if (!user || !user.invitationTokenExpiry) return null
+
+    // Check if token is expired
+    if (new Date() > user.invitationTokenExpiry) return null
+
+    return user
   }
 
   // ==================== EVENTS ====================

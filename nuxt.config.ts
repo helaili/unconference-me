@@ -46,7 +46,7 @@ export default defineNuxtConfig({
     'pages:extend' (pages: NuxtPage[]) {
       function setMiddleware (pages: NuxtPage[]) {
         const publicPages = ['index', 'login', 'register']
-        const adminPages = ['admin', 'settings'] // Add admin-only pages here
+        const adminPages = ['admin', 'settings', 'users', 'adminSettings'] // Add admin-only pages here
         
         for (const page of pages) {
           if (page.name && !publicPages.includes(page.name)) {
@@ -112,6 +112,7 @@ export default defineNuxtConfig({
       defaultUserName: process.env.DEFAULT_USER_NAME, 
       defaultUserPassword: process.env.DEFAULT_USER_PASSWORD,
       authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
       eventName: "Universe User Group 2025", 
       eventLocation: "Convene 100 Stockton, Union Square, San Francisco",
       eventDate: "Monday, October 27th, 2025",

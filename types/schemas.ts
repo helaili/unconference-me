@@ -4,6 +4,33 @@
 import { z } from 'zod'
 
 /**
+ * User schema
+ */
+export const userSchema = z.object({
+  id: z.string().optional(),
+  email: z.string().email(),
+  firstname: z.string().min(1),
+  lastname: z.string().min(1),
+  password: z.string().min(8).optional(),
+  role: z.enum(['Admin', 'User', 'Participant', 'Organizer']).optional(),
+  githubId: z.number().optional(),
+  githubUsername: z.string().optional(),
+  invitationToken: z.string().optional(),
+  invitationTokenExpiry: z.date().optional(),
+  registeredAt: z.date().optional(),
+  lastLoginAt: z.date().optional()
+})
+
+export const invitationLinkSchema = z.object({
+  userId: z.string(),
+  email: z.string().email(),
+  token: z.string(),
+  expiresAt: z.date(),
+  eventId: z.string().optional(),
+  createdAt: z.date()
+})
+
+/**
  * Event schema
  */
 export const eventSettingsSchema = z.object({
