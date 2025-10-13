@@ -28,6 +28,12 @@
       adminOnly: false
     },
     {
+      icon: 'mdi-account-multiple',
+      title: 'Users',
+      to: '/users',
+      adminOnly: true
+    },
+    {
       icon: 'mdi-cog',
       title: 'Settings',
       to: '/adminSettings',

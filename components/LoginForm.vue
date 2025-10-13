@@ -105,5 +105,13 @@
         <div v-else class="mt-4 text-center">
             <p>Please log in</p>
         </div>
+        <div class="text-center mt-2">
+            <p>
+                Don't have an account? 
+                <a href="/register" class="text-primary" data-testid="register-link">
+                    Register here
+                </a>
+            </p>
+        </div>
     </v-card>
 </template>
