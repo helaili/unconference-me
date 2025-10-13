@@ -1,5 +1,5 @@
 import logger from '../../../../../utils/logger'
-import { mockData } from '../../../../../tests/helpers/mock-manager'
+import { topicService, participantService } from '../../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const topicId = getRouterParam(event, 'topicId')
     
-    logger.info(`Deleting topic ${topicId} for event ${eventId} by user: ${session.user?.email}`)
+    logger.info('Deleting topic for event', { topicId, eventId, user: session.user })
     
     if (!eventId || !topicId) {
       throw createError({
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // Get the topic
-    const topic = mockData.getTopicById(topicId)
+    const topic = await topicService.findById(topicId)
     if (!topic) {
       throw createError({
         statusCode: 404,
@@ -34,14 +34,22 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Find participant ID based on user email
-    const participants = mockData.getParticipantsByEventId(eventId)
-    const participant = participants.find(p => p.email === session.user?.email)
+    // Check if user is admin
+    const isAdmin = (session.user as { role?: string })?.role === 'Admin'
     
-    // Check authorization: user can delete their own topics, admin can delete any
-    const isAdmin = session.user?.role === 'Admin'
-    const isOwner = participant && topic.proposedBy === participant.id
+    // For non-admins, check if they are the owner of the topic
+    let isOwner = false
+    if (!isAdmin) {
+      // Find participant ID based on user identifier
+      const participants = await participantService.findByEventId(eventId)
+      const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
+      const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
+      
+      // Check if user is the owner of the topic (either via participant ID or direct proposer match)
+      isOwner = (participant && topic.proposedBy === participant.id) || topic.proposedBy === userIdentifier
+    }
     
+    // Check authorization: admins can delete any topic, users can only delete their own
     if (!isAdmin && !isOwner) {
       throw createError({
         statusCode: 403,
@@ -49,15 +57,8 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Perform soft delete (mark as rejected)
-    const success = mockData.softDeleteTopic(topicId)
-    
-    if (!success) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Failed to delete topic'
-      })
-    }
+    // Perform soft delete by updating status to rejected
+    await topicService.update(topicId, { status: 'rejected' })
     
     logger.info(`Topic soft deleted successfully: ${topicId}`)
     

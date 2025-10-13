@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import type { Topic } from '../../../../../types/topic'
 import logger from '../../../../../utils/logger'
-import { mockData } from '../../../../../tests/helpers/mock-manager'
+import { topicService, participantService } from '../../../../../services'
 
 // Validation schema for updating a topic
 const updateTopicSchema = z.object({
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     const topicId = getRouterParam(event, 'topicId')
     const body = await readBody(event)
     
-    logger.info(`Updating topic ${topicId} for event ${eventId} by user: ${session.user?.email}`)
+    logger.info('Updating topic for event', { topicId, eventId, user: session.user })
     
     if (!eventId || !topicId) {
       throw createError({
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     const validatedData = updateTopicSchema.parse(body)
     
     // Get the topic
-    const topic = mockData.getTopicById(topicId)
+    const topic = await topicService.findById(topicId)
     if (!topic) {
       throw createError({
         statusCode: 404,
@@ -48,14 +48,22 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Find participant ID based on user email
-    const participants = mockData.getParticipantsByEventId(eventId)
-    const participant = participants.find(p => p.email === session.user?.email)
+    // Check if user is admin
+    const isAdmin = (session.user as { role?: string })?.role === 'Admin'
     
-    // Check authorization: user can edit their own topics, admin can edit any
-    const isAdmin = session.user?.role === 'Admin'
-    const isOwner = participant && topic.proposedBy === participant.id
+    // For non-admins, check if they are the owner of the topic
+    let isOwner = false
+    if (!isAdmin) {
+      // Find participant ID based on user identifier
+      const participants = await participantService.findByEventId(eventId)
+      const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
+      const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
+      
+      // Check if user is the owner of the topic (either via participant ID or direct proposer match)
+      isOwner = (participant && topic.proposedBy === participant.id) || topic.proposedBy === userIdentifier
+    }
     
+    // Check authorization: admins can edit any topic, users can only edit their own
     if (!isAdmin && !isOwner) {
       throw createError({
         statusCode: 403,
@@ -80,16 +88,7 @@ export default defineEventHandler(async (event) => {
       updates.metadata = { ...topic.metadata, tags: validatedData.tags }
     }
     
-    const success = mockData.updateTopic(topicId, updates)
-    
-    if (!success) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Failed to update topic'
-      })
-    }
-    
-    const updatedTopic = mockData.getTopicById(topicId)
+    const updatedTopic = await topicService.update(topicId, updates)
     
     logger.info(`Topic updated successfully: ${topicId}`)
     
@@ -107,7 +106,7 @@ export default defineEventHandler(async (event) => {
         data: { 
           success: false, 
           message: 'Invalid topic data',
-          errors: error.errors
+          errors: error.issues
         }
       })
     }
