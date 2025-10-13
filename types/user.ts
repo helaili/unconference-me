@@ -4,7 +4,11 @@ export interface User {
   firstname: string
   lastname: string
   password?: string
-  role?: 'Admin' | 'User'
+  role?: 'Admin' | 'Organizer' | 'Participant'
+  githubId?: number // GitHub user ID for OAuth
+  githubUsername?: string // GitHub username
+  registrationToken?: string // Unique token for registration link
+  registrationTokenExpiry?: Date // Token expiration date
   createdAt?: Date
   updatedAt?: Date
 }

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import logger from '../../../utils/logger'
-import { mockData } from '../../../tests/helpers/mock-manager'
+import { userService } from '../../../services/userService'
 
 const bodySchema = z.object({
   email: z.email(),
@@ -13,8 +13,8 @@ export default defineEventHandler(async (event) => {
     
     logger.debug(`Attempting login for email: ${email}`)
     
-    // Find user by email using mock manager
-    const user = mockData.getUserByEmail(email)
+    // Find user by email using user service
+    const user = await userService.findByEmail(email)
 
     if (!user) {
       logger.warn(`Login attempt with unknown email: ${email}`)
