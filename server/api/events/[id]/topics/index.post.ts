@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import logger from '../../../../../utils/logger'
-import { mockData } from '../../../../../tests/helpers/mock-manager'
+import { eventService, participantService, topicService } from '../../../../../services'
 
 // Validation schema for creating a topic
 const createTopicSchema = z.object({
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const body = await readBody(event)
     
-    logger.info(`Creating topic for event ${eventId} by user: ${session.user?.email}`)
+    logger.info('Creating topic for event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -28,8 +28,8 @@ export default defineEventHandler(async (event) => {
     // Validate request body
     const validatedData = createTopicSchema.parse(body)
     
-    // Get event to verify it exists and check settings
-    const eventData = mockData.getEventById(eventId)
+    // Get event to verify it exists
+    const eventData = await eventService.findById(eventId)
     if (!eventData) {
       throw createError({
         statusCode: 404,
@@ -37,22 +37,36 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Find participant ID based on user email
-    const participants = mockData.getParticipantsByEventId(eventId)
-    const participant = participants.find(p => p.email === session.user?.email)
+    // Check if user is admin
+    const isAdmin = (session.user as { role?: string })?.role === 'Admin'
     
-    if (!participant) {
+    // Find participant based on user or allow admin to submit without being a participant
+    const participants = await participantService.findByEventId(eventId)
+    const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
+    const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
+    
+    // For non-admin users, require participant registration
+    if (!isAdmin && !participant) {
       throw createError({
         statusCode: 403,
         statusMessage: 'You must be registered as a participant for this event to submit topics'
       })
     }
     
+    // For admins without participant registration, create a virtual participant identifier
+    let proposerId: string
+    if (isAdmin && !participant) {
+      // Use the user's email or a generated admin identifier as the proposer
+      proposerId = userIdentifier || `admin-${Date.now()}`
+    } else {
+      proposerId = participant!.id
+    }
+    
     // Check if user has reached the maximum number of topics (non-admin only)
-    const isAdmin = session.user?.role === 'Admin'
     if (!isAdmin) {
       const maxTopics = eventData.settings?.maxTopicsPerParticipant || 3
-      const userTopicCount = mockData.countTopicsByProposer(eventId, participant.id)
+      const userTopics = await topicService.findByProposer(proposerId)
+      const userTopicCount = userTopics.filter(t => t.eventId === eventId).length
       
       if (userTopicCount >= maxTopics) {
         throw createError({
@@ -62,20 +76,17 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    // Create new topic
-    const newTopic = {
-      id: `topic-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+    // Create new topic using the service
+    const newTopic = await topicService.create({
       eventId,
       title: validatedData.title,
       description: validatedData.description,
-      proposedBy: participant.id,
-      status: 'proposed' as const,
+      proposedBy: proposerId,
+      status: 'proposed',
       createdAt: new Date(),
       updatedAt: new Date(),
       metadata: validatedData.tags ? { tags: validatedData.tags } : undefined
-    }
-    
-    mockData.addTopic(newTopic)
+    })
     
     logger.info(`Topic created successfully: ${newTopic.id}`)
     
@@ -93,7 +104,7 @@ export default defineEventHandler(async (event) => {
         data: { 
           success: false, 
           message: 'Invalid topic data',
-          errors: error.errors
+          errors: error.issues
         }
       })
     }

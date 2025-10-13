@@ -1,16 +1,15 @@
 import logger from '../../../utils/logger'
-import { mockData } from '../../../tests/helpers/mock-manager'
+import { eventService } from '../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     const session = await requireUserSession(event)
     
-    logger.info(`Fetching events list for user: ${session.user?.email}`)
+    logger.info('Fetching events list for authenticated user', { user: session.user })
     
-    // Get events from mock manager
-    // In production, this would fetch from CosmosDB based on user's permissions
-    const events = mockData.getEvents()
+    // Get events using the service layer (automatically uses CosmosDB or mock data based on environment)
+    const events = await eventService.findAll()
     
     return {
       success: true,

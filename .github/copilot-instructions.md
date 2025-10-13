@@ -52,69 +52,167 @@ This is a Nuxt.js web application for managing unconference events. The applicat
 
 ## Data Services Architecture
 
-**CRITICAL REQUIREMENT**: All data services in this application MUST use the mock service pattern. This is a mandatory architectural requirement that applies to:
+**CRITICAL REQUIREMENT**: All data services in this application use a **hybrid architecture** that supports both mock data (for development/testing) and CosmosDB (for staging/production) based on the `APP_ENV` environment variable.
 
-- All existing data services
-- All new data services created by GitHub Copilot
-- All data access layers and database interactions
-- All entity management and CRUD operations
+### Environment-Based Data Service Pattern
 
-### Mock Service Pattern Requirements
+The application automatically switches between data sources based on environment:
 
-#### 1. Mandatory Mock Service Usage
+- **Development/Copilot (`APP_ENV=development|copilot`)**: Uses in-memory mock data via MockDataManager
+- **Staging (`APP_ENV=staging`)**: Uses Azure CosmosDB with staging connection string
+- **Production (`APP_ENV=production`)**: Uses Azure CosmosDB with production connection string
 
-**ALL new data services created by GitHub Copilot MUST:**
+### Base Service Architecture
 
-- Extend the base `MockService` class
-- Implement mock data storage and operations
-- Never directly connect to external databases during development
-- Use in-memory data structures for data persistence
-- Provide realistic sample data for testing and development
+#### 1. BaseService Implementation
 
-#### 2. Base MockService Implementation
-
-All services must extend from `services/mockService.ts` which provides:
+All services extend from `services/baseService.ts` which provides:
 
 ```typescript
-export abstract class MockService<T> {
-  protected data: T[] = []
-  protected nextId = 1
-
-  // Standard CRUD operations
-  async findAll(): Promise<T[]>
-  async findById(id: string): Promise<T | null>
-  async create(data: Omit<T, 'id'>): Promise<T>
-  async update(id: string, data: Partial<T>): Promise<T>
-  async delete(id: string): Promise<boolean>
-  async exists(id: string): Promise<boolean>
+export abstract class BaseService<T extends { id: string }> {
+  protected abstract readonly containerName: string
+  protected abstract readonly partitionKey: string
+  
+  // Environment detection
+  protected async isUsingCosmosDB(): Promise<boolean>
+  
+  // CosmosDB operations
+  protected async executeCosmosQuery<TResult = T>(query: string, parameters?: SqlParameter[]): Promise<TResult[]>
+  protected async cosmosUpsert(item: T): Promise<T>
+  protected async cosmosDelete(id: string, partitionKeyValue?: string): Promise<boolean>
+  protected async cosmosReadById(id: string, partitionKeyValue?: string): Promise<T | null>
+  
+  // Abstract methods that must be implemented
+  abstract findAll(): Promise<T[]>
+  abstract findById(id: string): Promise<T | null>
+  abstract create(data: Omit<T, 'id'>): Promise<T>
+  abstract update(id: string, data: Partial<T>): Promise<T>
+  abstract delete(id: string): Promise<boolean>
+  abstract exists(id: string): Promise<boolean>
 }
 ```
 
-#### 3. Service Implementation Template
+#### 2. Service Implementation Template
 
 **GitHub Copilot MUST follow this exact template when creating new data services:**
 
 ```typescript
 // services/[entity]Service.ts
-import { MockService } from './mockService'
-import type { Entity, CreateEntityInput, UpdateEntityInput } from '~/types/[entity]'
+import { BaseService } from './baseService'
+import { mockData } from '../tests/helpers/mock-manager'
+import type { Entity } from '../types/[entity]'
+import logger from '../utils/logger'
 
-export class EntityService extends MockService<Entity> {
-  constructor() {
-    super('[entities]') // collection name
-    this.initializeMockData()
+export class EntityService extends BaseService<Entity> {
+  protected readonly containerName = '[entities]'
+  protected readonly partitionKey = '/[partitionKey]'
+
+  async findAll(): Promise<Entity[]> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        return await this.executeCosmosQuery<Entity>('SELECT * FROM c')
+      } else {
+        return mockData.getEntities()
+      }
+    } catch (error) {
+      logger.error('Failed to fetch all entities', { error })
+      throw error
+    }
   }
 
-  private initializeMockData() {
-    // Add realistic mock data here
-    this.data = [
-      // Sample entities
-    ]
+  async findById(id: string): Promise<Entity | null> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        return await this.cosmosReadById(id, id) // or appropriate partition key
+      } else {
+        return mockData.getEntityById(id) || null
+      }
+    } catch (error) {
+      logger.error('Failed to fetch entity by id', { id, error })
+      throw error
+    }
   }
 
-  // Entity-specific methods
-  async customMethod(): Promise<Entity[]> {
-    // Implementation using this.data
+  async create(entityData: Omit<Entity, 'id'>): Promise<Entity> {
+    try {
+      const entity: Entity = {
+        ...entityData,
+        id: this.generateId(),
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      if (await this.isUsingCosmosDB()) {
+        return await this.cosmosUpsert(entity)
+      } else {
+        mockData.addEntity(entity)
+        return entity
+      }
+    } catch (error) {
+      logger.error('Failed to create entity', { entityData, error })
+      throw error
+    }
+  }
+
+  async update(id: string, updates: Partial<Entity>): Promise<Entity> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        const existingEntity = await this.findById(id)
+        if (!existingEntity) {
+          throw new Error(`Entity with id ${id} not found`)
+        }
+
+        const updatedEntity: Entity = {
+          ...existingEntity,
+          ...updates,
+          id,
+          updatedAt: new Date()
+        }
+
+        return await this.cosmosUpsert(updatedEntity)
+      } else {
+        const success = mockData.updateEntity(id, { ...updates, updatedAt: new Date() })
+        if (!success) {
+          throw new Error(`Entity with id ${id} not found`)
+        }
+        
+        const updatedEntity = mockData.getEntityById(id)
+        if (!updatedEntity) {
+          throw new Error('Failed to retrieve updated entity')
+        }
+        return updatedEntity
+      }
+    } catch (error) {
+      logger.error('Failed to update entity', { id, updates, error })
+      throw error
+    }
+  }
+
+  async delete(id: string): Promise<boolean> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        return await this.cosmosDelete(id, id) // or appropriate partition key
+      } else {
+        return mockData.removeEntity(id)
+      }
+    } catch (error) {
+      logger.error('Failed to delete entity', { id, error })
+      throw error
+    }
+  }
+
+  async exists(id: string): Promise<boolean> {
+    try {
+      const entity = await this.findById(id)
+      return entity !== null
+    } catch (error) {
+      logger.error('Failed to check if entity exists', { id, error })
+      throw error
+    }
+  }
+
+  private generateId(): string {
+    return `entity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
 }
 
@@ -122,9 +220,19 @@ export class EntityService extends MockService<Entity> {
 export const entityService = new EntityService()
 ```
 
+#### 3. Available Data Services
+
+The application provides the following pre-built services:
+
+- **UserService** (`services/userService.ts`) - User management
+- **EventService** (`services/eventService.ts`) - Event management  
+- **ParticipantService** (`services/participantService.ts`) - Event participant management
+- **TopicService** (`services/topicService.ts`) - Discussion topic management
+- **AssignmentService** (`services/assignmentService.ts`) - Participant-topic assignments
+
 #### 4. TypeScript Interface Requirements
 
-All services must define proper interfaces:
+All entities must include these base properties:
 
 ```typescript
 // types/[entity].ts
@@ -134,36 +242,78 @@ export interface Entity {
   updatedAt: Date
   // entity-specific properties
 }
-
-export interface CreateEntityInput {
-  // required properties for creation
-}
-
-export interface UpdateEntityInput {
-  // optional properties for updates
-}
 ```
+
+#### 5. CosmosDB Configuration
+
+**Container Design:**
+- `users` - Partition key: `/email`
+- `events` - Partition key: `/id`
+- `participants` - Partition key: `/eventId`
+- `topics` - Partition key: `/eventId`
+- `assignments` - Partition key: `/eventId`
+
+**Connection String:**
+Uses `COSMODB_PRIMARY_CONNECTION_STRING` environment variable for both staging and production.
 
 ### Data Service Creation Guidelines for GitHub Copilot
 
 When GitHub Copilot creates new data services, it MUST:
 
-1. **Always create mock implementations** - Never create direct database connections
+1. **Always extend BaseService** - Never create services that bypass the hybrid architecture
 2. **Follow the service template** - Use the exact structure shown above
-3. **Include realistic mock data** - Add sample data that represents real-world usage
-4. **Implement proper TypeScript types** - Define interfaces for all entities
-5. **Export singleton instances** - Use the pattern `export const entityService = new EntityService()`
-6. **Add entity-specific methods** - Implement business logic methods as needed
-7. **Include proper error handling** - Use try/catch blocks and proper error responses
-8. **Add logging** - Use the Winston logger for all operations
+3. **Implement both CosmosDB and mock data paths** - Every method must handle both data sources
+4. **Use proper partition keys** - Follow CosmosDB partitioning best practices
+5. **Include proper error handling** - Use try/catch blocks with detailed logging
+6. **Export singleton instances** - Use the pattern `export const entityService = new EntityService()`
+7. **Add entity-specific methods** - Implement business logic methods that work with both data sources
+8. **Include proper logging** - Use the Winston logger for all operations
+9. **Use appropriate SQL queries** - Write efficient CosmosDB SQL queries for production
+10. **Handle async operations** - All methods must be async and handle promises correctly
+
+### Mandatory Service Features
+
+Every service MUST include:
+
+- **Environment detection** - Automatic switching between mock and CosmosDB
+- **Proper container naming** - Use plural nouns for container names
+- **Partition key strategy** - Define appropriate partition keys for CosmosDB
+- **Error handling** - Comprehensive error handling with logging
+- **Type safety** - Full TypeScript support with proper interfaces
+- **ID generation** - Consistent ID generation strategies
+- **CRUD operations** - Complete Create, Read, Update, Delete functionality
+- **Custom query methods** - Entity-specific query methods for business logic
+
+### CosmosDB Integration Requirements
+
+When implementing CosmosDB operations:
+
+1. **Use SQL API** - All queries must use CosmosDB SQL syntax
+2. **Parameterize queries** - Always use parameter binding to prevent injection
+3. **Handle partitioning** - Consider partition keys in all operations
+4. **Optimize queries** - Write efficient queries with proper indexing
+5. **Handle errors** - Properly handle CosmosDB-specific errors (404, etc.)
+6. **Use transactions** - Implement proper transaction handling where needed
+
+### MockData Integration Requirements
+
+When implementing mock operations:
+
+1. **Use MockDataManager** - Always use the centralized mock data manager
+2. **Maintain consistency** - Ensure mock data matches CosmosDB schema
+3. **Support filtering** - Implement proper filtering for mock operations
+4. **Handle relationships** - Properly handle entity relationships in mock data
+5. **Provide test data** - Include realistic test data for development
 
 ### Prohibited Patterns
 
 GitHub Copilot MUST NOT create services that:
 
-- Implement database-specific query languages
-- Use file system persistence for data storage
-- Implement real authentication providers (use mock authentication)
+- **Bypass the BaseService** - All services must extend BaseService
+- **Mix data sources inappropriately** - Never mix CosmosDB and mock data in single operations
+- **Hardcode environment logic** - Use the isUsingCosmosDB() method for environment detection
+- **Ignore error handling** - Every operation must have proper error handling
+- **Skip logging** - All operations must include appropriate logging
 
 ## Authentication & Authorization
 
@@ -181,6 +331,29 @@ The application uses a custom authentication system for test environments and Gi
 3. Admin pages check for `role === 'Admin'` in user session
 4. Unauthenticated users are redirected to `/login`
 5. Non-admin users attempting to access admin pages are redirected to `/dashboard`
+
+### Admin Privileges
+
+Users with `role === 'Admin'` have enhanced capabilities throughout the application:
+
+#### Topic Management
+- **Submit topics to any event**: Admins can create topics for any event without being registered as participants
+- **Edit any topic**: Admins can modify any topic regardless of who proposed it
+- **Delete any topic**: Admins can remove any topic from any event
+- **Bypass topic limits**: Admins are not subject to the maximum topics per participant restriction
+- **Change topic status**: Only admins can update topic status (proposed, approved, scheduled, etc.)
+
+#### Event Management
+- **Access any event**: Admins can view and manage all events regardless of participation status
+- **Modify event settings**: Admins can update event configuration and settings
+
+#### Administrative Detection
+The system detects admin users using:
+```typescript
+const isAdmin = (session.user as { role?: string })?.role === 'Admin'
+```
+
+For admin-submitted topics without participant registration, the system generates virtual proposer IDs to maintain data integrity.
 
 ## Configuration
 
@@ -645,29 +818,54 @@ export interface UpdateEntityInput {
 }
 ```
 
-#### Step 2: Create Mock Service Implementation
+#### Step 2: Create Hybrid Service Implementation
 
 ```typescript
 // services/[entity]Service.ts
-import { MockService } from './mockService'
+import { BaseService } from './baseService'
+import { mockData } from '../tests/helpers/mock-manager'
 import type { Entity, CreateEntityInput, UpdateEntityInput } from '~/types/[entity]'
+import logger from '../utils/logger'
 
-export class EntityService extends MockService<Entity> {
-  constructor() {
-    super('[entities]')
-    this.initializeMockData()
+export class EntityService extends BaseService<Entity> {
+  protected readonly containerName = '[entities]'
+  protected readonly partitionKey = '/[partitionKey]'
+
+  async findAll(): Promise<Entity[]> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        return await this.executeCosmosQuery<Entity>('SELECT * FROM c')
+      } else {
+        return mockData.getEntities()
+      }
+    } catch (error) {
+      logger.error('Failed to fetch all entities', { error })
+      throw error
+    }
   }
 
-  private initializeMockData() {
-    // Add realistic sample data
-    this.data = [
-      // Sample entities with realistic data
-    ]
-  }
-
-  // Entity-specific methods using mock data
+  // Implement all required BaseService methods
+  // ... (following the template exactly)
+  
+  // Entity-specific methods
   async findByCustomCriteria(criteria: any): Promise<Entity[]> {
-    return this.data.filter(/* implementation */)
+    try {
+      if (await this.isUsingCosmosDB()) {
+        return await this.executeCosmosQuery<Entity>(
+          'SELECT * FROM c WHERE c.customField = @criteria',
+          [{ name: '@criteria', value: criteria }]
+        )
+      } else {
+        return mockData.getEntities().filter(/* mock implementation */)
+      }
+    } catch (error) {
+      logger.error('Failed to find entities by criteria', { criteria, error })
+      throw error
+    }
+  }
+
+  private generateId(): string {
+    return `entity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }
 }
 
@@ -678,12 +876,13 @@ export const entityService = new EntityService()
 
 1. **Import service in components/pages:**
    ```typescript
-   import { entityService } from '~/services/entityService'
+   import { entityService } from '~/services'
    ```
 
 2. **Use service methods with proper error handling:**
    ```typescript
    try {
+     // Service automatically detects environment and uses appropriate data source
      const entities = await entityService.findAll()
    } catch (error) {
      // Handle error
@@ -691,6 +890,7 @@ export const entityService = new EntityService()
    ```
 
 3. **Implement loading states and user feedback**
+4. **Service works in all environments** - development (mock), staging (CosmosDB), production (CosmosDB)
 
 ### Adding Authentication to API Routes
 
@@ -699,21 +899,22 @@ export const entityService = new EntityService()
 3. Check user role from session for authorization
 4. Use mock services for all data operations
 
-### Working with Mock Services
+### Working with Hybrid Services
 
 **GitHub Copilot must follow these patterns when working with services:**
 
-1. **Always use mock services** - Never create database connections
-2. **Import service instances** directly in components/pages
+1. **Always use the service layer** - Never bypass the service architecture
+2. **Import service instances** from the services index in components/pages
 3. **Handle service errors** properly with try/catch blocks
 4. **Use TypeScript types** for all service interactions
 5. **Include proper loading states** in UI components
 6. **Implement proper error handling** and user feedback
+7. **Services automatically adapt** to the environment (mock or CosmosDB)
 
 Example service usage pattern:
 ```vue
 <script setup lang="ts">
-import { entityService } from '~/services/entityService'
+import { entityService } from '~/services'
 import type { Entity } from '~/types/entity'
 
 const entities = ref<Entity[]>([])
@@ -722,6 +923,7 @@ const error = ref<string | null>(null)
 
 onMounted(async () => {
   try {
+    // Service automatically uses CosmosDB or mock data based on APP_ENV
     entities.value = await entityService.findAll()
   } catch (err) {
     error.value = 'Failed to load entities'
@@ -733,28 +935,55 @@ onMounted(async () => {
 </script>
 ```
 
+Example API endpoint usage pattern:
+```typescript
+import { entityService } from '~/services'
+import logger from '~/utils/logger'
+
+export default defineEventHandler(async (event) => {
+  try {
+    const session = await requireUserSession(event)
+    
+    // Service layer handles environment detection automatically
+    const entities = await entityService.findAll()
+    
+    return {
+      success: true,
+      entities
+    }
+  } catch (error) {
+    logger.error('Failed to fetch entities', { error })
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Failed to fetch entities'
+    })
+  }
+})
+```
+
 ## Important Notes
 
 - The application is configured for compatibility date '2025-07-15'
 - **GitHub Copilot must always set APP_ENV=copilot before running any npm commands**
-- **GitHub Copilot must EXCLUSIVELY use mock services for all data operations**
-- **ALL new data services created by GitHub Copilot MUST extend MockService**
-- **NO direct database connections are allowed during Copilot operations**
+- **GitHub Copilot must use the hybrid service architecture for all data operations**
+- **ALL new data services created by GitHub Copilot MUST extend BaseService**
+- **Services automatically use mock data when APP_ENV=copilot, and CosmosDB for staging/production**
 - Vuetify components must be transpiled (configured in build.transpile)
 - TypeScript strict mode is enabled
 - All paths should use TypeScript path aliases when available
 - The APP_ENV=copilot setting enables special configurations for AI-assisted development
 - Legacy JSON data files in `/data` directory are maintained for fallback purposes
-- Mock services provide safe, isolated environment for development and testing
+- Hybrid service architecture provides both development safety and production capability
 - Service layer pattern ensures consistency and maintainability across the application
+- Mock data is used for development/Copilot, CosmosDB for staging/production
 
 ## Critical Reminders for GitHub Copilot
 
-1. **NEVER create direct database connections** - Always use mock services
-2. **ALWAYS extend MockService base class** for new data services
-3. **ALWAYS include realistic mock data** in service constructors
+1. **ALWAYS extend BaseService** - Never create services that bypass the hybrid architecture
+2. **ALWAYS implement both data paths** - Every service method must handle mock and CosmosDB
+3. **ALWAYS use environment detection** - Use isUsingCosmosDB() to determine data source
 4. **ALWAYS export singleton instances** from service files
 5. **ALWAYS prefix npm commands with APP_ENV=copilot**
-6. **ALWAYS use TypeScript interfaces** for all entities
-7. **ALWAYS implement proper error handling** in service methods
-8. **NEVER access production or staging databases** during development
+6. **ALWAYS use TypeScript interfaces** for all entities with id, createdAt, updatedAt
+7. **ALWAYS implement proper error handling** in service methods with logging
+8. **ALWAYS use MockDataManager** for mock operations in development

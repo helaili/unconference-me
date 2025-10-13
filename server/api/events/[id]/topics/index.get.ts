@@ -1,5 +1,5 @@
 import logger from '../../../../../utils/logger'
-import { mockData } from '../../../../../tests/helpers/mock-manager'
+import { eventService, topicService } from '../../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     
-    logger.info(`Fetching topics for event ${eventId} by user: ${session.user?.email}`)
+    logger.info('Fetching topics for event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // Get event to verify it exists
-    const eventData = mockData.getEventById(eventId)
+    const eventData = await eventService.findById(eventId)
     if (!eventData) {
       throw createError({
         statusCode: 404,
@@ -31,26 +31,12 @@ export default defineEventHandler(async (event) => {
     const status = query.status as string | undefined
     const proposedBy = query.proposedBy as string | undefined
     
-    // Get topics for this event
-    let topics = mockData.getTopicsByEventId(eventId)
-    
-    // Apply filters
-    if (search) {
-      const searchLower = search.toLowerCase()
-      topics = topics.filter(t => 
-        t.title.toLowerCase().includes(searchLower) ||
-        t.description?.toLowerCase().includes(searchLower) ||
-        t.metadata?.tags?.some(tag => tag.toLowerCase().includes(searchLower))
-      )
-    }
-    
-    if (status) {
-      topics = topics.filter(t => t.status === status)
-    }
-    
-    if (proposedBy) {
-      topics = topics.filter(t => t.proposedBy === proposedBy)
-    }
+    // Use the topic service search method for better performance
+    const topics = await topicService.searchTopics(eventId, {
+      search,
+      status,
+      proposedBy
+    })
     
     return {
       success: true,
