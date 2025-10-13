@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "vue.volar",
+        "github.vscode-github-actions",
+        "ms-vscode.vscode-node-azure-pack",
+        "github.vscode-pull-request-github"
+    ]
+}
