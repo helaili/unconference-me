@@ -154,7 +154,7 @@ When `NUXT_AUTH_GITHUB` is enabled:
 
 ### Password Requirements
 - Minimum 8 characters
-- Stored securely (should be hashed in production)
+- **Note**: In the current mock service implementation, passwords are stored in plain text for development purposes. In production with CosmosDB, passwords should be hashed using bcrypt or a similar algorithm before storage.
 
 ### Registration Tokens
 - 32-byte random tokens
@@ -222,7 +222,11 @@ Comprehensive test suites are provided:
 
 Run tests:
 ```bash
-APP_ENV=copilot npm test
+# For development/testing with mock data
+APP_ENV=test npm test
+
+# Or use the npm script
+npm test
 ```
 
 ## Troubleshooting
