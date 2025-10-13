@@ -83,7 +83,7 @@ export default defineEventHandler(async (event) => {
 
     // Create new organizer
     const newOrganizer = {
-      id: `organizer-${Date.now()}`,
+      id: crypto.randomUUID(),
       eventId,
       userId: body.userId,
       email: user.email,

@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Create new user or update existing participant
-    const userId = existingUser?.id || `user-${Date.now()}`
+    const userId = existingUser?.id || crypto.randomUUID()
     const newUser = {
       id: userId,
       email: body.email,
