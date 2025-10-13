@@ -1,0 +1,225 @@
+name: Mobile Compatibility Tests
+on:
+  workflow_dispatch:
+    inputs:
+      browser:
+        description: 'Mobile browser to test'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - Mobile Chrome
+        - Mobile Safari
+  schedule:
+    # Run mobile tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+env:
+  NODE_VERSION: 20.x
+  NUXT_SESSION_PASSWORD: ${{ secrets.NUXT_SESSION_PASSWORD }}
+  NUXT_AUTH_GITHUB: ${{ vars.NUXT_AUTH_GITHUB }}
+  APP_ENV: test
+
+jobs:
+  mobile-test:
+    name: Mobile Compatibility Testing
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: ${{ fromJson(inputs.browser == 'all' && '["Mobile Chrome", "Mobile Safari"]' || format('["{0}"]', inputs.browser)) }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-mobile-${{ hashFiles('**/package-lock.json') }}-${{ matrix.project }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-mobile-${{ matrix.project }}-
+          ${{ runner.os }}-playwright-mobile-
+          ${{ runner.os }}-playwright-
+          
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium webkit
+      
+    - name: Install Mobile Browser Dependencies  
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          fonts-liberation \
+          fonts-noto-color-emoji \
+          fonts-noto-cjk \
+          libnss3-dev \
+          libatk-bridge2.0-dev \
+          libdrm2 \
+          libxkbcommon-dev \
+          libxrandr2 \
+          libasound2-dev \
+          libpangocairo-1.0-0 \
+          libatk1.0-dev \
+          libcairo2-dev \
+          libgtk-3-dev \
+          libgdk-pixbuf2.0-dev
+          
+    - name: Run Mobile Compatibility Tests on ${{ matrix.project }}
+      run: |
+        echo "🔧 Running mobile compatibility tests on ${{ matrix.project }}"
+        npx playwright test mobile-compatibility.spec.ts --project="${{ matrix.project }}" --reporter=html,github
+      env:
+        NUXT_SESSION_PASSWORD: ${{ secrets.NUXT_SESSION_PASSWORD }}
+        NUXT_AUTH_GITHUB: ${{ vars.NUXT_AUTH_GITHUB }}
+        APP_ENV: test
+        CI: true
+        
+    - name: Run All Tests on ${{ matrix.project }} (if mobile compatibility passes)
+      if: success()
+      run: |
+        echo "✅ Mobile compatibility tests passed, running full test suite on ${{ matrix.project }}"
+        npx playwright test --project="${{ matrix.project }}" --reporter=html,github
+      env:
+        NUXT_SESSION_PASSWORD: ${{ secrets.NUXT_SESSION_PASSWORD }}
+        NUXT_AUTH_GITHUB: ${{ vars.NUXT_AUTH_GITHUB }}
+        APP_ENV: test
+        CI: true
+        
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: mobile-test-results-${{ matrix.project }}
+        path: |
+          playwright-report/
+          test-results/
+        retention-days: 14
+        
+    - name: Upload Test Screenshots
+      uses: actions/upload-artifact@v4
+      if: failure()
+      with:
+        name: mobile-test-screenshots-${{ matrix.project }}
+        path: test-results/*/
+        retention-days: 7
+
+  mobile-performance:
+    name: Mobile Performance Testing
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    needs: mobile-test
+    if: success()
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+      
+    - name: Run Mobile Performance Tests
+      run: |
+        echo "📊 Running mobile performance analysis"
+        # Create a simple performance test
+        cat > mobile-performance.spec.ts << 'EOF'
+        import { test, expect } from '@playwright/test';
+        import { devices } from '@playwright/test';
+
+        test.describe('Mobile Performance', () => {
+          test('should load homepage quickly on mobile', async ({ page }) => {
+            const startTime = Date.now();
+            
+            await page.goto('/');
+            await page.waitForLoadState('networkidle');
+            
+            const loadTime = Date.now() - startTime;
+            console.log(`Mobile page load time: ${loadTime}ms`);
+            
+            // Performance expectations for mobile
+            expect(loadTime).toBeLessThan(5000); // Should load within 5 seconds
+            
+            // Check for mobile-specific optimizations
+            const viewport = page.viewportSize();
+            expect(viewport?.width).toBeLessThanOrEqual(428); // iPhone 12 Pro Max width
+            
+            // Verify responsive design is working
+            const mainContent = page.locator('.v-main');
+            await expect(mainContent).toBeVisible();
+          });
+        });
+        EOF
+        
+        npx playwright test mobile-performance.spec.ts --project="Mobile Chrome" --reporter=html,github
+      env:
+        NUXT_SESSION_PASSWORD: ${{ secrets.NUXT_SESSION_PASSWORD }}
+        NUXT_AUTH_GITHUB: ${{ vars.NUXT_AUTH_GITHUB }}
+        APP_ENV: test
+        CI: true
+
+  summary:
+    name: Mobile Test Summary
+    if: always()
+    needs: [mobile-test, mobile-performance]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Generate Summary
+      run: |
+        echo "# 📱 Mobile Compatibility Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## Test Status Overview" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.mobile-test.result }}" == "success" ]]; then
+          echo "✅ **Mobile Compatibility Tests**: PASSED" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.mobile-test.result }}" == "failure" ]]; then
+          echo "❌ **Mobile Compatibility Tests**: FAILED" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ **Mobile Compatibility Tests**: ${{ needs.mobile-test.result }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ "${{ needs.mobile-performance.result }}" == "success" ]]; then
+          echo "✅ **Mobile Performance Tests**: PASSED" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.mobile-performance.result }}" == "failure" ]]; then
+          echo "❌ **Mobile Performance Tests**: FAILED" >> $GITHUB_STEP_SUMMARY
+        elif [[ "${{ needs.mobile-performance.result }}" == "skipped" ]]; then
+          echo "⏭️ **Mobile Performance Tests**: SKIPPED (compatibility tests failed)" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "⚠️ **Mobile Performance Tests**: ${{ needs.mobile-performance.result }}" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Mobile Devices Tested" >> $GITHUB_STEP_SUMMARY
+        echo "- 📱 **Mobile Chrome (Pixel 5)**: ${{ inputs.browser == 'all' || inputs.browser == 'Mobile Chrome' && '✅ Tested' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY  
+        echo "- 📱 **Mobile Safari (iPhone 12)**: ${{ inputs.browser == 'all' || inputs.browser == 'Mobile Safari' && '✅ Tested' || '⏭️ Skipped' }}" >> $GITHUB_STEP_SUMMARY
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## Test Coverage" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Touch interaction compatibility" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Responsive layout verification" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Mobile navigation patterns" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Touch target accessibility (44px minimum)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Mobile form usability" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Cross-platform mobile compatibility" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.mobile-performance.result }}" == "success" ]]; then
+          echo "- ✅ Mobile performance benchmarks" >> $GITHUB_STEP_SUMMARY
+        fi

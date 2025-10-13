@@ -1,0 +1,125 @@
+/* Mobile-first responsive styles for Unconference-Me */
+
+/* Ensure all interactive elements meet minimum touch target sizes */
+.v-btn {
+  min-height: 44px !important;
+  min-width: 44px !important;
+}
+
+.v-list-item {
+  min-height: 48px !important;
+}
+
+.v-expansion-panel-title {
+  min-height: 48px !important;
+  padding: 12px 24px !important;
+}
+
+.v-app-bar-nav-icon {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+.v-icon {
+  min-width: 24px !important;
+  min-height: 24px !important;
+}
+
+/* Mobile-specific overrides */
+@media (max-width: 599px) {
+  .v-btn {
+    min-height: 48px !important;
+    padding: 0 16px !important;
+  }
+  
+  .v-list-item {
+    min-height: 52px !important;
+    padding: 8px 16px !important;
+  }
+  
+  .v-expansion-panel-title {
+    min-height: 52px !important;
+    padding: 16px 24px !important;
+  }
+  
+  .v-app-bar-nav-icon {
+    min-width: 48px !important;
+    min-height: 48px !important;
+  }
+  
+  /* Ensure proper spacing on mobile */
+  .v-container {
+    padding: 8px !important;
+  }
+  
+  .v-card {
+    margin-bottom: 16px !important;
+  }
+  
+  .v-card-title {
+    padding: 12px 16px !important;
+    font-size: 1.125rem !important;
+  }
+  
+  .v-card-text {
+    padding: 12px 16px !important;
+  }
+  
+  .v-card-actions {
+    padding: 8px 16px 16px 16px !important;
+  }
+}
+
+/* Tablet and up */
+@media (min-width: 600px) {
+  .v-btn {
+    min-height: 44px !important;
+  }
+  
+  .v-list-item {
+    min-height: 48px !important;
+  }
+  
+  .v-expansion-panel-title {
+    min-height: 48px !important;
+  }
+}
+
+/* Ensure form elements are touch-friendly */
+.v-text-field .v-field__input,
+.v-textarea .v-field__input,
+.v-select .v-field__input {
+  min-height: 44px !important;
+}
+
+@media (max-width: 599px) {
+  .v-text-field .v-field__input,
+  .v-textarea .v-field__input,
+  .v-select .v-field__input {
+    min-height: 48px !important;
+  }
+}
+
+/* Ensure expansion panels are properly sized */
+.v-expansion-panel {
+  margin-bottom: 8px !important;
+}
+
+.v-expansion-panel-text {
+  padding: 16px 24px !important;
+}
+
+@media (max-width: 599px) {
+  .v-expansion-panel-text {
+    padding: 16px !important;
+  }
+}
+
+/* Mobile-friendly dialog sizing */
+@media (max-width: 599px) {
+  .v-dialog .v-card {
+    margin: 16px !important;
+    width: calc(100% - 32px) !important;
+    max-width: none !important;
+  }
+}

@@ -11,14 +11,22 @@ logger.info(`Using GitHub Auth: ${process.env.NUXT_AUTH_GITHUB === 'true'}`)
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
+  css: [
+    '~/assets/css/mobile.css'
+  ],
   app: {
     head: {
       title: 'Unconference Me',
       titleTemplate: '%s - Unconference Me',
       meta: [
         { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: 'Manage your unconference events' }
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        { name: 'description', content: 'Manage your unconference events' },
+        { name: 'format-detection', content: 'telephone=no' },
+        { name: 'mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-capable', content: 'yes' },
+        { name: 'apple-mobile-web-app-status-bar-style', content: 'default' },
+        { name: 'theme-color', content: '#1976d2' }
       ]
     }
   },
