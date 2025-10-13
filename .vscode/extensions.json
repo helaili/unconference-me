@@ -1,0 +1,7 @@
+{
+    "recommendations": [
+        "github.vscode-github-actions",
+        "github.vscode-pull-request-github",
+        "ms-vscode.vscode-node-azure-pack"
+    ]
+}
