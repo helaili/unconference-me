@@ -139,6 +139,7 @@ const deleteParticipant = async () => {
 
 const getStatusColor = (status: string) => {
   const colors = {
+    invited: 'orange',
     registered: 'blue',
     confirmed: 'green',
     'checked-in': 'purple',
@@ -307,7 +308,7 @@ const formatDate = (date: Date) => {
             <v-select
               v-model="editForm.status"
               label="Status"
-              :items="['registered', 'confirmed', 'checked-in', 'cancelled']"
+              :items="['invited', 'registered', 'confirmed', 'checked-in', 'cancelled']"
               variant="outlined"
               density="comfortable"
             />

@@ -1,5 +1,5 @@
 import logger from '../../../../utils/logger'
-import { invitationService, userService } from '../../../../services'
+import { invitationService, userService, participantService } from '../../../../services'
 import type { User } from '../../../../types/user'
 
 export default defineEventHandler(async (event) => {
@@ -30,13 +30,13 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    // Create invitations for each user
+    // Create invitations and participants for each user
     const invitations = []
     for (const userId of body.userIds) {
-      // Verify user exists
+      // Verify user exists and is not soft-deleted
       const user = await userService.findById(userId)
-      if (!user) {
-        logger.warn(`User ${userId} not found, skipping invitation`)
+      if (!user || user.deletedAt) {
+        logger.warn(`User ${userId} not found or deleted, skipping invitation`)
         continue
       }
 
@@ -47,6 +47,17 @@ export default defineEventHandler(async (event) => {
         status: 'pending',
         invitedBy,
         invitedAt: new Date()
+      })
+      
+      // Create participant with "invited" status
+      await participantService.create({
+        eventId,
+        userId: user.id,
+        email: user.email,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        status: 'invited',
+        registrationDate: new Date()
       })
       
       invitations.push(invitation)

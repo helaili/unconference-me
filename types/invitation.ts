@@ -11,6 +11,7 @@ export interface Invitation {
   invitedBy: string // User ID of admin who sent the invitation
   invitedAt: Date
   respondedAt?: Date
+  responseComment?: string // User's comment when accepting/declining
   
   // Metadata
   createdAt: Date
