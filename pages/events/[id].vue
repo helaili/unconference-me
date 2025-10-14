@@ -1,0 +1,254 @@
+<!-- eslint-disable vue/multi-word-component-names -->
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import type { Event } from '~/types/event'
+import type { Participant } from '~/types/participant'
+
+definePageMeta({
+  requiresAdmin: true
+})
+
+const route = useRoute()
+const router = useRouter()
+const eventId = computed(() => route.params.id as string)
+
+const event = ref<Event | null>(null)
+const participants = ref<Participant[]>([])
+const participantStats = ref<any>(null)
+const loading = ref(false)
+const error = ref<string | null>(null)
+const successMessage = ref<string | null>(null)
+
+useSeoMeta({
+  title: computed(() => event.value ? `${event.value.name} - Event Management` : 'Event Management'),
+  description: 'Manage event details, participants, and invitations'
+})
+
+const fetchEventData = async () => {
+  loading.value = true
+  error.value = null
+  
+  try {
+    // Fetch event details
+    const eventResponse = await $fetch(`/api/events/${eventId.value}`)
+    if (eventResponse.success && eventResponse.event) {
+      event.value = eventResponse.event as Event
+    }
+    
+    // Fetch participants
+    const participantsResponse = await $fetch(`/api/events/${eventId.value}/participants`)
+    if (participantsResponse.success) {
+      participants.value = participantsResponse.participants || []
+      participantStats.value = participantsResponse.stats
+    }
+  } catch (err) {
+    console.error('Error fetching event data:', err)
+    error.value = 'Failed to load event data'
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleEventUpdate = async (updates: Partial<Event>) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch(`/api/events/${eventId.value}`, {
+      method: 'PUT',
+      body: updates
+    })
+    
+    if (response.success && response.event) {
+      event.value = response.event as Event
+      successMessage.value = 'Event updated successfully!'
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err) {
+    console.error('Error updating event:', err)
+    error.value = 'Failed to update event'
+  }
+}
+
+const handleAddParticipant = async (participantData: Omit<Participant, 'id' | 'eventId' | 'createdAt' | 'updatedAt'>) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch(`/api/events/${eventId.value}/participants`, {
+      method: 'POST',
+      body: participantData
+    })
+    
+    if (response.success) {
+      successMessage.value = 'Participant added successfully!'
+      await fetchEventData()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err) {
+    console.error('Error adding participant:', err)
+    error.value = 'Failed to add participant'
+  }
+}
+
+const handleUpdateParticipant = async (participantId: string, updates: Partial<Participant>) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch(`/api/events/${eventId.value}/participants/${participantId}`, {
+      method: 'PUT',
+      body: updates
+    })
+    
+    if (response.success) {
+      successMessage.value = 'Participant updated successfully!'
+      await fetchEventData()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err) {
+    console.error('Error updating participant:', err)
+    error.value = 'Failed to update participant'
+  }
+}
+
+const handleDeleteParticipant = async (participantId: string) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch(`/api/events/${eventId.value}/participants/${participantId}`, {
+      method: 'DELETE'
+    })
+    
+    if (response.success) {
+      successMessage.value = 'Participant deleted successfully!'
+      await fetchEventData()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err) {
+    console.error('Error deleting participant:', err)
+    error.value = 'Failed to delete participant'
+  }
+}
+
+const handleSendInvitations = async (emails: string[]) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch(`/api/events/${eventId.value}/invitations`, {
+      method: 'POST',
+      body: { emails }
+    })
+    
+    if (response.success) {
+      successMessage.value = `Invitations sent to ${emails.length} recipient(s)!`
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 5000)
+    }
+  } catch (err) {
+    console.error('Error sending invitations:', err)
+    error.value = 'Failed to send invitations'
+  }
+}
+
+const goBack = () => {
+  router.push('/events')
+}
+
+onMounted(() => {
+  fetchEventData()
+})
+</script>
+
+<template>
+  <v-container :class="$vuetify.display.smAndDown ? 'pa-2' : 'pa-4'">
+    <div class="d-flex align-center mb-4">
+      <v-btn
+        icon="mdi-arrow-left"
+        variant="text"
+        :size="$vuetify.display.smAndDown ? 'small' : 'default'"
+        @click="goBack"
+      />
+      <h1 :class="$vuetify.display.smAndDown ? 'text-h5 ml-2' : 'text-h3 ml-2'">
+        {{ event?.name || 'Event Management' }}
+      </h1>
+    </div>
+
+    <v-alert
+      v-if="successMessage"
+      type="success"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="successMessage = null"
+    >
+      {{ successMessage }}
+    </v-alert>
+
+    <v-alert
+      v-if="error"
+      type="error"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="error = null"
+    >
+      {{ error }}
+    </v-alert>
+
+    <div v-if="loading" class="text-center py-8">
+      <v-progress-circular indeterminate color="primary" size="64" />
+      <p class="mt-4 text-grey">Loading event data...</p>
+    </div>
+
+    <div v-else-if="event">
+      <!-- Event Status -->
+      <EventStatus :event="event" :participant-stats="participantStats" class="mb-4" />
+
+      <!-- Event Configuration -->
+      <EventConfiguration
+        :event="event"
+        @update="handleEventUpdate"
+        @save="fetchEventData"
+        class="mb-4"
+      />
+
+      <!-- Participant Management -->
+      <ParticipantManagement
+        :event-id="eventId"
+        :participants="participants"
+        @add="handleAddParticipant"
+        @update="handleUpdateParticipant"
+        @delete="handleDeleteParticipant"
+        @refresh="fetchEventData"
+        class="mb-4"
+      />
+
+      <!-- Invitation Management -->
+      <InvitationManagement
+        :event-id="eventId"
+        @invite="handleSendInvitations"
+      />
+    </div>
+
+    <v-alert v-else type="info" variant="tonal">
+      Event not found
+    </v-alert>
+  </v-container>
+</template>

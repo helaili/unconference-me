@@ -1,5 +1,5 @@
 import logger from '../../../../utils/logger'
-import { mockData } from '../../../../tests/helpers/mock-manager'
+import { participantService } from '../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,10 +16,17 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Get participants from mock manager
-    // In production, this would fetch from CosmosDB
-    const participants = mockData.getParticipantsByEventId(id)
-    const stats = mockData.getParticipantStats(id)
+    // Get participants using service layer (automatically uses CosmosDB or mock data based on environment)
+    const participants = await participantService.findByEventId(id)
+    
+    // Calculate stats
+    const stats = {
+      total: participants.length,
+      registered: participants.filter(p => p.status === 'registered').length,
+      confirmed: participants.filter(p => p.status === 'confirmed').length,
+      checkedIn: participants.filter(p => p.status === 'checked-in').length,
+      cancelled: participants.filter(p => p.status === 'cancelled').length
+    }
     
     return {
       success: true,

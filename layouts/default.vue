@@ -22,6 +22,12 @@
       adminOnly: false
     },
     {
+      icon: 'mdi-calendar-multiple',
+      title: 'Events',
+      to: '/events',
+      adminOnly: true
+    },
+    {
       icon: 'mdi-comment-text-multiple',
       title: 'Topics',
       to: '/topics',
