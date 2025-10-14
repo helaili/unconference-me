@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { Topic } from '../../../../../types/topic'
 import logger from '../../../../../utils/logger'
 import { topicService, participantService } from '../../../../../services'
+import { canEditTopic, canChangeTopicStatus } from '../../../../../utils/access-control'
 
 // Validation schema for updating a topic
 const updateTopicSchema = z.object({
@@ -48,34 +49,24 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Check if user is admin
-    const isAdmin = (session.user as { role?: string })?.role === 'Admin'
+    // Find participant ID based on user identifier
+    const participants = await participantService.findByEventId(eventId)
+    const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
+    const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
     
-    // For non-admins, check if they are the owner of the topic
-    let isOwner = false
-    if (!isAdmin) {
-      // Find participant ID based on user identifier
-      const participants = await participantService.findByEventId(eventId)
-      const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
-      const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
-      
-      // Check if user is the owner of the topic (either via participant ID or direct proposer match)
-      isOwner = (participant && topic.proposedBy === participant.id) || topic.proposedBy === userIdentifier
-    }
-    
-    // Check authorization: admins can edit any topic, users can only edit their own
-    if (!isAdmin && !isOwner) {
+    // Check authorization: admins, organizers, and topic owners can edit
+    if (!await canEditTopic(eventId, topic.proposedBy, session, participant?.id)) {
       throw createError({
         statusCode: 403,
         statusMessage: 'You do not have permission to edit this topic'
       })
     }
     
-    // Non-admins cannot change status
-    if (!isAdmin && validatedData.status) {
+    // Check if user can change status (only admins and organizers)
+    if (validatedData.status && !await canChangeTopicStatus(eventId, session)) {
       throw createError({
         statusCode: 403,
-        statusMessage: 'Only administrators can change topic status'
+        statusMessage: 'Only administrators and organizers can change topic status'
       })
     }
     
