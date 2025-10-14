@@ -68,7 +68,8 @@ const sendInvitations = async () => {
     setTimeout(() => {
       showInviteDialog.value = false
     }, 2000)
-  } catch {
+  } catch (error) {
+    console.error('Failed to send invitations:', error)
     errorMessage.value = 'Failed to send invitations'
   } finally {
     sending.value = false
