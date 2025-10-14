@@ -177,7 +177,7 @@ const formatDate = (date: Date) => {
         :mobile-breakpoint="$vuetify.display.smAndDown ? 960 : 0"
         density="comfortable"
       >
-        <template #item.status="{ item }">
+        <template #[`item.status`]="{ item }">
           <v-chip
             :color="getStatusColor(item.status)"
             size="small"
@@ -186,11 +186,11 @@ const formatDate = (date: Date) => {
           </v-chip>
         </template>
 
-        <template #item.registrationDate="{ item }">
+        <template #[`item.registrationDate`]="{ item }">
           {{ formatDate(item.registrationDate) }}
         </template>
 
-        <template #item.actions="{ item }">
+        <template #[`item.actions`]="{ item }">
           <div class="d-flex justify-end ga-2">
             <v-btn
               icon="mdi-pencil"
@@ -208,7 +208,7 @@ const formatDate = (date: Date) => {
           </div>
         </template>
 
-        <template #no-data>
+        <template #[`no-data`]>
           <div class="text-center py-4">
             <v-icon size="48" color="grey">mdi-account-off</v-icon>
             <p class="text-grey mt-2">No participants found</p>

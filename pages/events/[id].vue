@@ -12,9 +12,17 @@ const route = useRoute()
 const router = useRouter()
 const eventId = computed(() => route.params.id as string)
 
+interface ParticipantStats {
+  total: number
+  registered: number
+  confirmed: number
+  checkedIn: number
+  cancelled: number
+}
+
 const event = ref<Event | null>(null)
 const participants = ref<Participant[]>([])
-const participantStats = ref<any>(null)
+const participantStats = ref<ParticipantStats | null>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
@@ -223,21 +231,21 @@ onMounted(() => {
 
       <!-- Event Configuration -->
       <EventConfiguration
+        class="mb-4"
         :event="event"
         @update="handleEventUpdate"
         @save="fetchEventData"
-        class="mb-4"
       />
 
       <!-- Participant Management -->
       <ParticipantManagement
+        class="mb-4"
         :event-id="eventId"
         :participants="participants"
         @add="handleAddParticipant"
         @update="handleUpdateParticipant"
         @delete="handleDeleteParticipant"
         @refresh="fetchEventData"
-        class="mb-4"
       />
 
       <!-- Invitation Management -->

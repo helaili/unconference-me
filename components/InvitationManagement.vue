@@ -5,7 +5,7 @@ interface Props {
   eventId: string
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 const emit = defineEmits<{
   invite: [emails: string[]]
 }>()
@@ -68,7 +68,7 @@ const sendInvitations = async () => {
     setTimeout(() => {
       showInviteDialog.value = false
     }, 2000)
-  } catch (error) {
+  } catch {
     errorMessage.value = 'Failed to send invitations'
   } finally {
     sending.value = false
