@@ -161,7 +161,7 @@ The system comes with sensible defaults:
 
 ### Users
 - Luke Skywalker (`luke@rebels.com`) - Admin role
-- Darth Vader (`darth@empire.com`) - User role
+- Darth Vader (`darth@empire.com`) - Participant role
 
 ### Events  
 - Universe User Group 2025 - Sample unconference event

@@ -27,13 +27,16 @@
     "cosmos:status:production": "bash ./scripts/cosmosdb/manage.sh status production",
     "populate:staging": "npx tsx scripts/run-db-population.ts staging",
     "populate:production": "npx tsx scripts/run-db-population.ts production",
-    "db:setup": "npm run populate:staging"
+    "db:setup": "npm run populate:staging",
+    "migrate:passwords": "npx tsx scripts/run-password-migration.ts"
   },
   "dependencies": {
     "@azure/cosmos": "^4.0.0",
     "@mdi/font": "^7.4.47",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/test-utils": "^3.19.2",
+    "@types/bcrypt": "^6.0.0",
+    "bcrypt": "^6.0.0",
     "cosmos": "^0.1.2",
     "eslint": "^9.36.0",
     "nuxt": "^4.1.2",

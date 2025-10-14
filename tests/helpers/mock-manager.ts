@@ -57,20 +57,30 @@ export class MockDataManager {
   // ==================== USERS ====================
 
   private getDefaultUsers(): User[] {
+    // Pre-hashed version of "changeme" using bcrypt
+    // This allows tests to run synchronously while still using secure hashed passwords
+    const hashedPassword = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2' // "changeme"
+    
     return [
       {
+        id: "luke@rebels.com",
         firstname: "Luke",
         lastname: "Skywalker",
         email: "luke@rebels.com",
-        password: "changeme",
-        role: "Admin"
+        password: hashedPassword,
+        role: "Admin",
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
       },
       {
+        id: "darth@empire.com",
         firstname: "Darth",
         lastname: "Vador",
         email: "darth@empire.com",
-        password: "changeme",
-        role: "User"
+        password: hashedPassword,
+        role: "Participant",
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
       }
     ]
   }
@@ -94,11 +104,11 @@ export class MockDataManager {
     // Ensure required fields are preserved
     const currentUser = this._users[index]!
     this._users[index] = {
+      ...currentUser,
+      ...updates,
+      id: updates.email ?? currentUser.email, // ID follows email
       email: updates.email ?? currentUser.email,
-      firstname: updates.firstname ?? currentUser.firstname,
-      lastname: updates.lastname ?? currentUser.lastname,
-      password: updates.password ?? currentUser.password,
-      role: updates.role ?? currentUser.role
+      updatedAt: new Date()
     }
     return true
   }

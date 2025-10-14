@@ -2,6 +2,7 @@ import { BaseService } from './baseService'
 import { mockData } from '../tests/helpers/mock-manager'
 import type { User } from '../types/user'
 import logger from '../utils/logger'
+import { PasswordUtils } from '../utils/password'
 
 export class UserService extends BaseService<User> {
   protected readonly containerName = 'users'
@@ -53,57 +54,68 @@ export class UserService extends BaseService<User> {
 
   async create(userData: Omit<User, 'id'>): Promise<User> {
     try {
+      // Hash the password if provided and not already hashed
+      let hashedPassword = userData.password
+      if (userData.password && !PasswordUtils.isPasswordHashed(userData.password)) {
+        hashedPassword = await PasswordUtils.hashPassword(userData.password)
+      }
+
       const user: User = {
         ...userData,
-        id: userData.email // For users, email serves as the id
+        password: hashedPassword,
+        id: userData.email, // Use email as ID for CosmosDB partition key
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
 
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(user)
       } else {
-        // Check if user already exists
-        if (mockData.getUserByEmail(user.email)) {
-          throw new Error(`User with email ${user.email} already exists`)
-        }
         mockData.addUser(user)
         return user
       }
     } catch (error) {
-      logger.error('Failed to create user', { userData, error })
+      logger.error('Failed to create user', { email: userData.email, error })
       throw error
     }
   }
 
-  async update(email: string, updates: Partial<User>): Promise<User> {
+  async update(id: string, updates: Partial<User>): Promise<User> {
     try {
+      // Hash the password if it's being updated and not already hashed
+      let processedUpdates = { ...updates }
+      if (updates.password && !PasswordUtils.isPasswordHashed(updates.password)) {
+        processedUpdates.password = await PasswordUtils.hashPassword(updates.password)
+      }
+
       if (await this.isUsingCosmosDB()) {
-        const existingUser = await this.findByEmail(email)
+        const existingUser = await this.findById(id)
         if (!existingUser) {
-          throw new Error(`User with email ${email} not found`)
+          throw new Error(`User with id ${id} not found`)
         }
 
         const updatedUser: User = {
           ...existingUser,
-          ...updates,
-          email, // Ensure email doesn't change
-          id: email // Ensure id stays consistent
+          ...processedUpdates,
+          id,
+          updatedAt: new Date()
         }
 
         return await this.cosmosUpsert(updatedUser)
       } else {
-        const success = mockData.updateUser(email, updates)
+        const success = mockData.updateUser(id, { ...processedUpdates, updatedAt: new Date() })
         if (!success) {
-          throw new Error(`User with email ${email} not found`)
+          throw new Error(`User with id ${id} not found`)
         }
         
-        const updatedUser = mockData.getUserByEmail(email)
+        const updatedUser = mockData.getUserByEmail(id)
         if (!updatedUser) {
           throw new Error('Failed to retrieve updated user')
         }
         return updatedUser
       }
     } catch (error) {
-      logger.error('Failed to update user', { email, updates, error })
+      logger.error('Failed to update user', { id, error })
       throw error
     }
   }
@@ -134,9 +146,16 @@ export class UserService extends BaseService<User> {
   async validateCredentials(email: string, password: string): Promise<User | null> {
     try {
       const user = await this.findByEmail(email)
-      if (user && user.password === password) {
+      if (!user || !user.password) {
+        return null
+      }
+
+      // Verify the password using bcrypt
+      const isPasswordValid = await PasswordUtils.verifyPassword(password, user.password)
+      if (isPasswordValid) {
         return user
       }
+      
       return null
     } catch (error) {
       logger.error('Failed to validate user credentials', { email, error })

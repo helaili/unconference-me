@@ -46,7 +46,7 @@ export default defineNuxtConfig({
     'pages:extend' (pages: NuxtPage[]) {
       function setMiddleware (pages: NuxtPage[]) {
         const publicPages = ['index', 'login', 'register']
-        const adminPages = ['admin', 'settings'] // Add admin-only pages here
+        const adminPages = ['admin', 'settings', 'users'] // Add admin-only pages here
         
         for (const page of pages) {
           if (page.name && !publicPages.includes(page.name)) {

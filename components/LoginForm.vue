@@ -99,11 +99,17 @@
             data-testid="login-error"
             :text="loginErrorMessage"
         />
-        <div v-else-if="loggedIn" class="mt-4 text-center">
+        <div v-if="loggedIn" class="mt-4 text-center">
             <p>Welcome, {{ (user as any)?.name }}</p>
         </div>
-        <div v-else class="mt-4 text-center">
+        <div v-else-if="!loggedIn" class="mt-4 text-center">
             <p>Please log in</p>
+            <p class="mt-2">
+                Don't have an account? 
+                <a href="/register" class="text-primary" data-testid="register-link">
+                    Register here
+                </a>
+            </p>
         </div>
     </v-card>
 </template>

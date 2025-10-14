@@ -2,6 +2,7 @@ import { CosmosClient } from '@azure/cosmos'
 import type { Database } from '@azure/cosmos'
 import { mockData } from '../tests/helpers/mock-manager'
 import logger from '../utils/logger'
+import { PasswordUtils } from '../utils/password'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
@@ -113,18 +114,23 @@ export class ProductionDatabasePopulator {
   async createAdminUser(adminEmail: string, adminPassword: string): Promise<void> {
     const container = this.database.container('users')
     
+    // Hash the password before storing
+    const hashedPassword = await PasswordUtils.hashPassword(adminPassword)
+    
     const adminUser = {
       id: adminEmail,
       email: adminEmail,
       firstname: 'Admin',
       lastname: 'User',
-      password: adminPassword,
-      role: 'Admin'
+      password: hashedPassword,
+      role: 'Admin',
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
     
     try {
       await container.items.upsert(adminUser)
-      logger.info(`Admin user '${adminEmail}' created in production database`)
+      logger.info(`Admin user '${adminEmail}' created in production database with hashed password`)
     } catch (error) {
       logger.error(`Failed to create admin user '${adminEmail}'`, { error })
       throw error
