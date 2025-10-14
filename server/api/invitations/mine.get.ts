@@ -1,17 +1,23 @@
 import logger from '../../../utils/logger'
 import { invitationService, eventService } from '../../../services'
-import type { User } from '../../../types/user'
 
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     const session = await requireUserSession(event)
-    const userId = (session.user as User).id
+    const userEmail = (session.user as { email?: string })?.email
     
-    logger.info(`Fetching invitations for user ${userId}`)
+    if (!userEmail) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'User email not found in session'
+      })
+    }
     
-    // Get pending invitations for this user
-    const invitations = await invitationService.findPendingByUserId(userId)
+    logger.info(`Fetching invitations for user ${userEmail}`)
+    
+    // Get pending invitations for this user (email is used as userId)
+    const invitations = await invitationService.findPendingByUserId(userEmail)
     
     // Enrich with event details
     const enrichedInvitations = await Promise.all(

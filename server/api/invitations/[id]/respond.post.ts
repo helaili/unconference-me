@@ -1,15 +1,21 @@
 import logger from '../../../../utils/logger'
 import { invitationService, participantService } from '../../../../services'
-import type { User } from '../../../../types/user'
 
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     const session = await requireUserSession(event)
-    const userId = (session.user as User).id
+    const userEmail = (session.user as { email?: string })?.email
     const invitationId = getRouterParam(event, 'id')
     
-    logger.info(`User ${userId} responding to invitation ${invitationId}`)
+    if (!userEmail) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'User email not found in session'
+      })
+    }
+    
+    logger.info(`User ${userEmail} responding to invitation ${invitationId}`)
     
     if (!invitationId) {
       throw createError({
@@ -37,7 +43,7 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    if (invitation.userId !== userId) {
+    if (invitation.userId !== userEmail) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Not authorized to respond to this invitation'
@@ -61,7 +67,7 @@ export default defineEventHandler(async (event) => {
 
     // Update participant status
     const participants = await participantService.findByEventId(invitation.eventId)
-    const participant = participants.find(p => p.userId === userId)
+    const participant = participants.find(p => p.userId === userEmail)
     
     if (participant) {
       if (body.response === 'accept') {
@@ -76,7 +82,7 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    logger.info(`Invitation ${invitationId} ${newStatus} by user ${userId}`)
+    logger.info(`Invitation ${invitationId} ${newStatus} by user ${userEmail}`)
     
     return {
       success: true,

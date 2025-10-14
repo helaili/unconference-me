@@ -1,6 +1,5 @@
 import logger from '../../../../utils/logger'
 import { invitationService, userService, participantService } from '../../../../services'
-import type { User } from '../../../../types/user'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,8 +7,15 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     
-    // Extract user ID from session
-    const invitedBy = (session.user as User).id
+    // Extract user email from session (used as userId)
+    const invitedBy = (session.user as { email?: string })?.email
+    
+    if (!invitedBy) {
+      throw createError({
+        statusCode: 401,
+        statusMessage: 'User email not found in session'
+      })
+    }
     
     logger.info(`Sending invitations for event ${eventId}`, { user: session.user })
     
