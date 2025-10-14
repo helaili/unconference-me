@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Participant } from '~/types/participant'
+import type { User } from '~/types/user'
 
 interface Props {
   eventId: string
@@ -10,30 +11,24 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   refresh: []
-  add: [participant: Omit<Participant, 'id' | 'eventId' | 'createdAt' | 'updatedAt'>]
+  register: [userId: string]
   update: [id: string, updates: Partial<Participant>]
   delete: [id: string]
 }>()
 
 const search = ref('')
-const showAddDialog = ref(false)
+const showRegisterDialog = ref(false)
 const showEditDialog = ref(false)
 const showDeleteDialog = ref(false)
 const selectedParticipant = ref<Participant | null>(null)
 const saving = ref(false)
+const loadingUsers = ref(false)
 
-// Form state
-const newParticipant = ref({
-  email: '',
-  firstname: '',
-  lastname: '',
-  status: 'registered' as const
-})
+// Available users to register
+const availableUsers = ref<User[]>([])
+const selectedUserId = ref<string | null>(null)
 
 const editForm = ref({
-  email: '',
-  firstname: '',
-  lastname: '',
   status: 'registered' as const
 })
 
@@ -46,6 +41,12 @@ const filteredParticipants = computed(() => {
     p.lastname.toLowerCase().includes(searchLower) ||
     p.email.toLowerCase().includes(searchLower)
   )
+})
+
+// Filter users that are not already participants
+const unregisteredUsers = computed(() => {
+  const participantUserIds = new Set(props.participants.map(p => p.userId).filter(Boolean))
+  return availableUsers.value.filter(u => !participantUserIds.has(u.id))
 })
 
 const headers = [
@@ -63,22 +64,29 @@ const participantItems = computed(() => {
   }))
 })
 
-const openAddDialog = () => {
-  newParticipant.value = {
-    email: '',
-    firstname: '',
-    lastname: '',
-    status: 'registered'
+const fetchAvailableUsers = async () => {
+  loadingUsers.value = true
+  try {
+    const response = await $fetch('/api/users')
+    if (response.success && response.users) {
+      availableUsers.value = response.users as User[]
+    }
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+  } finally {
+    loadingUsers.value = false
   }
-  showAddDialog.value = true
+}
+
+const openRegisterDialog = async () => {
+  await fetchAvailableUsers()
+  selectedUserId.value = null
+  showRegisterDialog.value = true
 }
 
 const openEditDialog = (participant: Participant) => {
   selectedParticipant.value = participant
   editForm.value = {
-    email: participant.email,
-    firstname: participant.firstname,
-    lastname: participant.lastname,
     status: participant.status
   }
   showEditDialog.value = true
@@ -89,18 +97,21 @@ const openDeleteDialog = (participant: Participant) => {
   showDeleteDialog.value = true
 }
 
-const addParticipant = async () => {
+const registerUser = async () => {
+  if (!selectedUserId.value) return
+  
   saving.value = true
   try {
-    emit('add', {
-      ...newParticipant.value,
-      registrationDate: new Date()
-    })
-    showAddDialog.value = false
+    emit('register', selectedUserId.value)
+    showRegisterDialog.value = false
   } finally {
     saving.value = false
   }
 }
+
+onMounted(() => {
+  fetchAvailableUsers()
+})
 
 const updateParticipant = async () => {
   if (!selectedParticipant.value) return
@@ -153,9 +164,9 @@ const formatDate = (date: Date) => {
         color="primary"
         prepend-icon="mdi-account-plus"
         :block="$vuetify.display.smAndDown"
-        @click="openAddDialog"
+        @click="openRegisterDialog"
       >
-        Add Participant
+        Register User
       </v-btn>
     </v-card-title>
 
@@ -217,49 +228,44 @@ const formatDate = (date: Date) => {
       </v-data-table>
     </v-card-text>
 
-    <!-- Add Participant Dialog -->
+    <!-- Register User Dialog -->
     <v-dialog
-      v-model="showAddDialog"
+      v-model="showRegisterDialog"
       :max-width="$vuetify.display.smAndDown ? '100%' : '600'"
       :fullscreen="$vuetify.display.smAndDown"
     >
       <v-card>
-        <v-card-title>Add Participant</v-card-title>
+        <v-card-title>Register User to Event</v-card-title>
         <v-card-text>
-          <v-form @submit.prevent="addParticipant">
-            <v-text-field
-              v-model="newParticipant.firstname"
-              label="First Name"
-              variant="outlined"
-              density="comfortable"
-              required
-              class="mb-2"
-            />
-            <v-text-field
-              v-model="newParticipant.lastname"
-              label="Last Name"
-              variant="outlined"
-              density="comfortable"
-              required
-              class="mb-2"
-            />
-            <v-text-field
-              v-model="newParticipant.email"
-              label="Email"
-              type="email"
-              variant="outlined"
-              density="comfortable"
-              required
-              class="mb-2"
-            />
+          <v-progress-circular v-if="loadingUsers" indeterminate class="ma-4" />
+          <div v-else>
+            <p class="text-body-2 mb-4">
+              Select an existing user to register for this event. Only users who are not already registered are shown.
+            </p>
             <v-select
-              v-model="newParticipant.status"
-              label="Status"
-              :items="['registered', 'confirmed', 'checked-in', 'cancelled']"
+              v-model="selectedUserId"
+              label="Select User"
+              :items="unregisteredUsers"
+              item-title="email"
+              item-value="id"
               variant="outlined"
               density="comfortable"
-            />
-          </v-form>
+              :disabled="unregisteredUsers.length === 0"
+            >
+              <template #item="{ props: itemProps, item }">
+                <v-list-item v-bind="itemProps">
+                  <v-list-item-title>{{ item.raw.firstname }} {{ item.raw.lastname }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ item.raw.email }}</v-list-item-subtitle>
+                </v-list-item>
+              </template>
+              <template #selection="{ item }">
+                {{ item.raw.firstname }} {{ item.raw.lastname }} ({{ item.raw.email }})
+              </template>
+            </v-select>
+            <v-alert v-if="unregisteredUsers.length === 0" type="info" variant="tonal" class="mt-4">
+              All users are already registered for this event
+            </v-alert>
+          </div>
         </v-card-text>
         <v-card-actions class="flex-column flex-sm-row">
           <v-spacer />
@@ -267,17 +273,18 @@ const formatDate = (date: Date) => {
             variant="outlined"
             :block="$vuetify.display.smAndDown"
             class="mb-2 mb-sm-0 mr-sm-2"
-            @click="showAddDialog = false"
+            @click="showRegisterDialog = false"
           >
             Cancel
           </v-btn>
           <v-btn
             color="primary"
             :loading="saving"
+            :disabled="!selectedUserId"
             :block="$vuetify.display.smAndDown"
-            @click="addParticipant"
+            @click="registerUser"
           >
-            Add
+            Register
           </v-btn>
         </v-card-actions>
       </v-card>
@@ -286,38 +293,17 @@ const formatDate = (date: Date) => {
     <!-- Edit Participant Dialog -->
     <v-dialog
       v-model="showEditDialog"
-      :max-width="$vuetify.display.smAndDown ? '100%' : '600'"
+      :max-width="$vuetify.display.smAndDown ? '100%' : '500'"
       :fullscreen="$vuetify.display.smAndDown"
     >
       <v-card>
-        <v-card-title>Edit Participant</v-card-title>
+        <v-card-title>Update Participant Status</v-card-title>
         <v-card-text>
           <v-form @submit.prevent="updateParticipant">
-            <v-text-field
-              v-model="editForm.firstname"
-              label="First Name"
-              variant="outlined"
-              density="comfortable"
-              required
-              class="mb-2"
-            />
-            <v-text-field
-              v-model="editForm.lastname"
-              label="Last Name"
-              variant="outlined"
-              density="comfortable"
-              required
-              class="mb-2"
-            />
-            <v-text-field
-              v-model="editForm.email"
-              label="Email"
-              type="email"
-              variant="outlined"
-              density="comfortable"
-              required
-              class="mb-2"
-            />
+            <p v-if="selectedParticipant" class="text-body-2 mb-4">
+              <strong>{{ selectedParticipant.firstname }} {{ selectedParticipant.lastname }}</strong><br>
+              {{ selectedParticipant.email }}
+            </p>
             <v-select
               v-model="editForm.status"
               label="Status"

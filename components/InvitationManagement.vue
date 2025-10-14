@@ -1,58 +1,57 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import type { User } from '~/types/user'
+import type { Participant } from '~/types/participant'
 
 interface Props {
   eventId: string
+  participants: Participant[]
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 const emit = defineEmits<{
-  invite: [emails: string[]]
+  invite: [userIds: string[]]
 }>()
 
 const showInviteDialog = ref(false)
-const emailInput = ref('')
-const emailList = ref<string[]>([])
+const selectedUserIds = ref<string[]>([])
 const sending = ref(false)
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
+const loadingUsers = ref(false)
+const availableUsers = ref<User[]>([])
 
-const parseEmails = (input: string): string[] => {
-  // Support comma, semicolon, space, or newline-separated emails
-  return input
-    .split(/[,;\s\n]+/)
-    .map(email => email.trim())
-    .filter(email => email.length > 0)
+// Filter users who are not already participants
+const uninvitedUsers = computed(() => {
+  const participantUserIds = new Set(props.participants.map(p => p.userId).filter(Boolean))
+  return availableUsers.value.filter(u => !participantUserIds.has(u.id))
+})
+
+const fetchAvailableUsers = async () => {
+  loadingUsers.value = true
+  try {
+    const response = await $fetch('/api/users')
+    if (response.success && response.users) {
+      availableUsers.value = response.users as User[]
+    }
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+  } finally {
+    loadingUsers.value = false
+  }
 }
 
-const isValidEmail = (email: string): boolean => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  return emailRegex.test(email)
-}
-
-const addEmailsFromInput = () => {
-  const emails = parseEmails(emailInput.value)
-  const validEmails = emails.filter(isValidEmail)
-  
-  emailList.value = [...new Set([...emailList.value, ...validEmails])]
-  emailInput.value = ''
-}
-
-const removeEmail = (email: string) => {
-  emailList.value = emailList.value.filter(e => e !== email)
-}
-
-const openInviteDialog = () => {
-  emailList.value = []
-  emailInput.value = ''
+const openInviteDialog = async () => {
+  await fetchAvailableUsers()
+  selectedUserIds.value = []
   successMessage.value = null
   errorMessage.value = null
   showInviteDialog.value = true
 }
 
 const sendInvitations = async () => {
-  if (emailList.value.length === 0) {
-    errorMessage.value = 'Please add at least one email address'
+  if (selectedUserIds.value.length === 0) {
+    errorMessage.value = 'Please select at least one user'
     return
   }
 
@@ -61,8 +60,8 @@ const sendInvitations = async () => {
   successMessage.value = null
 
   try {
-    emit('invite', emailList.value)
-    successMessage.value = `Invitations sent to ${emailList.value.length} recipient(s)`
+    emit('invite', selectedUserIds.value)
+    successMessage.value = `Invitations sent to ${selectedUserIds.value.length} user(s)`
     
     // Close dialog after 2 seconds
     setTimeout(() => {
@@ -76,37 +75,9 @@ const sendInvitations = async () => {
   }
 }
 
-const importFromCSV = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  
-  if (!file) return
-
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const text = e.target?.result as string
-    const lines = text.split('\n')
-    
-    // Parse CSV - assume first line is header or email column
-    const emails: string[] = []
-    lines.forEach(line => {
-      const cells = line.split(',').map(cell => cell.trim())
-      // Try to find email in any column
-      cells.forEach(cell => {
-        if (isValidEmail(cell)) {
-          emails.push(cell)
-        }
-      })
-    })
-    
-    emailList.value = [...new Set([...emailList.value, ...emails])]
-  }
-  
-  reader.readAsText(file)
-  
-  // Reset input to allow re-selecting same file
-  target.value = ''
-}
+onMounted(() => {
+  fetchAvailableUsers()
+})
 </script>
 
 <template>
@@ -125,8 +96,7 @@ const importFromCSV = (event: Event) => {
 
     <v-card-text :class="$vuetify.display.smAndDown ? 'pa-2' : 'pa-4'">
       <p class="text-body-2 text-grey">
-        Send event invitations to participants via email. You can enter multiple email addresses 
-        or import them from a CSV file.
+        Send event invitations to existing users. Invited users will see pending invitations when they log in.
       </p>
 
       <v-divider class="my-4" />
@@ -134,9 +104,9 @@ const importFromCSV = (event: Event) => {
       <div class="d-flex align-center">
         <v-icon size="large" color="primary" class="mr-3">mdi-information</v-icon>
         <div>
-          <div class="text-body-2 font-weight-medium">Quick Tips</div>
+          <div class="text-body-2 font-weight-medium">About Invitations</div>
           <div class="text-caption text-grey">
-            Invitations include event details and a registration link
+            Only existing users can be invited. Users must accept invitations to become participants.
           </div>
         </div>
       </div>
@@ -149,7 +119,7 @@ const importFromCSV = (event: Event) => {
       :fullscreen="$vuetify.display.smAndDown"
     >
       <v-card>
-        <v-card-title>Send Invitations</v-card-title>
+        <v-card-title>Send Invitations to Users</v-card-title>
         
         <v-card-text :class="$vuetify.display.smAndDown ? 'pa-3' : 'pa-4'">
           <v-alert
@@ -174,65 +144,39 @@ const importFromCSV = (event: Event) => {
             {{ errorMessage }}
           </v-alert>
 
-          <v-textarea
-            v-model="emailInput"
-            label="Email Addresses"
-            hint="Enter email addresses separated by commas, spaces, or new lines"
-            variant="outlined"
-            density="comfortable"
-            rows="3"
-            class="mb-2"
-            @keyup.enter.prevent="addEmailsFromInput"
-          />
-
-          <div class="d-flex flex-column flex-sm-row ga-2 mb-4">
-            <v-btn
+          <v-progress-circular v-if="loadingUsers" indeterminate class="ma-4" />
+          <div v-else>
+            <p class="text-body-2 mb-4">
+              Select users to invite to this event. Only users who are not already participants are shown.
+            </p>
+            <v-select
+              v-model="selectedUserIds"
+              label="Select Users"
+              :items="uninvitedUsers"
+              item-title="email"
+              item-value="id"
               variant="outlined"
-              prepend-icon="mdi-plus"
-              :block="$vuetify.display.smAndDown"
-              @click="addEmailsFromInput"
+              density="comfortable"
+              multiple
+              chips
+              closable-chips
+              :disabled="uninvitedUsers.length === 0"
             >
-              Add Emails
-            </v-btn>
-
-            <v-btn
-              variant="outlined"
-              prepend-icon="mdi-file-upload"
-              :block="$vuetify.display.smAndDown"
-              @click="() => ($refs.csvInput as HTMLInputElement)?.click()"
-            >
-              Import CSV
-            </v-btn>
-            <input
-              ref="csvInput"
-              type="file"
-              accept=".csv"
-              style="display: none"
-              @change="importFromCSV"
-            >
-          </div>
-
-          <v-divider class="my-4" />
-
-          <div v-if="emailList.length > 0">
-            <div class="text-subtitle-2 mb-2">
-              Recipients ({{ emailList.length }})
-            </div>
-            
-            <v-chip
-              v-for="email in emailList"
-              :key="email"
-              closable
-              class="ma-1"
-              @click:close="removeEmail(email)"
-            >
-              {{ email }}
-            </v-chip>
-          </div>
-
-          <div v-else class="text-center py-4">
-            <v-icon size="48" color="grey">mdi-email-outline</v-icon>
-            <p class="text-grey mt-2">No recipients added yet</p>
+              <template #item="{ props: itemProps, item }">
+                <v-list-item v-bind="itemProps">
+                  <v-list-item-title>{{ item.raw.firstname }} {{ item.raw.lastname }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ item.raw.email }}</v-list-item-subtitle>
+                </v-list-item>
+              </template>
+              <template #chip="{ item }">
+                <v-chip>
+                  {{ item.raw.firstname }} {{ item.raw.lastname }}
+                </v-chip>
+              </template>
+            </v-select>
+            <v-alert v-if="uninvitedUsers.length === 0" type="info" variant="tonal" class="mt-4">
+              All users are already participants or have pending invitations for this event
+            </v-alert>
           </div>
         </v-card-text>
 
@@ -250,11 +194,11 @@ const importFromCSV = (event: Event) => {
           <v-btn
             color="primary"
             :loading="sending"
-            :disabled="emailList.length === 0"
+            :disabled="selectedUserIds.length === 0"
             :block="$vuetify.display.smAndDown"
             @click="sendInvitations"
           >
-            Send {{ emailList.length }} Invitation{{ emailList.length !== 1 ? 's' : '' }}
+            Send {{ selectedUserIds.length }} Invitation{{ selectedUserIds.length !== 1 ? 's' : '' }}
           </v-btn>
         </v-card-actions>
       </v-card>

@@ -30,3 +30,6 @@ export type {
   Organizer, 
   OrganizerPermissions 
 } from './organizer'
+
+// Invitation types
+export type { Invitation } from './invitation'

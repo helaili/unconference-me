@@ -1,10 +1,15 @@
 import logger from '../../../../utils/logger'
+import { invitationService, userService } from '../../../../services'
+import type { User } from '../../../../types/user'
 
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
+    
+    // Extract user ID from session
+    const invitedBy = (session.user as User).id
     
     logger.info(`Sending invitations for event ${eventId}`, { user: session.user })
     
@@ -18,29 +23,49 @@ export default defineEventHandler(async (event) => {
     // Parse request body
     const body = await readBody(event)
     
-    if (!body.emails || !Array.isArray(body.emails) || body.emails.length === 0) {
+    if (!body.userIds || !Array.isArray(body.userIds) || body.userIds.length === 0) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Email list is required'
+        statusMessage: 'User ID list is required'
       })
     }
 
-    // In a production environment, this would:
-    // 1. Validate email addresses
-    // 2. Send actual emails with event details and registration links
-    // 3. Track invitation status in the database
-    // 4. Handle bounces and failures
+    // Create invitations for each user
+    const invitations = []
+    for (const userId of body.userIds) {
+      // Verify user exists
+      const user = await userService.findById(userId)
+      if (!user) {
+        logger.warn(`User ${userId} not found, skipping invitation`)
+        continue
+      }
+
+      // Create invitation
+      const invitation = await invitationService.create({
+        eventId,
+        userId,
+        status: 'pending',
+        invitedBy,
+        invitedAt: new Date()
+      })
+      
+      invitations.push(invitation)
+      
+      // In a production environment, this would also:
+      // 1. Send actual emails with event details
+      // 2. Include acceptance/decline links
+      // 3. Handle email delivery failures
+    }
     
-    // For now, we'll just log the invitations
-    logger.info(`Invitations would be sent to ${body.emails.length} recipients`, {
+    logger.info(`Created ${invitations.length} invitations for event ${eventId}`, {
       eventId,
-      recipients: body.emails
+      invitationCount: invitations.length
     })
     
     return {
       success: true,
-      message: `Invitations sent to ${body.emails.length} recipient(s)`,
-      sent: body.emails.length
+      message: `Invitations sent to ${invitations.length} user(s)`,
+      sent: invitations.length
     }
   } catch (error) {
     logger.error('Error sending invitations:', error)

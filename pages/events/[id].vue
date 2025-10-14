@@ -81,18 +81,18 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
   }
 }
 
-const handleAddParticipant = async (participantData: Omit<Participant, 'id' | 'eventId' | 'createdAt' | 'updatedAt'>) => {
+const handleRegisterUser = async (userId: string) => {
   error.value = null
   successMessage.value = null
   
   try {
-    const response = await $fetch(`/api/events/${eventId.value}/participants`, {
+    const response = await $fetch(`/api/events/${eventId.value}/participants/register`, {
       method: 'POST',
-      body: participantData
+      body: { userId }
     })
     
     if (response.success) {
-      successMessage.value = 'Participant added successfully!'
+      successMessage.value = 'User registered successfully!'
       await fetchEventData()
       
       setTimeout(() => {
@@ -100,8 +100,8 @@ const handleAddParticipant = async (participantData: Omit<Participant, 'id' | 'e
       }, 3000)
     }
   } catch (err) {
-    console.error('Error adding participant:', err)
-    error.value = 'Failed to add participant'
+    console.error('Error registering user:', err)
+    error.value = 'Failed to register user'
   }
 }
 
@@ -152,18 +152,18 @@ const handleDeleteParticipant = async (participantId: string) => {
   }
 }
 
-const handleSendInvitations = async (emails: string[]) => {
+const handleSendInvitations = async (userIds: string[]) => {
   error.value = null
   successMessage.value = null
   
   try {
     const response = await $fetch(`/api/events/${eventId.value}/invitations`, {
       method: 'POST',
-      body: { emails }
+      body: { userIds }
     })
     
     if (response.success) {
-      successMessage.value = `Invitations sent to ${emails.length} recipient(s)!`
+      successMessage.value = `Invitations sent to ${userIds.length} user(s)!`
       
       setTimeout(() => {
         successMessage.value = null
@@ -242,7 +242,7 @@ onMounted(() => {
         class="mb-4"
         :event-id="eventId"
         :participants="participants"
-        @add="handleAddParticipant"
+        @register="handleRegisterUser"
         @update="handleUpdateParticipant"
         @delete="handleDeleteParticipant"
         @refresh="fetchEventData"
@@ -251,6 +251,7 @@ onMounted(() => {
       <!-- Invitation Management -->
       <InvitationManagement
         :event-id="eventId"
+        :participants="participants"
         @invite="handleSendInvitations"
       />
     </div>
