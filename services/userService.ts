@@ -11,12 +11,26 @@ export class UserService extends BaseService<User> {
   async findAll(): Promise<User[]> {
     try {
       if (await this.isUsingCosmosDB()) {
+        // Exclude soft-deleted users
+        return await this.executeCosmosQuery<User>('SELECT * FROM c WHERE NOT IS_DEFINED(c.deletedAt)')
+      } else {
+        return mockData.getUsers().filter(u => !u.deletedAt)
+      }
+    } catch (error) {
+      logger.error('Failed to fetch all users', { error })
+      throw error
+    }
+  }
+
+  async findAllIncludingDeleted(): Promise<User[]> {
+    try {
+      if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<User>('SELECT * FROM c')
       } else {
         return mockData.getUsers()
       }
     } catch (error) {
-      logger.error('Failed to fetch all users', { error })
+      logger.error('Failed to fetch all users including deleted', { error })
       throw error
     }
   }
@@ -54,6 +68,19 @@ export class UserService extends BaseService<User> {
 
   async create(userData: Omit<User, 'id'>): Promise<User> {
     try {
+      // Check if a soft-deleted user exists with this email
+      const existingUser = await this.findByEmailIncludingDeleted(userData.email)
+      
+      if (existingUser && existingUser.deletedAt) {
+        // Restore soft-deleted user
+        logger.info(`Restoring soft-deleted user: ${userData.email}`)
+        return await this.update(existingUser.id, {
+          ...userData,
+          deletedAt: undefined,
+          updatedAt: new Date()
+        })
+      }
+
       // Hash the password if provided and not already hashed
       let hashedPassword = userData.password
       if (userData.password && !PasswordUtils.isPasswordHashed(userData.password)) {
@@ -76,6 +103,23 @@ export class UserService extends BaseService<User> {
       }
     } catch (error) {
       logger.error('Failed to create user', { email: userData.email, error })
+      throw error
+    }
+  }
+
+  async findByEmailIncludingDeleted(email: string): Promise<User | null> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        const users = await this.executeCosmosQuery<User>(
+          'SELECT * FROM c WHERE c.email = @email',
+          [{ name: '@email', value: email }]
+        )
+        return users.length > 0 ? users[0]! : null
+      } else {
+        return mockData.getUsers().find(u => u.email === email) || null
+      }
+    } catch (error) {
+      logger.error('Failed to fetch user by email including deleted', { email, error })
       throw error
     }
   }
@@ -122,13 +166,33 @@ export class UserService extends BaseService<User> {
 
   async delete(email: string): Promise<boolean> {
     try {
+      // Soft delete - just mark as deleted
+      const user = await this.findById(email)
+      if (!user) {
+        return false
+      }
+
+      await this.update(email, {
+        deletedAt: new Date()
+      })
+
+      logger.info(`User soft-deleted: ${email}`)
+      return true
+    } catch (error) {
+      logger.error('Failed to delete user', { email, error })
+      throw error
+    }
+  }
+
+  async hardDelete(email: string): Promise<boolean> {
+    try {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosDelete(email, email)
       } else {
         return mockData.removeUser(email)
       }
     } catch (error) {
-      logger.error('Failed to delete user', { email, error })
+      logger.error('Failed to hard delete user', { email, error })
       throw error
     }
   }
@@ -145,8 +209,14 @@ export class UserService extends BaseService<User> {
 
   async validateCredentials(email: string, password: string): Promise<User | null> {
     try {
-      const user = await this.findByEmail(email)
+      const user = await this.findByEmailIncludingDeleted(email)
       if (!user || !user.password) {
+        return null
+      }
+
+      // Check if user is soft-deleted
+      if (user.deletedAt) {
+        logger.warn(`Login attempt for soft-deleted user: ${email}`)
         return null
       }
 

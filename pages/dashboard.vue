@@ -111,8 +111,11 @@ onMounted(() => {
     </div>
     
     <div v-else>
-      <p>Welcome, User! You have limited access to the dashboard features.</p>
-      <!-- User-specific content goes here -->
+      <!-- Pending invitations front and center for users -->
+      <PendingInvitations />
+      
+      <p>Welcome, {{ user?.firstname }}! View your event invitations above.</p>
+      <!-- Additional user-specific content goes here -->
     </div>
   </v-container>
 </template>

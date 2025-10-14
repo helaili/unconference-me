@@ -12,7 +12,7 @@ export interface Participant {
   lastname: string
   
   // Participation details
-  status: 'registered' | 'confirmed' | 'checked-in' | 'cancelled'
+  status: 'invited' | 'registered' | 'confirmed' | 'checked-in' | 'cancelled'
   registrationDate: Date
   
   // Metadata

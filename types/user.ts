@@ -9,6 +9,7 @@ export interface User {
   githubUsername?: string // GitHub username
   registrationToken?: string // Unique token for registration link
   registrationTokenExpiry?: Date // Token expiration date
+  deletedAt?: Date // Soft deletion timestamp
   createdAt?: Date
   updatedAt?: Date
 }

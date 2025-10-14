@@ -2,6 +2,7 @@ import type { User } from '../../types/user'
 import type { Event } from '../../types/event'
 import type { Participant, ParticipantAssignment } from '../../types/participant'
 import type { Topic } from '../../types/topic'
+import type { Invitation } from '../../types/invitation'
 
 /**
  * Centralized Mock Data Manager
@@ -17,6 +18,7 @@ export class MockDataManager {
   private _participants: Participant[] = []
   private _assignments: ParticipantAssignment[] = []
   private _topics: Topic[] = []
+  private _invitations: Invitation[] = []
 
   private constructor() {
     this.resetToDefaults()
@@ -41,6 +43,7 @@ export class MockDataManager {
     this._participants = this.getDefaultParticipants()
     this._assignments = this.getDefaultAssignments()
     this._topics = this.getDefaultTopics()
+    this._invitations = this.getDefaultInvitations()
   }
 
   /**
@@ -52,6 +55,7 @@ export class MockDataManager {
     this._participants = []
     this._assignments = []
     this._topics = []
+    this._invitations = []
   }
 
   // ==================== USERS ====================
@@ -504,6 +508,56 @@ export class MockDataManager {
     ).length
   }
 
+  // ==================== INVITATIONS ====================
+
+  private getDefaultInvitations(): Invitation[] {
+    return []
+  }
+
+  getInvitations(): Invitation[] {
+    return [...this._invitations]
+  }
+
+  getInvitationById(id: string): Invitation | undefined {
+    return this._invitations.find(i => i.id === id)
+  }
+
+  getInvitationsByEventId(eventId: string): Invitation[] {
+    return this._invitations.filter(i => i.eventId === eventId)
+  }
+
+  getInvitationsByUserId(userId: string): Invitation[] {
+    return this._invitations.filter(i => i.userId === userId)
+  }
+
+  getPendingInvitationsByUserId(userId: string): Invitation[] {
+    return this._invitations.filter(i => i.userId === userId && i.status === 'pending')
+  }
+
+  addInvitation(invitation: Invitation): void {
+    this._invitations.push(invitation)
+  }
+
+  updateInvitation(id: string, updates: Partial<Invitation>): boolean {
+    const index = this._invitations.findIndex(i => i.id === id)
+    if (index === -1) return false
+    
+    this._invitations[index] = {
+      ...this._invitations[index]!,
+      ...updates,
+      updatedAt: new Date()
+    }
+    return true
+  }
+
+  removeInvitation(id: string): boolean {
+    const index = this._invitations.findIndex(i => i.id === id)
+    if (index === -1) return false
+    
+    this._invitations.splice(index, 1)
+    return true
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /**
@@ -515,7 +569,8 @@ export class MockDataManager {
       events: [...this._events],
       participants: [...this._participants],
       assignments: [...this._assignments],
-      topics: [...this._topics]
+      topics: [...this._topics],
+      invitations: [...this._invitations]
     }
   }
 
@@ -528,6 +583,7 @@ export class MockDataManager {
     this._participants = [...snapshot.participants]
     this._assignments = [...snapshot.assignments]
     this._topics = [...snapshot.topics]
+    this._invitations = [...snapshot.invitations]
   }
 
   /**
@@ -539,7 +595,8 @@ export class MockDataManager {
       events: this._events.length,
       participants: this._participants.length,
       assignments: this._assignments.length,
-      topics: this._topics.length
+      topics: this._topics.length,
+      invitations: this._invitations.length
     }
   }
 }
