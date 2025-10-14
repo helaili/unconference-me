@@ -13,31 +13,16 @@ export default defineEventHandler(async (event) => {
     
     logger.debug(`Attempting login for email: ${email}`)
     
-    // Find user by email using user service
-    const user = await userService.findByEmail(email)
-
+    // Validate user credentials (includes password verification)
+    const user = await userService.validateCredentials(email, password)
     if (!user) {
-      logger.warn(`Login attempt with unknown email: ${email}`)
+      logger.warn(`Login attempt failed for email: ${email}`)
       throw createError({
         statusCode: 401,
         statusMessage: 'Invalid credentials',
         data: { 
           success: false, 
-          message: 'Invalid email or password',
-          field: 'email'
-        }
-      })
-    }
-
-    if (user.password !== password) {
-      logger.warn(`Login attempt with wrong password for user: ${email}`)
-      throw createError({
-        statusCode: 401,
-        statusMessage: 'Invalid credentials',
-        data: { 
-          success: false, 
-          message: 'Invalid email or password',
-          field: 'password'
+          message: 'Invalid email or password'
         }
       })
     }

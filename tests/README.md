@@ -65,7 +65,7 @@ The application includes two test users for authentication testing:
 2. **Darth Vader** (User)  
    - Email: `darth@empire.com`
    - Password: `changeme`
-   - Role: User
+   - Role: Participant
 
 ### Helper Classes
 
