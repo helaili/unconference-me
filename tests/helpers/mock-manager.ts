@@ -149,6 +149,7 @@ export class MockDataManager {
         updatedAt: new Date('2025-10-01T00:00:00Z'),
         settings: {
           enableTopicRanking: true,
+          minTopicsToRank: 3,
           enableAutoAssignment: false,
           maxTopicsPerParticipant: 3,
           requireApproval: false,
@@ -197,6 +198,18 @@ export class MockDataManager {
 
   private getDefaultParticipants(): Participant[] {
     return [
+      {
+        id: 'participant-luke',
+        eventId: '1',
+        userId: 'luke@rebels.com',
+        email: 'luke@rebels.com',
+        firstname: 'Luke',
+        lastname: 'Skywalker',
+        status: 'registered',
+        registrationDate: new Date('2025-08-01T00:00:00Z'),
+        createdAt: new Date('2025-08-01T00:00:00Z'),
+        updatedAt: new Date('2025-08-01T00:00:00Z')
+      },
       {
         id: 'participant-1',
         eventId: '1',
