@@ -381,8 +381,6 @@ The application uses the following environment variables:
 - `NUXT_TOPICS_FILE_PATH` - Path to topics file (legacy/fallback)
 - `NUXT_USERS_FILE_PATH` - Path to users file (legacy/fallback)
 - `APP_ENV` - Application environment (development/production/copilot)
-- `DEFAULT_USER_NAME` - Default username for development
-- `DEFAULT_USER_PASSWORD` - Default password for development
 - `USE_MOCK_SERVICES` - Force mock service usage ("true"/"false", always "true" for Copilot)
 
 ### Database Configuration
@@ -727,6 +725,23 @@ npm run dev  # Missing APP_ENV=copilot prefix, service implementation unclear
 - When adding tests, follow Nuxt testing best practices
 - Test mock services independently of external dependencies
 - **All new features must include mobile compatibility tests**
+
+### Running Tests
+**IMPORTANT**: When debugging tests, first focus on project Chromium for faster feedback. Append `--project=chromium` to the test command. Once the Chromium tests pass, run the full suite with all projects.
+**IMPORTANT**: When running Playwright tests, use the `--reporter=line` option to avoid the HTML report server blocking the terminal:
+
+```bash
+# Run tests without HTML report blocking
+APP_ENV=copilot npx playwright test --reporter=line
+
+# Run specific test file
+APP_ENV=copilot npx playwright test tests/example.spec.ts --reporter=line
+
+# Run tests for specific project
+APP_ENV=copilot npx playwright test --project=chromium --reporter=line
+```
+
+The default `html` reporter in `playwright.config.ts` will serve an HTML report at `http://localhost:9323` and block the terminal with "Press Ctrl+C to quit." Using `--reporter=line` provides clean console output without blocking.
 
 ### Mobile Testing Requirements
 

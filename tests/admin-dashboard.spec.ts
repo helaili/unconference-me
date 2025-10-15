@@ -88,7 +88,7 @@ test.describe('Admin Dashboard', () => {
     await expect(page).toHaveURL('/dashboard');
     
     // Should see the user welcome message
-    await expect(page.locator('text=Welcome, User!')).toBeVisible();
+    await expect(page.locator('text=Welcome, Darth!')).toBeVisible();
     
     // Should NOT see admin-specific components
     await expect(page.locator('text=Event Configuration')).not.toBeVisible();

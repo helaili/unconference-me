@@ -112,8 +112,8 @@ test.describe('Authentication', () => {
     await expect(page).toHaveURL('/dashboard');
     
     // Check that we're actually logged in by looking for dashboard content
-    await expect(page.locator('h1')).toContainText('Dashboard');
-    await expect(page.locator('text=Welcome, User!')).toBeVisible(); // Vader has User role
+    await expect(page.locator('h1')).toContainText('User Dashboard'); // Vader has Participant role, shows as User Dashboard
+    await expect(page.locator('text=Welcome, Darth!')).toBeVisible(); // Vader's firstname is Darth
   });
 
   test('should maintain session after login', async ({ page }) => {

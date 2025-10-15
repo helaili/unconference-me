@@ -19,7 +19,7 @@ test.describe('Authentication with Helper', () => {
     await auth.loginAsVader();
     
     // Verify user-specific content
-    await expect(page.locator('text=You have limited access to the dashboard features')).toBeVisible();
+    await expect(page.locator('text=Welcome, Darth! View your event invitations and ranking tasks above')).toBeVisible();
   });
 
   test('should redirect unauthenticated user to login', async ({ page }) => {

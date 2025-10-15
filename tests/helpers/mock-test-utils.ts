@@ -17,12 +17,13 @@ export interface MockTestContext {
     clearAll: () => void
     
     // User management
-    addTestUser: (user: Partial<User> & { email: string; firstname: string; lastname: string }) => User
+    addTestUser: (user: Partial<User> & { id: string; email: string; firstname: string; lastname: string }) => User
     getTestUsers: () => User[]
     
     // Event management  
     addTestEvent: (event: Partial<Event> & { id: string; name: string }) => Event
     getTestEvents: () => Event[]
+    setEvents: (events: Event[]) => void
     
     // Participant management
     addTestParticipant: (participant: Partial<Participant> & { id: string; eventId: string; email: string; firstname: string; lastname: string }) => Participant
@@ -52,10 +53,10 @@ export const test = base.extend<MockTestContext>({
       resetToDefaults: () => resetMockData(),
       clearAll: () => clearMockData(),
       
-      addTestUser: (user: Partial<User> & { email: string; firstname: string; lastname: string }): User => {
+      addTestUser: (user: Partial<User> & { id: string; email: string; firstname: string; lastname: string }): User => {
         const fullUser: User = {
           password: 'testpassword123',
-          role: 'User',
+          role: 'Participant',
           ...user
         }
         mockData.addUser(fullUser)
@@ -92,6 +93,8 @@ export const test = base.extend<MockTestContext>({
       },
       
       getTestEvents: () => mockData.getEvents(),
+      
+      setEvents: (events: Event[]) => mockData.setEvents(events),
       
       addTestParticipant: (participant: Partial<Participant> & { id: string; eventId: string; email: string; firstname: string; lastname: string }): Participant => {
         const fullParticipant: Participant = {

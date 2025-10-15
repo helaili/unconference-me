@@ -71,7 +71,7 @@ export class MockDataManager {
   private getDefaultUsers(): User[] {
     // Pre-hashed version of "changeme" using bcrypt
     // This allows tests to run synchronously while still using secure hashed passwords
-    const hashedPassword = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2' // "changeme"
+    const hashedPassword = '$2b$12$LGtR/rq3C67ODqfZiN.5Z.6JAuj4VBO7n8J4hWAtDbPLVD/hjkt5G' // "changeme"
     
     return [
       {
@@ -87,10 +87,20 @@ export class MockDataManager {
       {
         id: "darth@empire.com",
         firstname: "Darth",
-        lastname: "Vador",
+        lastname: "Vader",
         email: "darth@empire.com",
         password: hashedPassword,
         role: "Participant",
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: "organizer@example.com",
+        firstname: "Jane",
+        lastname: "Organizer",
+        email: "organizer@example.com",
+        password: hashedPassword,
+        role: "Organizer",
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01')
       }
@@ -159,6 +169,30 @@ export class MockDataManager {
           requireApproval: false,
           maxParticipants: 100
         }
+      },
+      {
+        id: '2',
+        name: 'Galaxy Meetup 2025',
+        description: 'Another unconference event',
+        location: 'Remote',
+        startDate: new Date('2025-11-15T10:00:00Z'),
+        endDate: new Date('2025-11-15T16:00:00Z'),
+        numberOfRounds: 2,
+        discussionsPerRound: 4,
+        idealGroupSize: 6,
+        minGroupSize: 4,
+        maxGroupSize: 8,
+        status: 'published',
+        createdAt: new Date('2025-01-15T00:00:00Z'),
+        updatedAt: new Date('2025-10-15T00:00:00Z'),
+        settings: {
+          enableTopicRanking: false,
+          minTopicsToRank: 0,
+          enableAutoAssignment: true,
+          maxTopicsPerParticipant: 2,
+          requireApproval: true,
+          maxParticipants: 50
+        }
       }
     ]
   }
@@ -173,6 +207,10 @@ export class MockDataManager {
 
   addEvent(event: Event): void {
     this._events.push(event)
+  }
+
+  setEvents(events: Event[]): void {
+    this._events = [...events]
   }
 
   updateEvent(id: string, updates: Partial<Event>): boolean {
@@ -249,6 +287,18 @@ export class MockDataManager {
         registrationDate: new Date('2025-09-05T00:00:00Z'),
         createdAt: new Date('2025-09-05T00:00:00Z'),
         updatedAt: new Date('2025-09-05T00:00:00Z')
+      },
+      {
+        id: 'participant-darth',
+        eventId: '1',
+        userId: 'darth@empire.com',
+        email: 'darth@empire.com',
+        firstname: 'Darth',
+        lastname: 'Vader',
+        status: 'registered',
+        registrationDate: new Date('2025-09-06T00:00:00Z'),
+        createdAt: new Date('2025-09-06T00:00:00Z'),
+        updatedAt: new Date('2025-09-06T00:00:00Z')
       }
     ]
   }
@@ -459,6 +509,19 @@ export class MockDataManager {
         updatedAt: new Date('2025-09-18T00:00:00Z'),
         metadata: {
           tags: ['security', 'devops']
+        }
+      },
+      {
+        id: 'topic-darth',
+        eventId: '1',
+        title: 'Darth Topic',
+        description: 'A topic created by Darth for testing',
+        proposedBy: 'participant-darth',
+        status: 'proposed',
+        createdAt: new Date('2025-09-19T00:00:00Z'),
+        updatedAt: new Date('2025-09-19T00:00:00Z'),
+        metadata: {
+          tags: ['test']
         }
       }
     ]

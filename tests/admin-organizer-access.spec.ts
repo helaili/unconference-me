@@ -1,5 +1,16 @@
 import { test, expect } from '@playwright/test'
 import { mockData } from './helpers/mock-manager'
+import { AuthHelper } from './helpers/auth'
+
+// Helper function for login using the working AuthHelper pattern
+async function loginWithAuthHelper(page: any, email: string, password: string) {
+  const authHelper = new AuthHelper(page)
+  await authHelper.loginAs(email, password)
+  // Wait for successful redirect - but don't be strict about the URL in case of role-specific redirects
+  await page.waitForFunction(() => window.location.pathname !== '/login')
+  // Give a moment for any additional redirects to complete
+  await page.waitForLoadState('networkidle')
+}
 
 test.describe('Admin and Organizer Access Control', () => {
   test.beforeEach(async ({ page }) => {
@@ -12,13 +23,7 @@ test.describe('Admin and Organizer Access Control', () => {
   test.describe('Admin Event Management', () => {
     test('admin can create a new event', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      // Wait for redirect
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       // Test the API directly
       const response = await page.request.post('/api/events', {
@@ -45,13 +50,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('non-admin cannot create a new event', async ({ page }) => {
       // Login as regular user (Darth)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'darth@empire.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      // Wait for redirect
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
       
       const response = await page.request.post('/api/events', {
         data: {
@@ -66,12 +65,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('admin can update any event', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       const response = await page.request.put('/api/events/1', {
         data: {
@@ -88,12 +82,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('admin can cancel an event', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       const response = await page.request.put('/api/events/1', {
         data: {
@@ -111,12 +100,7 @@ test.describe('Admin and Organizer Access Control', () => {
   test.describe('Admin Topic Management', () => {
     test('admin can create topic without being a participant', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       const response = await page.request.post('/api/events/1/topics', {
         data: {
@@ -133,12 +117,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('admin can edit any topic', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       // Edit a topic created by another user
       const response = await page.request.put('/api/events/1/topics/topic-1', {
@@ -156,12 +135,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('admin can delete any topic', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       // Delete a topic created by another user
       const response = await page.request.delete('/api/events/1/topics/topic-1')
@@ -173,12 +147,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('admin can change topic status', async ({ page }) => {
       // Login as admin (Luke)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'luke@rebels.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'luke@rebels.com', 'changeme')
       
       const response = await page.request.put('/api/events/1/topics/topic-4', {
         data: {
@@ -200,31 +169,16 @@ test.describe('Admin and Organizer Access Control', () => {
         userId: 'darth@empire.com',
         email: 'darth@empire.com',
         firstname: 'Darth',
-        lastname: 'Vador',
+        lastname: 'Vader',
         status: 'confirmed',
         registrationDate: new Date(),
         createdAt: new Date(),
         updatedAt: new Date()
       })
       
-      // Create a topic for the user
-      mockData.addTopic({
-        id: 'topic-darth',
-        eventId: '1',
-        title: 'Darth Topic',
-        proposedBy: 'participant-darth',
-        status: 'proposed',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      })
-      
       // Login as regular user (Darth)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'darth@empire.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      // Note: topic-darth already exists in default mock data
+      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
       
       const response = await page.request.put('/api/events/1/topics/topic-darth', {
         data: {
@@ -253,12 +207,7 @@ test.describe('Admin and Organizer Access Control', () => {
       // The organizer is already in the default organizers list for event '1'
       
       // Login as organizer
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'organizer@example.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
       
       const response = await page.request.put('/api/events/1', {
         data: {
@@ -286,12 +235,7 @@ test.describe('Admin and Organizer Access Control', () => {
       })
       
       // Login as organizer
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'organizer@example.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
       
       // Edit any topic in their event
       const response = await page.request.put('/api/events/1/topics/topic-1', {
@@ -337,12 +281,7 @@ test.describe('Admin and Organizer Access Control', () => {
       })
       
       // Login as organizer
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'organizer@example.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
       
       // Try to edit event 2 (which they don't organize)
       const response = await page.request.put('/api/events/2', {
@@ -358,12 +297,7 @@ test.describe('Admin and Organizer Access Control', () => {
   test.describe('Regular User Restrictions', () => {
     test('regular user cannot create topics without being a participant', async ({ page }) => {
       // Login as regular user (Darth)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'darth@empire.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
       
       const response = await page.request.post('/api/events/1/topics', {
         data: {
@@ -383,7 +317,7 @@ test.describe('Admin and Organizer Access Control', () => {
         userId: 'darth@empire.com',
         email: 'darth@empire.com',
         firstname: 'Darth',
-        lastname: 'Vador',
+        lastname: 'Vader',
         status: 'confirmed',
         registrationDate: new Date(),
         createdAt: new Date(),
@@ -391,12 +325,7 @@ test.describe('Admin and Organizer Access Control', () => {
       })
       
       // Login as regular user (Darth)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'darth@empire.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
       
       // Try to edit someone else's topic
       const response = await page.request.put('/api/events/1/topics/topic-1', {
@@ -410,12 +339,7 @@ test.describe('Admin and Organizer Access Control', () => {
 
     test('regular user cannot update events', async ({ page }) => {
       // Login as regular user (Darth)
-      await page.goto('/login')
-      await page.fill('input[type="email"]', 'darth@empire.com')
-      await page.fill('input[type="password"]', 'changeme')
-      await page.click('button[type="submit"]')
-      
-      await page.waitForURL('/dashboard')
+      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
       
       const response = await page.request.put('/api/events/1', {
         data: {

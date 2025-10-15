@@ -8,7 +8,7 @@ test.describe('Centralized Mock Management Demo', () => {
     
     // Verify default users exist
     const users = mockData.getTestUsers()
-    expect(users.length).toBe(2)
+    expect(users.length).toBe(3)
     expect(users.find(u => u.email === 'luke@rebels.com')).toBeDefined()
     expect(users.find(u => u.email === 'darth@empire.com')).toBeDefined()
     
@@ -17,11 +17,11 @@ test.describe('Centralized Mock Management Demo', () => {
       email: 'test@example.com',
       firstname: 'Test',
       lastname: 'User',
-      role: 'User'
+      role: 'Participant',
     })
     
     // Verify user was added
-    expect(mockData.getTestUsers().length).toBe(3)
+    expect(mockData.getTestUsers().length).toBe(4)
     expect(mockData.manager.getUserByEmail('test@example.com')).toEqual(newUser)
   })
 
@@ -30,7 +30,7 @@ test.describe('Centralized Mock Management Demo', () => {
     const scenario = MockScenarios.setupUnconferenceEvent()
     
     expect(scenario.event).toBeDefined()
-    expect(scenario.participants.length).toBe(3)
+    expect(scenario.participants.length).toBe(5)
     expect(scenario.assignments.length).toBe(4)
     
     // Add a new participant to the event
@@ -44,7 +44,7 @@ test.describe('Centralized Mock Management Demo', () => {
     
     // Verify participant was added
     const participants = mockData.getTestParticipants('1')
-    expect(participants.length).toBe(4)
+    expect(participants.length).toBe(6)
     expect(participants.find(p => p.id === 'new-participant')).toEqual(newParticipant)
   })
 
@@ -60,12 +60,12 @@ test.describe('Centralized Mock Management Demo', () => {
       lastname: 'User'
     })
     
-    expect(mockData.getTestUsers().length).toBe(3)
+    expect(mockData.getTestUsers().length).toBe(4)
     
     // Restore original state
     mockData.restoreTestSnapshot(initialSnapshot)
     
-    expect(mockData.getTestUsers().length).toBe(2)
+    expect(mockData.getTestUsers().length).toBe(3)
     expect(mockData.manager.getUserByEmail('modified@example.com')).toBeUndefined()
   })
 
@@ -96,7 +96,7 @@ test.describe('Centralized Mock Management Demo', () => {
     })
     
     // Verify the custom user was added
-    expect(mockData.getTestUsers().length).toBe(3) // 2 defaults + 1 custom
+    expect(mockData.getTestUsers().length).toBe(4) // 3 defaults + 1 custom
     expect(mockData.manager.getUserByEmail('custom.admin@test.com')).toEqual(customAdmin)
     
     // We can still login with default users

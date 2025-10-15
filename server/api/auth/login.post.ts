@@ -31,6 +31,8 @@ export default defineEventHandler(async (event) => {
     const session = await setUserSession(event, {
       user: {
         name: `${user.firstname} ${user.lastname}`,
+        firstname: user.firstname,
+        lastname: user.lastname,
         email: user.email,
         role: user.role
       }
@@ -46,6 +48,8 @@ export default defineEventHandler(async (event) => {
       message: 'Login successful',
       user: {
         name: `${user.firstname} ${user.lastname}`,
+        firstname: user.firstname,
+        lastname: user.lastname,
         email: user.email,
         role: user.role
       }

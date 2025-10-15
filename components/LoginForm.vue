@@ -1,13 +1,11 @@
 <script setup lang="ts">
     const runtimeConfig = useRuntimeConfig()
     const devMode = ref(runtimeConfig.public.devMode);
-    const defaultUserName = ref(runtimeConfig.public.defaultUserName);
-    const defaultUserPassword = ref(runtimeConfig.public.defaultUserPassword);
-
+    
     const { loggedIn, user, fetch: refreshSession } = useUserSession()
     const credentials = reactive({
-        email: devMode.value ? defaultUserName.value : '',
-        password: devMode.value ? defaultUserPassword.value : '',
+        email: '',
+        password: '',
     })
     const loginError = ref(false)
     const loginErrorMessage = ref('')
