@@ -114,7 +114,10 @@ onMounted(() => {
       <!-- Pending invitations front and center for users -->
       <PendingInvitations />
       
-      <p>Welcome, {{ user?.firstname }}! View your event invitations above.</p>
+      <!-- Topic ranking tasks -->
+      <RankingTasks />
+      
+      <p>Welcome, {{ user?.firstname }}! View your event invitations and ranking tasks above.</p>
       <!-- Additional user-specific content goes here -->
     </div>
   </v-container>

@@ -3,6 +3,7 @@ import type { Event } from '../../types/event'
 import type { Participant, ParticipantAssignment } from '../../types/participant'
 import type { Topic } from '../../types/topic'
 import type { Invitation } from '../../types/invitation'
+import type { TopicRanking } from '../../types/topicRanking'
 
 /**
  * Centralized Mock Data Manager
@@ -19,6 +20,7 @@ export class MockDataManager {
   private _assignments: ParticipantAssignment[] = []
   private _topics: Topic[] = []
   private _invitations: Invitation[] = []
+  private _topicRankings: TopicRanking[] = []
 
   private constructor() {
     this.resetToDefaults()
@@ -44,6 +46,7 @@ export class MockDataManager {
     this._assignments = this.getDefaultAssignments()
     this._topics = this.getDefaultTopics()
     this._invitations = this.getDefaultInvitations()
+    this._topicRankings = this.getDefaultTopicRankings()
   }
 
   /**
@@ -56,6 +59,7 @@ export class MockDataManager {
     this._assignments = []
     this._topics = []
     this._invitations = []
+    this._topicRankings = []
   }
 
   // ==================== USERS ====================
@@ -598,6 +602,51 @@ export class MockDataManager {
       topics: this._topics.length,
       invitations: this._invitations.length
     }
+  }
+
+  // ==================== TOPIC RANKINGS ====================
+
+  private getDefaultTopicRankings(): TopicRanking[] {
+    return []
+  }
+
+  getTopicRankings(): TopicRanking[] {
+    return [...this._topicRankings]
+  }
+
+  getTopicRankingById(id: string): TopicRanking | undefined {
+    return this._topicRankings.find(r => r.id === id)
+  }
+
+  getTopicRankingByParticipantAndEvent(participantId: string, eventId: string): TopicRanking | null {
+    return this._topicRankings.find(r => r.participantId === participantId && r.eventId === eventId) || null
+  }
+
+  getTopicRankingsByEventId(eventId: string): TopicRanking[] {
+    return this._topicRankings.filter(r => r.eventId === eventId)
+  }
+
+  addTopicRanking(ranking: TopicRanking): void {
+    this._topicRankings.push(ranking)
+  }
+
+  updateTopicRanking(id: string, updates: Partial<TopicRanking>): boolean {
+    const index = this._topicRankings.findIndex(r => r.id === id)
+    if (index === -1) return false
+    
+    this._topicRankings[index] = {
+      ...this._topicRankings[index]!,
+      ...updates
+    }
+    return true
+  }
+
+  removeTopicRanking(id: string): boolean {
+    const index = this._topicRankings.findIndex(r => r.id === id)
+    if (index === -1) return false
+    
+    this._topicRankings.splice(index, 1)
+    return true
   }
 }
 
