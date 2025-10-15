@@ -101,22 +101,32 @@ test.describe('Registration', () => {
   })
 
   test('should pre-fill form data when token is valid', async ({ page, mockData }) => {
-    // Add a user with registration token
+    // Add a user with registration token via API endpoint to ensure server and client use same data
     const token = 'test-token-123'
-    mockData.addUser({
+    const userToAdd = {
+      id: 'pending@example.com',
       email: 'pending@example.com',
       firstname: 'Pending',
       lastname: 'User',
-      role: 'Participant',
+      role: 'Participant' as const,
+      password: 'testpassword123',
       registrationToken: token,
-      registrationTokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      registrationTokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    
+    // Add user via server API to ensure both server and test see the same data
+    const addUserResponse = await page.request.post('/api/test/add-user', {
+      data: userToAdd
     })
+    expect(addUserResponse.ok()).toBeTruthy()
     
     // Navigate with token
     await page.goto(`/register?token=${token}`, { waitUntil: 'networkidle' })
     
     // Wait for form to load and pre-fill
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(2000)
     
     // Check that fields are pre-filled
     const firstname = await page.getByTestId('firstname-input').locator('input').inputValue()

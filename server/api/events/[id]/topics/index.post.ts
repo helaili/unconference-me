@@ -16,7 +16,6 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     const body = await readBody(event)
-    
     logger.info('Creating topic for event', { eventId, user: session.user })
     
     if (!eventId) {
@@ -50,6 +49,7 @@ export default defineEventHandler(async (event) => {
     
     // For non-admin users, require participant registration
     if (!userIsAdmin && !participant) {
+       console.log('User is not a participant and not an admin:', userIdentifier)
       throw createError({
         statusCode: 403,
         statusMessage: 'You must be registered as a participant for this event to submit topics'

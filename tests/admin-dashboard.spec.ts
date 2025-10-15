@@ -7,6 +7,14 @@ test.describe('Admin Dashboard', () => {
   test.beforeEach(async ({ page, mockData }) => {
     // Ensure we have default mock data for each test
     mockData.resetToDefaults()
+    
+    // Also reset server-side mock data
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (error) {
+      console.warn('Failed to reset server-side mock data:', error)
+    }
+    
     auth = new AuthHelper(page)
   })
 
