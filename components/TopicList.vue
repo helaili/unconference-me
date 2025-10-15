@@ -21,6 +21,7 @@ const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
   like: [topicId: string]
+  unlike: [topicId: string]
   'change-status': [topicId: string, status: Topic['status']]
 }>()
 
@@ -94,6 +95,10 @@ const handleLike = (topicId: string) => {
   emit('like', topicId)
 }
 
+const handleUnlike = (topicId: string) => {
+  emit('unlike', topicId)
+}
+
 const handleChangeStatus = (topicId: string, status: Topic['status']) => {
   emit('change-status', topicId, status)
 }
@@ -138,25 +143,21 @@ const handleChangeStatus = (topicId: string, status: Topic['status']) => {
           />
         </v-col>
         
-        <v-col cols="12" md="2" class="d-flex align-center">
+        <v-col cols="12" md="4" class="d-flex align-center">
           <v-checkbox
             v-if="userParticipantId"
             v-model="showMyTopicsOnly"
             label="My Topics"
             density="comfortable"
             hide-details
+            class="mr-4"
           />
-        </v-col>
-      </v-row>
-      
-      <v-row v-if="rankingEnabled" class="mb-2">
-        <v-col cols="12" md="4">
           <v-checkbox
+            v-if="rankingEnabled"
             v-model="showFavoritesOnly"
-            label="Show Only Favorites"
+            label="Favorites"
             density="comfortable"
             hide-details
-            prepend-icon="mdi-heart"
           />
         </v-col>
       </v-row>
@@ -201,6 +202,7 @@ const handleChangeStatus = (topicId: string, status: Topic['status']) => {
             @edit="handleEdit"
             @delete="handleDelete"
             @like="handleLike"
+            @unlike="handleUnlike"
             @change-status="handleChangeStatus"
             class="flex-grow-1"
           />

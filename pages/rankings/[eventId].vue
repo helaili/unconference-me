@@ -35,14 +35,19 @@ const minTopicsToRank = computed(() => {
 })
 
 const rankableTopics = computed(() => {
-  // Filter topics to show only approved topics or topics proposed by the user
+  // Filter topics to show only approved topics or topics proposed by the user (excluding rejected topics)
   return topics.value.filter(topic => {
+    // Never show rejected topics regardless of user role
+    if (topic.status === 'rejected') {
+      return false
+    }
+    
     // Admins can see all approved topics
     if (isAdmin.value) {
       return topic.status === 'approved'
     }
     
-    // Regular participants can see approved topics or their own topics
+    // Regular participants can see approved topics or their own non-rejected topics
     return topic.status === 'approved' || 
            (participant.value && topic.proposedBy === participant.value.id)
   })
@@ -147,16 +152,26 @@ onMounted(async () => {
 
 <template>
   <v-container>
-    <v-btn
-      variant="text"
-      prepend-icon="mdi-arrow-left"
-      class="mb-4"
-      @click="router.push('/dashboard')"
-    >
-      Back to Dashboard
-    </v-btn>
-    
-    <h1 class="mb-6">Rank Discussion Topics</h1>
+    <div class="d-flex align-center mb-6">
+      <h1>Rank Discussion Topics</h1>
+      <v-spacer />
+      <v-btn
+        variant="outlined"
+        prepend-icon="mdi-view-list"
+        color="primary"
+        class="mr-2"
+        @click="router.push('/topics')"
+      >
+        View All Topics
+      </v-btn>
+      <v-btn
+        variant="text"
+        prepend-icon="mdi-arrow-left"
+        @click="router.push('/dashboard')"
+      >
+        Back to Dashboard
+      </v-btn>
+    </div>
     
     <!-- Alerts -->
     <v-alert

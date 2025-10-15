@@ -130,6 +130,39 @@ const handleLikeTopic = async (topicId: string) => {
   }
 }
 
+const handleUnlikeTopic = async (topicId: string) => {
+  if (!participant.value) return
+  
+  try {
+    // Get current ranking
+    const currentRankedIds = ranking.value?.rankedTopicIds || []
+    
+    // Check if topic is actually liked
+    if (!currentRankedIds.includes(topicId)) {
+      successMessage.value = 'This topic is not in your favorites!'
+      setTimeout(() => { successMessage.value = null }, 3000)
+      return
+    }
+    
+    // Remove from ranking
+    const newRankedIds = currentRankedIds.filter((id: string) => id !== topicId)
+    
+    const response = await $fetch(`/api/events/${eventId}/rankings`, {
+      method: 'POST',
+      body: { rankedTopicIds: newRankedIds }
+    })
+    
+    if (response.success) {
+      ranking.value = response.ranking
+      successMessage.value = 'Topic removed from your favorites!'
+      setTimeout(() => { successMessage.value = null }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error unliking topic:', err)
+    error.value = err?.data?.message || 'Failed to remove topic from favorites'
+  }
+}
+
 // Handle topic submission
 const handleSubmit = async (data: { title: string; description?: string; tags?: string[] }) => {
   submitting.value = true
@@ -318,6 +351,7 @@ onMounted(async () => {
       @edit="handleEdit"
       @delete="handleDelete"
       @like="handleLikeTopic"
+      @unlike="handleUnlikeTopic"
       @change-status="handleChangeStatus"
     />
     
