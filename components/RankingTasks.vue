@@ -19,6 +19,8 @@ const tasks = ref<RankingTask[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+const { user } = useUserSession()
+
 const fetchRankingTasks = async () => {
   loading.value = true
   error.value = null
@@ -42,7 +44,7 @@ const fetchRankingTasks = async () => {
       if (!participantsResponse.success || !participantsResponse.participants) continue
       
       const participants = participantsResponse.participants as Participant[]
-      const participant = participants.find(p => p.email === (await useUserSession()).user.value?.email)
+      const participant = participants.find(p => p.email === user.value?.email)
       
       if (!participant) continue
       
