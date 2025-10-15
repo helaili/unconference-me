@@ -15,6 +15,8 @@ useSeoMeta({
 const events = ref<Event[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
+const successMessage = ref<string | null>(null)
+const showCreateDialog = ref(false)
 
 const fetchEvents = async () => {
   loading.value = true
@@ -33,6 +35,30 @@ const fetchEvents = async () => {
   }
 }
 
+const handleCreateEvent = async (eventData: any) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch('/api/events', {
+      method: 'POST',
+      body: eventData
+    })
+    
+    if (response.success) {
+      successMessage.value = 'Event created successfully!'
+      await fetchEvents()
+      
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error creating event:', err)
+    error.value = err?.data?.message || 'Failed to create event'
+  }
+}
+
 onMounted(() => {
   fetchEvents()
 })
@@ -44,6 +70,15 @@ onMounted(() => {
       <h1 :class="$vuetify.display.smAndDown ? 'text-h4 mb-2' : 'text-h3 mb-0'">
         Events
       </h1>
+      <v-btn
+        color="primary"
+        prepend-icon="mdi-plus"
+        :block="$vuetify.display.smAndDown"
+        :class="$vuetify.display.smAndDown ? 'mt-2' : ''"
+        @click="showCreateDialog = true"
+      >
+        Create Event
+      </v-btn>
     </div>
 
     <v-alert
@@ -56,7 +91,23 @@ onMounted(() => {
     >
       {{ error }}
     </v-alert>
+    
+    <v-alert
+      v-if="successMessage"
+      type="success"
+      variant="tonal"
+      closable
+      class="mb-4"
+      @click:close="successMessage = null"
+    >
+      {{ successMessage }}
+    </v-alert>
 
     <EventList :events="events" :loading="loading" />
+    
+    <EventCreationDialog
+      v-model="showCreateDialog"
+      @create="handleCreateEvent"
+    />
   </v-container>
 </template>

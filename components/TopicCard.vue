@@ -13,6 +13,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
+  'change-status': [topicId: string, status: Topic['status']]
 }>()
 
 const canEdit = ref(props.isAdmin || props.topic.proposedBy === props.userParticipantId)
@@ -46,6 +47,10 @@ const handleEdit = () => {
 
 const handleDelete = () => {
   emit('delete', props.topic.id)
+}
+
+const handleChangeStatus = (status: Topic['status']) => {
+  emit('change-status', props.topic.id, status)
 }
 </script>
 
@@ -85,25 +90,89 @@ const handleDelete = () => {
       </div>
     </v-card-text>
     
-    <v-card-actions v-if="canEdit || canDelete">
+    <v-card-actions v-if="canEdit || canDelete || isAdmin">
+      <v-menu v-if="isAdmin" :close-on-content-click="true">
+        <template #activator="{ props: menuProps }">
+          <v-btn
+            variant="tonal"
+            color="primary"
+            size="small"
+            v-bind="menuProps"
+          >
+            <v-icon start>mdi-cog</v-icon>
+            Status
+          </v-btn>
+        </template>
+        <v-list density="compact">
+          <v-list-item
+            v-if="topic.status !== 'proposed'"
+            @click="handleChangeStatus('proposed')"
+          >
+            <v-list-item-title>
+              <v-icon size="small" class="mr-2">mdi-clock-outline</v-icon>
+              Mark as Proposed
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item
+            v-if="topic.status !== 'approved'"
+            @click="handleChangeStatus('approved')"
+          >
+            <v-list-item-title>
+              <v-icon size="small" class="mr-2">mdi-check-circle</v-icon>
+              Approve Topic
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item
+            v-if="topic.status !== 'scheduled'"
+            @click="handleChangeStatus('scheduled')"
+          >
+            <v-list-item-title>
+              <v-icon size="small" class="mr-2">mdi-calendar-check</v-icon>
+              Mark as Scheduled
+            </v-list-item-title>
+          </v-list-item>
+          <v-list-item
+            v-if="topic.status !== 'completed'"
+            @click="handleChangeStatus('completed')"
+          >
+            <v-list-item-title>
+              <v-icon size="small" class="mr-2">mdi-checkbox-marked-circle</v-icon>
+              Mark as Completed
+            </v-list-item-title>
+          </v-list-item>
+          <v-divider v-if="topic.status !== 'rejected'" />
+          <v-list-item
+            v-if="topic.status !== 'rejected'"
+            @click="handleChangeStatus('rejected')"
+          >
+            <v-list-item-title class="text-error">
+              <v-icon size="small" class="mr-2">mdi-close-circle</v-icon>
+              Reject Topic
+            </v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-menu>
+      
       <v-spacer />
       <v-btn
         v-if="canEdit && topic.status !== 'rejected'"
         variant="text"
         color="primary"
+        size="small"
         @click="handleEdit"
       >
         <v-icon start>mdi-pencil</v-icon>
-        Edit
+        <span v-if="!$vuetify.display.smAndDown">Edit</span>
       </v-btn>
       <v-btn
         v-if="canDelete && topic.status !== 'rejected'"
         variant="text"
         color="error"
+        size="small"
         @click="handleDelete"
       >
         <v-icon start>mdi-delete</v-icon>
-        Delete
+        <span v-if="!$vuetify.display.smAndDown">Delete</span>
       </v-btn>
     </v-card-actions>
   </v-card>

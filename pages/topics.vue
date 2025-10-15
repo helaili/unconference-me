@@ -165,6 +165,31 @@ const confirmDelete = async () => {
   }
 }
 
+const handleChangeStatus = async (topicId: string, status: Topic['status']) => {
+  error.value = null
+  successMessage.value = null
+  
+  try {
+    const response = await $fetch(`/api/events/${eventId}/topics/${topicId}`, {
+      method: 'PUT',
+      body: { status }
+    })
+    
+    if (response.success) {
+      successMessage.value = `Topic status changed to ${status}!`
+      await fetchTopics()
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => {
+        successMessage.value = null
+      }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error changing topic status:', err)
+    error.value = err?.data?.message || 'Failed to change topic status'
+  }
+}
+
 const cancelEdit = () => {
   editingTopic.value = null
 }
@@ -227,6 +252,7 @@ onMounted(async () => {
       :loading="loading"
       @edit="handleEdit"
       @delete="handleDelete"
+      @change-status="handleChangeStatus"
     />
     
     <!-- Delete Confirmation Dialog -->
