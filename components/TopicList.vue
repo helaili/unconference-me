@@ -7,21 +7,26 @@ interface Props {
   userParticipantId?: string
   isAdmin?: boolean
   loading?: boolean
+  ranking?: any
+  rankingEnabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
-  isAdmin: false
+  isAdmin: false,
+  rankingEnabled: false
 })
 
 const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
+  like: [topicId: string]
 }>()
 
 const searchQuery = ref('')
 const statusFilter = ref<string>('all')
 const showMyTopicsOnly = ref(false)
+const showFavoritesOnly = ref(false)
 
 const statusOptions = [
   { value: 'all', title: 'All Topics' },
@@ -30,6 +35,12 @@ const statusOptions = [
   { value: 'scheduled', title: 'Scheduled' },
   { value: 'completed', title: 'Completed' }
 ]
+
+const getRankForTopic = (topicId: string): number | null => {
+  if (!props.ranking?.rankedTopicIds) return null
+  const index = props.ranking.rankedTopicIds.indexOf(topicId)
+  return index >= 0 ? index + 1 : null
+}
 
 const filteredTopics = computed(() => {
   let filtered = [...props.topics]
@@ -54,6 +65,11 @@ const filteredTopics = computed(() => {
     filtered = filtered.filter(t => t.proposedBy === props.userParticipantId)
   }
   
+  // Filter to show only favorites/ranked topics
+  if (showFavoritesOnly.value && props.ranking?.rankedTopicIds) {
+    filtered = filtered.filter(t => props.ranking.rankedTopicIds.includes(t.id))
+  }
+  
   // Don't show rejected topics to regular users
   if (!props.isAdmin) {
     filtered = filtered.filter(t => t.status !== 'rejected')
@@ -71,6 +87,10 @@ const handleEdit = (topic: Topic) => {
 
 const handleDelete = (topicId: string) => {
   emit('delete', topicId)
+}
+
+const handleLike = (topicId: string) => {
+  emit('like', topicId)
 }
 </script>
 
@@ -124,6 +144,18 @@ const handleDelete = (topicId: string) => {
         </v-col>
       </v-row>
       
+      <v-row v-if="rankingEnabled" class="mb-2">
+        <v-col cols="12" md="4">
+          <v-checkbox
+            v-model="showFavoritesOnly"
+            label="Show Only Favorites"
+            density="comfortable"
+            hide-details
+            prepend-icon="mdi-heart"
+          />
+        </v-col>
+      </v-row>
+      
       <!-- Loading State -->
       <div v-if="loading" class="text-center py-8">
         <v-progress-circular indeterminate color="primary" size="64" />
@@ -159,8 +191,11 @@ const handleDelete = (topicId: string) => {
             :topic="topic"
             :user-participant-id="userParticipantId"
             :is-admin="isAdmin"
+            :rank="getRankForTopic(topic.id)"
+            :ranking-enabled="rankingEnabled"
             @edit="handleEdit"
             @delete="handleDelete"
+            @like="handleLike"
             class="flex-grow-1"
           />
         </v-col>

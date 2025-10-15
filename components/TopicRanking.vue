@@ -242,8 +242,21 @@ const saveRanking = async () => {
               </v-chip>
             </v-list-item-title>
             
-            <v-list-item-subtitle v-if="topic.description">
-              {{ topic.description }}
+            <v-list-item-subtitle>
+              <div v-if="topic.description" class="mb-2">
+                {{ topic.description }}
+              </div>
+              <div v-if="topic.metadata?.tags && topic.metadata.tags.length > 0" class="topic-tags">
+                <v-chip
+                  v-for="tag in topic.metadata.tags"
+                  :key="tag"
+                  size="x-small"
+                  variant="outlined"
+                  class="mr-1 mb-1"
+                >
+                  {{ tag }}
+                </v-chip>
+              </div>
             </v-list-item-subtitle>
             
             <template #append>

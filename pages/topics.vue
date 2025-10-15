@@ -13,6 +13,7 @@ const isAdmin = computed(() => user.value?.role === 'Admin')
 const topics = ref<Topic[]>([])
 const event = ref<Event | null>(null)
 const participant = ref<Participant | null>(null)
+const ranking = ref<any>(null)
 const loading = ref(false)
 const submitting = ref(false)
 const error = ref<string | null>(null)
@@ -42,6 +43,10 @@ const userTopicCount = computed(() => {
 })
 
 const participantId = computed(() => participant.value?.id)
+
+const rankingEnabled = computed(() => {
+  return event.value?.settings?.enableTopicRanking || false
+})
 
 // Fetch data
 const fetchTopics = async () => {
@@ -74,8 +79,54 @@ const fetchEventData = async () => {
       const participants = participantsResponse.participants as Participant[]
       participant.value = participants.find(p => p.email === user.value?.email) || null
     }
+    
+    // Fetch ranking if enabled
+    if (event.value?.settings?.enableTopicRanking && participant.value) {
+      try {
+        const rankingResponse = await $fetch(`/api/events/${eventId}/rankings`)
+        if (rankingResponse.success && rankingResponse.ranking) {
+          ranking.value = rankingResponse.ranking
+        }
+      } catch (err) {
+        // No ranking exists yet, that's okay
+        console.log('No existing ranking found')
+      }
+    }
   } catch (err) {
     console.error('Error fetching event data:', err)
+  }
+}
+
+const handleLikeTopic = async (topicId: string) => {
+  if (!participant.value) return
+  
+  try {
+    // Get current ranking or create new one
+    const currentRankedIds = ranking.value?.rankedTopicIds || []
+    
+    // Check if already liked
+    if (currentRankedIds.includes(topicId)) {
+      successMessage.value = 'This topic is already in your favorites!'
+      setTimeout(() => { successMessage.value = null }, 3000)
+      return
+    }
+    
+    // Add to end of ranking
+    const newRankedIds = [...currentRankedIds, topicId]
+    
+    const response = await $fetch(`/api/events/${eventId}/rankings`, {
+      method: 'POST',
+      body: { rankedTopicIds: newRankedIds }
+    })
+    
+    if (response.success) {
+      ranking.value = response.ranking
+      successMessage.value = 'Topic added to your favorites!'
+      setTimeout(() => { successMessage.value = null }, 3000)
+    }
+  } catch (err: any) {
+    console.error('Error liking topic:', err)
+    error.value = err?.data?.message || 'Failed to add topic to favorites'
   }
 }
 
@@ -178,7 +229,19 @@ onMounted(async () => {
 
 <template>
   <v-container>
-    <h1 class="mb-6">Discussion Topics</h1>
+    <div class="d-flex align-center mb-6">
+      <h1 class="mr-4">Discussion Topics</h1>
+      <v-spacer />
+      <v-btn
+        v-if="rankingEnabled && (participant || isAdmin)"
+        color="primary"
+        variant="elevated"
+        prepend-icon="mdi-sort"
+        :to="`/rankings/${eventId}`"
+      >
+        Rank Topics
+      </v-btn>
+    </div>
     
     <!-- Alerts -->
     <v-alert
@@ -225,8 +288,11 @@ onMounted(async () => {
       :user-participant-id="participantId"
       :is-admin="isAdmin"
       :loading="loading"
+      :ranking="ranking"
+      :ranking-enabled="rankingEnabled"
       @edit="handleEdit"
       @delete="handleDelete"
+      @like="handleLikeTopic"
     />
     
     <!-- Delete Confirmation Dialog -->
