@@ -258,6 +258,13 @@ onMounted(() => {
         @update="handleEventUpdate"
         @save="fetchEventData"
       />
+      
+      <!-- Organizer Management -->
+      <OrganizerManagement
+        class="mb-4"
+        :event-id="eventId"
+        @refresh="fetchEventData"
+      />
 
       <!-- Participant Management -->
       <ParticipantManagement
