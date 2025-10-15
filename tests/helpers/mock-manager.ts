@@ -4,6 +4,7 @@ import type { Participant, ParticipantAssignment } from '../../types/participant
 import type { Topic } from '../../types/topic'
 import type { Invitation } from '../../types/invitation'
 import type { TopicRanking } from '../../types/topicRanking'
+import type { Organizer } from '../../types/organizer'
 
 /**
  * Centralized Mock Data Manager
@@ -21,6 +22,7 @@ export class MockDataManager {
   private _topics: Topic[] = []
   private _invitations: Invitation[] = []
   private _topicRankings: TopicRanking[] = []
+  private _organizers: Organizer[] = []
 
   private constructor() {
     this.resetToDefaults()
@@ -47,6 +49,7 @@ export class MockDataManager {
     this._topics = this.getDefaultTopics()
     this._invitations = this.getDefaultInvitations()
     this._topicRankings = this.getDefaultTopicRankings()
+    this._organizers = this.getDefaultOrganizers()
   }
 
   /**
@@ -60,6 +63,7 @@ export class MockDataManager {
     this._topics = []
     this._invitations = []
     this._topicRankings = []
+    this._organizers = []
   }
 
   // ==================== USERS ====================
@@ -575,6 +579,87 @@ export class MockDataManager {
     return true
   }
 
+  // ==================== ORGANIZERS ====================
+
+  private getDefaultOrganizers(): Organizer[] {
+    return [
+      {
+        id: 'organizer-1',
+        eventId: '1',
+        userId: 'user-org-1',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        role: 'owner',
+        status: 'active',
+        createdAt: new Date('2025-01-01T00:00:00Z'),
+        updatedAt: new Date('2025-01-01T00:00:00Z'),
+        permissions: {
+          canEditEvent: true,
+          canDeleteEvent: true,
+          canApproveParticipants: true,
+          canRemoveParticipants: true,
+          canApproveTopics: true,
+          canRejectTopics: true,
+          canScheduleTopics: true,
+          canManageAssignments: true,
+          canRunAutoAssignment: true,
+          canViewReports: true,
+          canExportData: true
+        }
+      }
+    ]
+  }
+
+  getOrganizers(): Organizer[] {
+    return [...this._organizers]
+  }
+
+  getOrganizerById(id: string): Organizer | undefined {
+    return this._organizers.find(o => o.id === id)
+  }
+
+  getOrganizersByEventId(eventId: string): Organizer[] {
+    return this._organizers.filter(o => o.eventId === eventId)
+  }
+
+  getOrganizersByUserId(userId: string): Organizer[] {
+    return this._organizers.filter(o => o.userId === userId)
+  }
+
+  addOrganizer(organizer: Organizer): void {
+    this._organizers.push(organizer)
+  }
+
+  updateOrganizer(id: string, updates: Partial<Organizer>): boolean {
+    const index = this._organizers.findIndex(o => o.id === id)
+    if (index === -1) return false
+    
+    const currentOrganizer = this._organizers[index]
+    if (!currentOrganizer) return false
+    
+    // Ensure required fields are preserved
+    this._organizers[index] = {
+      ...currentOrganizer,
+      ...updates,
+      id: updates.id ?? currentOrganizer.id,
+      eventId: updates.eventId ?? currentOrganizer.eventId,
+      email: updates.email ?? currentOrganizer.email,
+      firstname: updates.firstname ?? currentOrganizer.firstname,
+      lastname: updates.lastname ?? currentOrganizer.lastname,
+      role: updates.role ?? currentOrganizer.role,
+      updatedAt: new Date()
+    }
+    return true
+  }
+
+  removeOrganizer(id: string): boolean {
+    const index = this._organizers.findIndex(o => o.id === id)
+    if (index === -1) return false
+    this._organizers.splice(index, 1)
+    return true
+  }
+
   // ==================== UTILITY METHODS ====================
 
   /**
@@ -587,7 +672,8 @@ export class MockDataManager {
       participants: [...this._participants],
       assignments: [...this._assignments],
       topics: [...this._topics],
-      invitations: [...this._invitations]
+      invitations: [...this._invitations],
+      organizers: [...this._organizers]
     }
   }
 
@@ -601,6 +687,7 @@ export class MockDataManager {
     this._assignments = [...snapshot.assignments]
     this._topics = [...snapshot.topics]
     this._invitations = [...snapshot.invitations]
+    this._organizers = [...snapshot.organizers]
   }
 
   /**
@@ -613,7 +700,8 @@ export class MockDataManager {
       participants: this._participants.length,
       assignments: this._assignments.length,
       topics: this._topics.length,
-      invitations: this._invitations.length
+      invitations: this._invitations.length,
+      organizers: this._organizers.length
     }
   }
 

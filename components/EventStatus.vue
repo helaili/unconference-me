@@ -10,9 +10,17 @@ interface Props {
     checkedIn: number
     cancelled: number
   }
+  canManage?: boolean
 }
 
-defineProps<Props>()
+withDefaults(defineProps<Props>(), {
+  canManage: false
+})
+
+const emit = defineEmits<{
+  'cancel-event': []
+  'change-status': [status: Event['status']]
+}>()
 
 const getStatusColor = (status: Event['status']) => {
   const colors = {
@@ -68,6 +76,70 @@ const formatDate = (date: Date) => {
             >
               {{ event.status.toUpperCase() }}
             </v-chip>
+          </div>
+          
+          <div v-if="canManage && event.status !== 'cancelled'" class="mb-4">
+            <div class="text-caption text-grey mb-2">Admin Actions</div>
+            <v-menu>
+              <template #activator="{ props }">
+                <v-btn
+                  color="primary"
+                  variant="tonal"
+                  size="small"
+                  v-bind="props"
+                  prepend-icon="mdi-cog"
+                >
+                  Change Status
+                </v-btn>
+              </template>
+              <v-list>
+                <v-list-item
+                  v-if="event.status !== 'draft'"
+                  @click="emit('change-status', 'draft')"
+                >
+                  <v-list-item-title>
+                    <v-icon size="small" class="mr-2">mdi-file-document</v-icon>
+                    Set to Draft
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  v-if="event.status !== 'published'"
+                  @click="emit('change-status', 'published')"
+                >
+                  <v-list-item-title>
+                    <v-icon size="small" class="mr-2">mdi-publish</v-icon>
+                    Publish Event
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  v-if="event.status !== 'active'"
+                  @click="emit('change-status', 'active')"
+                >
+                  <v-list-item-title>
+                    <v-icon size="small" class="mr-2">mdi-play</v-icon>
+                    Activate Event
+                  </v-list-item-title>
+                </v-list-item>
+                <v-list-item
+                  v-if="event.status !== 'completed'"
+                  @click="emit('change-status', 'completed')"
+                >
+                  <v-list-item-title>
+                    <v-icon size="small" class="mr-2">mdi-check-circle</v-icon>
+                    Mark as Completed
+                  </v-list-item-title>
+                </v-list-item>
+                <v-divider />
+                <v-list-item
+                  @click="emit('cancel-event')"
+                >
+                  <v-list-item-title class="text-error">
+                    <v-icon size="small" class="mr-2">mdi-cancel</v-icon>
+                    Cancel Event
+                  </v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </div>
           
           <div class="mb-4">

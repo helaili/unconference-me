@@ -21,6 +21,7 @@ const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
   like: [topicId: string]
+  'change-status': [topicId: string, status: Topic['status']]
 }>()
 
 const searchQuery = ref('')
@@ -91,6 +92,10 @@ const handleDelete = (topicId: string) => {
 
 const handleLike = (topicId: string) => {
   emit('like', topicId)
+}
+
+const handleChangeStatus = (topicId: string, status: Topic['status']) => {
+  emit('change-status', topicId, status)
 }
 </script>
 
@@ -196,6 +201,7 @@ const handleLike = (topicId: string) => {
             @edit="handleEdit"
             @delete="handleDelete"
             @like="handleLike"
+            @change-status="handleChangeStatus"
             class="flex-grow-1"
           />
         </v-col>
