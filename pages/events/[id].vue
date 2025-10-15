@@ -57,6 +57,8 @@ const fetchEventData = async () => {
   }
 }
 
+const cancelDialog = ref(false)
+
 const handleEventUpdate = async (updates: Partial<Event>) => {
   error.value = null
   successMessage.value = null
@@ -79,6 +81,19 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
     console.error('Error updating event:', err)
     error.value = 'Failed to update event'
   }
+}
+
+const handleChangeStatus = async (status: Event['status']) => {
+  await handleEventUpdate({ status })
+}
+
+const handleCancelEvent = () => {
+  cancelDialog.value = true
+}
+
+const confirmCancelEvent = async () => {
+  await handleEventUpdate({ status: 'cancelled' })
+  cancelDialog.value = false
 }
 
 const handleRegisterUser = async (userId: string) => {
@@ -227,7 +242,14 @@ onMounted(() => {
 
     <div v-else-if="event">
       <!-- Event Status -->
-      <EventStatus :event="event" :participant-stats="participantStats" class="mb-4" />
+      <EventStatus
+        :event="event"
+        :participant-stats="participantStats"
+        :can-manage="true"
+        class="mb-4"
+        @cancel-event="handleCancelEvent"
+        @change-status="handleChangeStatus"
+      />
 
       <!-- Event Configuration -->
       <EventConfiguration
@@ -235,6 +257,13 @@ onMounted(() => {
         :event="event"
         @update="handleEventUpdate"
         @save="fetchEventData"
+      />
+      
+      <!-- Organizer Management -->
+      <OrganizerManagement
+        class="mb-4"
+        :event-id="eventId"
+        @refresh="fetchEventData"
       />
 
       <!-- Participant Management -->
@@ -259,5 +288,40 @@ onMounted(() => {
     <v-alert v-else type="info" variant="tonal">
       Event not found
     </v-alert>
+    
+    <!-- Cancel Event Confirmation Dialog -->
+    <v-dialog v-model="cancelDialog" max-width="500">
+      <v-card>
+        <v-card-title :class="$vuetify.display.smAndDown ? 'text-h6' : 'text-h5'">
+          Cancel Event
+        </v-card-title>
+        <v-card-text>
+          <p>Are you sure you want to cancel this event?</p>
+          <p class="mt-2 text-warning">
+            <v-icon size="small" class="mr-1">mdi-alert</v-icon>
+            This will set the event status to "cancelled" and notify all participants.
+          </p>
+        </v-card-text>
+        <v-card-actions :class="$vuetify.display.smAndDown ? 'flex-column pa-3' : 'pa-4'">
+          <v-spacer v-if="!$vuetify.display.smAndDown" />
+          <v-btn
+            variant="text"
+            :block="$vuetify.display.smAndDown"
+            :class="$vuetify.display.smAndDown ? 'mb-2' : 'mr-2'"
+            @click="cancelDialog = false"
+          >
+            Keep Event
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :block="$vuetify.display.smAndDown"
+            @click="confirmCancelEvent"
+          >
+            Cancel Event
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>

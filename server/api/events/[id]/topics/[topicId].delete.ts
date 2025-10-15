@@ -1,5 +1,6 @@
 import logger from '../../../../../utils/logger'
 import { topicService, participantService } from '../../../../../services'
+import { canDeleteTopic } from '../../../../../utils/access-control'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -34,23 +35,13 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Check if user is admin
-    const isAdmin = (session.user as { role?: string })?.role === 'Admin'
+    // Find participant ID based on user identifier
+    const participants = await participantService.findByEventId(eventId)
+    const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
+    const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
     
-    // For non-admins, check if they are the owner of the topic
-    let isOwner = false
-    if (!isAdmin) {
-      // Find participant ID based on user identifier
-      const participants = await participantService.findByEventId(eventId)
-      const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
-      const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
-      
-      // Check if user is the owner of the topic (either via participant ID or direct proposer match)
-      isOwner = (participant && topic.proposedBy === participant.id) || topic.proposedBy === userIdentifier
-    }
-    
-    // Check authorization: admins can delete any topic, users can only delete their own
-    if (!isAdmin && !isOwner) {
+    // Check authorization: admins, organizers, and topic owners can delete
+    if (!await canDeleteTopic(eventId, topic.proposedBy, session, participant?.id)) {
       throw createError({
         statusCode: 403,
         statusMessage: 'You do not have permission to delete this topic'

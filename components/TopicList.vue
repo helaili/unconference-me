@@ -17,6 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
+  'change-status': [topicId: string, status: Topic['status']]
 }>()
 
 const searchQuery = ref('')
@@ -71,6 +72,10 @@ const handleEdit = (topic: Topic) => {
 
 const handleDelete = (topicId: string) => {
   emit('delete', topicId)
+}
+
+const handleChangeStatus = (topicId: string, status: Topic['status']) => {
+  emit('change-status', topicId, status)
 }
 </script>
 
@@ -161,6 +166,7 @@ const handleDelete = (topicId: string) => {
             :is-admin="isAdmin"
             @edit="handleEdit"
             @delete="handleDelete"
+            @change-status="handleChangeStatus"
             class="flex-grow-1"
           />
         </v-col>

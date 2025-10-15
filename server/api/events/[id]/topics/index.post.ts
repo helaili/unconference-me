@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import logger from '../../../../../utils/logger'
 import { eventService, participantService, topicService } from '../../../../../services'
+import { isAdmin } from '../../../../../utils/access-control'
 
 // Validation schema for creating a topic
 const createTopicSchema = z.object({
@@ -38,7 +39,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // Check if user is admin
-    const isAdmin = (session.user as { role?: string })?.role === 'Admin'
+    const userIsAdmin = isAdmin(session)
     
     // Find participant based on user or allow admin to submit without being a participant
     const participants = await participantService.findByEventId(eventId)
@@ -46,7 +47,7 @@ export default defineEventHandler(async (event) => {
     const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
     
     // For non-admin users, require participant registration
-    if (!isAdmin && !participant) {
+    if (!userIsAdmin && !participant) {
       throw createError({
         statusCode: 403,
         statusMessage: 'You must be registered as a participant for this event to submit topics'
@@ -55,7 +56,7 @@ export default defineEventHandler(async (event) => {
     
     // For admins without participant registration, create a virtual participant identifier
     let proposerId: string
-    if (isAdmin && !participant) {
+    if (userIsAdmin && !participant) {
       // Use the user's email or a generated admin identifier as the proposer
       proposerId = userIdentifier || `admin-${Date.now()}`
     } else {
@@ -63,7 +64,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // Check if user has reached the maximum number of topics (non-admin only)
-    if (!isAdmin) {
+    if (!userIsAdmin) {
       const maxTopics = eventData.settings?.maxTopicsPerParticipant || 3
       const userTopics = await topicService.findByProposer(proposerId)
       const userTopicCount = userTopics.filter(t => t.eventId === eventId).length

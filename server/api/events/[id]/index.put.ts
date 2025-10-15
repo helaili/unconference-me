@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { eventSchema } from '../../../../types/schemas'
 import logger from '../../../../utils/logger'
+import { eventService } from '../../../../services'
+import { canManageEvent } from '../../../../utils/access-control'
 
 // Validation schema for update (all fields optional except required metadata)
 const updateEventSchema = z.object({
@@ -36,43 +38,54 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // Check if event exists
+    const existingEvent = await eventService.findById(id)
+    if (!existingEvent) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Event not found'
+      })
+    }
+    
+    // Check if user has permission to edit this event (admin or organizer)
+    if (!await canManageEvent(id, session)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'You do not have permission to edit this event'
+      })
+    }
+    
     // Parse and validate request body
     const body = await readValidatedBody(event, updateEventSchema.parse)
     
     logger.info(`Updating event ${id} for user: ${session.user?.email}`)
     
-    // In production:
-    // 1. Check if user has permission to edit this event (must be organizer with canEditEvent permission)
-    // 2. Fetch existing event from CosmosDB
-    // 3. Validate updates (e.g., ensure minGroupSize <= idealGroupSize <= maxGroupSize)
-    // 4. Update event in CosmosDB
-    // 5. Return updated event
+    // Validate group sizes if provided
+    const minSize = body.minGroupSize ?? existingEvent.minGroupSize
+    const idealSize = body.idealGroupSize ?? existingEvent.idealGroupSize
+    const maxSize = body.maxGroupSize ?? existingEvent.maxGroupSize
     
-    // For now, return mock updated event
-    const updatedEvent = {
-      id,
-      name: body.name || 'Universe User Group 2025',
-      description: body.description || 'Annual unconference event for Universe users',
-      location: body.location || 'Convene 100 Stockton, Union Square, San Francisco',
-      startDate: new Date('2025-10-27T09:00:00Z'),
-      endDate: new Date('2025-10-27T17:00:00Z'),
-      numberOfRounds: body.numberOfRounds || 3,
-      discussionsPerRound: body.discussionsPerRound || 5,
-      idealGroupSize: body.idealGroupSize || 8,
-      minGroupSize: body.minGroupSize || 5,
-      maxGroupSize: body.maxGroupSize || 10,
-      totalCapacity: (body.maxGroupSize || 10) * (body.discussionsPerRound || 5),
-      status: body.status || 'active',
-      createdAt: new Date('2025-01-01T00:00:00Z'),
-      updatedAt: new Date(),
-      settings: body.settings || {
-        enableTopicRanking: true,
-        enableAutoAssignment: false,
-        maxTopicsPerParticipant: 3,
-        requireApproval: false,
-        maxParticipants: 100
-      }
+    if (minSize > idealSize) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Minimum group size cannot be larger than ideal group size'
+      })
     }
+    
+    if (idealSize > maxSize) {
+      throw createError({
+        statusCode: 400,
+        statusMessage: 'Ideal group size cannot be larger than maximum group size'
+      })
+    }
+    
+    // Update the event
+    const updatedEvent = await eventService.update(id, {
+      ...body,
+      updatedAt: new Date()
+    })
+    
+    logger.info(`Event updated successfully: ${id}`)
     
     return {
       success: true,

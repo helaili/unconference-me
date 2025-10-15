@@ -5,6 +5,7 @@ export { participantService, ParticipantService } from './participantService'
 export { topicService, TopicService } from './topicService'
 export { assignmentService, AssignmentService } from './assignmentService'
 export { invitationService, InvitationService } from './invitationService'
+export { organizerService, OrganizerService } from './organizerService'
 export { BaseService } from './baseService'
 
 // Service type definitions for convenience
@@ -15,4 +16,5 @@ export type Services = {
   topicService: typeof import('./topicService').topicService
   assignmentService: typeof import('./assignmentService').assignmentService
   invitationService: typeof import('./invitationService').invitationService
+  organizerService: typeof import('./organizerService').organizerService
 }
