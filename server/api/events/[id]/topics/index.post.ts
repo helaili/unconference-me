@@ -46,6 +46,8 @@ export default defineEventHandler(async (event) => {
     const userIdentifier = (session.user as { email?: string; id?: string })?.email || (session.user as { email?: string; id?: string })?.id
     const participant = participants.find(p => p.email === userIdentifier || p.userId === userIdentifier)
     
+
+    
     // For non-admin users, require participant registration
     if (!userIsAdmin && !participant) {
       throw createError({

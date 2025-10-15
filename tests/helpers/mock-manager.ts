@@ -103,6 +103,16 @@ export class MockDataManager {
         role: "Organizer",
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: "unregistered@example.com",
+        firstname: "Unregistered",
+        lastname: "User",
+        email: "unregistered@example.com",
+        password: hashedPassword,
+        role: "Participant",
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
       }
     ]
   }

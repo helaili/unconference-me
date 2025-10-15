@@ -296,9 +296,17 @@ test.describe('Admin and Organizer Access Control', () => {
 
   test.describe('Regular User Restrictions', () => {
     test('regular user cannot create topics without being a participant', async ({ page }) => {
-      // Login as regular user (Darth)
-      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
+      // Login as unregistered user (exists in users but not in participants)
+      await loginWithAuthHelper(page, 'unregistered@example.com', 'changeme')
       
+      // Verify this user is NOT in the participants list
+      const participantsResponse = await page.request.get('/api/events/1/participants')
+      expect(participantsResponse.ok()).toBeTruthy()
+      const participantsData = await participantsResponse.json()
+      const hasUser = participantsData.participants?.some((p: any) => p.email === 'unregistered@example.com')
+      expect(hasUser).toBe(false) // Should not be a participant
+      
+      // Try to create a topic - should fail with 403
       const response = await page.request.post('/api/events/1/topics', {
         data: {
           title: 'Unauthorized Topic',

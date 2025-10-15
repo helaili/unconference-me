@@ -9,6 +9,13 @@ test.describe('Event Management - Events List', () => {
     auth = new AuthHelper(page)
   })
 
+  test.afterEach(async ({ page, mockData }) => {
+    // Clean up any route handlers that might affect other tests
+    await page.unrouteAll({ behavior: 'ignoreErrors' })
+    // Ensure mock data is reset after each test as well
+    mockData.resetToDefaults()
+  })
+
   test('should redirect non-admin users from events page', async ({ page }) => {
     await auth.loginAsVader() // Non-admin user
     
@@ -33,7 +40,10 @@ test.describe('Event Management - Events List', () => {
     await expect(page.locator('text=Universe User Group 2025')).toBeVisible({ timeout: 10000 })
   })
 
-  test('should display event details in cards', async ({ page }) => {
+  test('should display event details in cards', async ({ page, mockData }) => {
+    // Explicitly ensure we have the default data for this test
+    mockData.resetToDefaults()
+    
     await auth.loginAsLuke()
     await page.goto('/events')
     
@@ -64,8 +74,11 @@ test.describe('Event Management - Events List', () => {
     await expect(page).toHaveURL(/\/events\/\d+/)
   })
 
-    test('should show loading state while fetching events', async ({ page, mockData }) => {
+  test('should show loading state while fetching events', async ({ page, mockData }) => {
+    // This test modifies mock data, so ensure clean state first
+    mockData.resetToDefaults()
     mockData.setEvents([]) // Empty list to show loading state
+    
     await auth.loginAsLuke()
     
     // Slow down network to catch loading state
@@ -79,11 +92,14 @@ test.describe('Event Management - Events List', () => {
     // Should show loading indicator
     await expect(page.locator('.v-progress-circular').first()).toBeVisible()
     
-    // Clean up route handlers
+    // Clean up route handlers AND restore mock data
     await page.unrouteAll({ behavior: 'ignoreErrors' })
+    mockData.resetToDefaults() // Restore default data immediately after test
   })
 
   test('should handle empty events list', async ({ page, mockData }) => {
+    // This test modifies mock data, so ensure clean state first
+    mockData.resetToDefaults()
     // Clear all events
     mockData.setEvents([])
     
@@ -92,6 +108,9 @@ test.describe('Event Management - Events List', () => {
     
     // Should show empty state
     await expect(page.locator('text=No events found')).toBeVisible({ timeout: 10000 })
+    
+    // Restore default data immediately after test
+    mockData.resetToDefaults()
   })
 })
 
