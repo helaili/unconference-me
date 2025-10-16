@@ -15,12 +15,20 @@ const users = ref<User[]>([])
 const isLoading = ref(false)
 const error = ref<string | null>(null)
 const showAddDialog = ref(false)
+const showEditDialog = ref(false)
 const showCsvDialog = ref(false)
 const showLinkDialog = ref(false)
 const selectedUser = ref<User | null>(null)
 const generatedLink = ref('')
 
 const newUser = reactive({
+  firstname: '',
+  lastname: '',
+  email: '',
+  role: 'Participant' as 'Admin' | 'Organizer' | 'Participant'
+})
+
+const editUser = reactive({
   firstname: '',
   lastname: '',
   email: '',
@@ -97,6 +105,33 @@ async function copyLink() {
     await navigator.clipboard.writeText(generatedLink.value)
   } catch (e) {
     console.error('Failed to copy link:', e)
+  }
+}
+
+// Open edit dialog
+function openEditDialog(user: User) {
+  editUser.firstname = user.firstname
+  editUser.lastname = user.lastname
+  editUser.email = user.email
+  editUser.role = user.role || 'Participant'
+  showEditDialog.value = true
+}
+
+// Update user
+async function updateUser() {
+  try {
+    await $fetch(`/api/users/${encodeURIComponent(editUser.email)}`, {
+      method: 'PUT',
+      body: {
+        firstname: editUser.firstname,
+        lastname: editUser.lastname,
+        role: editUser.role
+      }
+    })
+    showEditDialog.value = false
+    await loadUsers()
+  } catch (e: any) {
+    error.value = e?.data?.message || 'Failed to update user'
   }
 }
 
@@ -179,6 +214,15 @@ const userItems = computed(() => {
                     size="small"
                     color="primary"
                     variant="text"
+                    @click="openEditDialog(item.user)"
+                  >
+                    <v-icon>mdi-pencil</v-icon>
+                    <span v-if="!$vuetify.display.smAndDown">Edit</span>
+                  </v-btn>
+                  <v-btn
+                    size="small"
+                    color="primary"
+                    variant="text"
                     @click="generateLink(item.user)"
                   >
                     <v-icon>mdi-link</v-icon>
@@ -245,6 +289,58 @@ const userItems = computed(() => {
             @click="addUser"
           >
             Add
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Edit User Dialog -->
+    <v-dialog v-model="showEditDialog" :max-width="$vuetify.display.smAndDown ? '100%' : '500'">
+      <v-card>
+        <v-card-title>Edit User</v-card-title>
+        <v-card-text>
+          <v-text-field
+            v-model="editUser.firstname"
+            label="First Name"
+            required
+          />
+          <v-text-field
+            v-model="editUser.lastname"
+            label="Last Name"
+            required
+          />
+          <v-text-field
+            v-model="editUser.email"
+            label="Email"
+            type="email"
+            readonly
+            disabled
+            hint="Email cannot be changed"
+            persistent-hint
+          />
+          <v-select
+            v-model="editUser.role"
+            label="Role"
+            :items="['Admin', 'Organizer', 'Participant']"
+            required
+          />
+        </v-card-text>
+        <v-card-actions class="flex-column flex-sm-row">
+          <v-spacer />
+          <v-btn
+            variant="text"
+            :block="$vuetify.display.smAndDown"
+            class="mb-2 mb-sm-0"
+            @click="showEditDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            :block="$vuetify.display.smAndDown"
+            @click="updateUser"
+          >
+            Update
           </v-btn>
         </v-card-actions>
       </v-card>
