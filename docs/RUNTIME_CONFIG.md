@@ -51,19 +51,16 @@ runtimeConfig: {
 
 ### In Services (Server-Side)
 
-```typescript
-import { useRuntimeConfig } from '#imports'
+**Note**: Services should use `process.env` directly, not `useRuntimeConfig()`. See the "Special Cases" section below for details.
 
+```typescript
 export class MyService extends BaseService<MyEntity> {
   someMethod() {
-    const config = useRuntimeConfig()
+    // Services use process.env directly for Azure Static Web Apps compatibility
+    const appEnv = process.env.APP_ENV
+    const dbConnection = process.env.COSMODB_PRIMARY_CONNECTION_STRING
     
-    // Access server-only config
-    const appEnv = config.appEnv
-    const dbConnection = config.cosmosdb.connectionString
-    
-    // Access public config
-    const eventName = config.public.eventName
+    // Environment variables are still validated and typed through nuxt.config.ts
   }
 }
 ```
@@ -123,28 +120,51 @@ declare module '@nuxt/schema' {
 
 ## Migration Guide
 
-### Before (using process.env)
+### In API Routes and Request Handlers
+
+#### Before (using process.env)
 
 ```typescript
-const appEnv = process.env.APP_ENV
-const connectionString = process.env.COSMODB_PRIMARY_CONNECTION_STRING
-const databaseName = process.env.COSMODB_DATABASE || 'unconference-me'
+export default defineEventHandler(async (event) => {
+  const appEnv = process.env.APP_ENV
+  const eventName = process.env.EVENT_NAME
+  return { appEnv, eventName }
+})
 ```
 
-### After (using runtimeConfig)
+#### After (using runtimeConfig)
 
 ```typescript
-const config = useRuntimeConfig()
-const appEnv = config.appEnv
-const connectionString = config.cosmosdb.connectionString
-const databaseName = config.cosmosdb.database
+export default defineEventHandler(async (event) => {
+  const config = useRuntimeConfig()
+  const appEnv = config.appEnv
+  const eventName = config.public.eventName
+  return { appEnv, eventName }
+})
 ```
+
+### In Services
+
+**Services continue to use `process.env`** for Azure Static Web Apps compatibility. No migration needed.
 
 ## Special Cases
 
+### Services (BaseService and derived classes)
+
+**IMPORTANT**: Services use `process.env` instead of `useRuntimeConfig()` because:
+
+1. Services are instantiated as **singleton instances** at module initialization time
+2. This happens **before the Nuxt context is available**
+3. `useRuntimeConfig()` can only be called within the Nuxt context (during request handling)
+4. This is especially critical for **Azure Static Web Apps** where the Nuxt instance may not be available during service initialization
+
+The error `[nuxt] instance unavailable` in production occurs when trying to use `useRuntimeConfig()` outside the Nuxt context.
+
+**Solution**: Services use `process.env` directly with lazy initialization. The CosmosDB client is only initialized when actually needed (first database operation), not during service construction.
+
 ### Logger Utility
 
-The logger (`utils/logger.ts`) still uses `process.env` directly because it's initialized at build time before runtime config is available. This is documented in the file and is the correct approach.
+The logger (`utils/logger.ts`) uses `process.env` directly because it's initialized at build time before runtime config is available. This is documented in the file and is the correct approach.
 
 ### Nuxt Config File
 

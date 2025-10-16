@@ -5,7 +5,12 @@ import logger from '../utils/logger'
  * Base Service Class that handles both mock data and CosmosDB
  * 
  * This service automatically determines whether to use mock data or CosmosDB
- * based on the APP_ENV runtime configuration.
+ * based on the APP_ENV environment variable.
+ * 
+ * Note: We use process.env instead of useRuntimeConfig() because services are
+ * instantiated as singletons at module initialization time, before the Nuxt
+ * context is available. This is especially important for Azure Static Web Apps
+ * where the Nuxt instance may not be available during service initialization.
  */
 export abstract class BaseService<T extends { id: string }> {
   protected abstract readonly containerName: string
@@ -15,18 +20,16 @@ export abstract class BaseService<T extends { id: string }> {
   private database?: Database
   private container?: Container
   private isInitialized = false
-
-  constructor() {
-    this.initializeCosmosClient()
-  }
+  private clientInitialized = false
 
   private initializeCosmosClient(): void {
-    const config = useRuntimeConfig()
-    const appEnv = config.appEnv
+    if (this.clientInitialized) return
+    
+    const appEnv = process.env.APP_ENV
     
     // Only initialize CosmosDB client for staging and production environments
     if (appEnv === 'staging' || appEnv === 'production') {
-      const connectionString = config.cosmosdb.connectionString
+      const connectionString = process.env.COSMODB_PRIMARY_CONNECTION_STRING
       
       if (!connectionString) {
         logger.error('COSMODB_PRIMARY_CONNECTION_STRING environment variable is required for staging/production')
@@ -34,18 +37,24 @@ export abstract class BaseService<T extends { id: string }> {
       }
 
       this.client = new CosmosClient(connectionString)
+      this.clientInitialized = true
       logger.info(`Initialized CosmosDB client for environment: ${appEnv}`)
     } else {
+      this.clientInitialized = true
       logger.info(`Using mock data for environment: ${appEnv || 'development'}`)
     }
   }
 
   private async ensureContainer(): Promise<void> {
-    if (this.isInitialized || !this.client) return
+    if (this.isInitialized) return
+    
+    // Initialize client if not already done
+    this.initializeCosmosClient()
+    
+    if (!this.client) return
 
     try {
-      const config = useRuntimeConfig()
-      const databaseName = config.cosmosdb.database
+      const databaseName = process.env.COSMODB_DATABASE || 'unconference-me'
       
       // Get or create database
       const { database } = await this.client.databases.createIfNotExists({
@@ -69,8 +78,7 @@ export abstract class BaseService<T extends { id: string }> {
   }
 
   protected async isUsingCosmosDB(): Promise<boolean> {
-    const config = useRuntimeConfig()
-    const appEnv = config.appEnv
+    const appEnv = process.env.APP_ENV
     return appEnv === 'staging' || appEnv === 'production'
   }
 
