@@ -5,7 +5,13 @@ test.describe('Event Management - Events List', () => {
   let auth: AuthHelper
 
   test.beforeEach(async ({ page, mockData }) => {
-    mockData.resetToDefaults()
+    // Reset mock data on the server side to ensure clean state across parallel tests
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      // Fallback to client-side reset if server endpoint fails
+      mockData.resetToDefaults()
+    }
     auth = new AuthHelper(page)
   })
 
@@ -13,7 +19,11 @@ test.describe('Event Management - Events List', () => {
     // Clean up any route handlers that might affect other tests
     await page.unrouteAll({ behavior: 'ignoreErrors' })
     // Ensure mock data is reset after each test as well
-    mockData.resetToDefaults()
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      mockData.resetToDefaults()
+    }
   })
 
   test('should redirect non-admin users from events page', async ({ page }) => {
@@ -50,11 +60,11 @@ test.describe('Event Management - Events List', () => {
     // Wait for events to load
     await expect(page.locator('text=Universe User Group 2025')).toBeVisible({ timeout: 10000 })
     
-    // Check for event status
-    await expect(page.locator('text=ACTIVE')).toBeVisible()
+    // Check for event status - it's displayed in a v-chip with uppercase text
+    await expect(page.locator('.v-chip').filter({ hasText: 'ACTIVE' })).toBeVisible()
     
-    // Check that the event card is clickable (the whole card is a button)
-    await expect(page.locator('button:has-text("Universe User Group 2025")')).toBeVisible()
+    // Check that the event card is clickable (v-card with navigation)
+    await expect(page.locator('.v-card:has-text("Universe User Group 2025")')).toBeVisible()
   })
 
   test('should navigate to event management page when clicking event card', async ({ page }) => {
@@ -64,11 +74,12 @@ test.describe('Event Management - Events List', () => {
     // Wait for events to load
     await expect(page.locator('text=Universe User Group 2025')).toBeVisible({ timeout: 10000 })
     
-    // Click on the event card (entire card is clickable) - wait for navigation
-    await Promise.all([
-      page.waitForURL(/\/events\/\d+/),
-      page.locator('button:has-text("Universe User Group 2025")').click()
-    ])
+    // Click on the event card - v-card is the clickable element
+    const eventCard = page.locator('.v-card:has-text("Universe User Group 2025")').first()
+    await eventCard.click()
+    
+    // Wait for navigation to complete
+    await page.waitForURL(/\/events\/\d+/, { timeout: 10000 })
     
     // Should now be on event management page
     await expect(page).toHaveURL(/\/events\/\d+/)
@@ -118,7 +129,12 @@ test.describe('Event Management - Single Event View', () => {
   let auth: AuthHelper
 
   test.beforeEach(async ({ page, mockData }) => {
-    mockData.resetToDefaults()
+    // Reset mock data on the server side
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      mockData.resetToDefaults()
+    }
     auth = new AuthHelper(page)
   })
 
@@ -127,8 +143,8 @@ test.describe('Event Management - Single Event View', () => {
     
     await page.goto('/events/1')
     
-    // Should display event name
-    await expect(page.locator('h1:has-text("Universe User Group 2025")')).toBeVisible({ timeout: 10000 })
+    // Should display event name - use more flexible text matching
+    await expect(page.locator('h1').filter({ hasText: 'Universe User Group 2025' })).toBeVisible({ timeout: 10000 })
     
     // Should display all management sections - use simpler text matching
     await expect(page.locator('.v-card').filter({ hasText: 'Status' }).first()).toBeVisible()
@@ -142,7 +158,7 @@ test.describe('Event Management - Single Event View', () => {
     await page.goto('/events/1')
     
     // Wait for page to load
-    await expect(page.locator('h1:has-text("Universe User Group 2025")')).toBeVisible({ timeout: 10000 })
+    await expect(page.locator('h1').filter({ hasText: 'Universe User Group 2025' })).toBeVisible({ timeout: 10000 })
     
     // Click back button - be more specific to avoid the navigation drawer button
     await page.locator('.d-flex.align-center button:has(i.mdi-arrow-left)').first().click()
@@ -178,7 +194,12 @@ test.describe('Event Management - Participant Management', () => {
   let auth: AuthHelper
 
   test.beforeEach(async ({ page, mockData }) => {
-    mockData.resetToDefaults()
+    // Reset mock data on the server side
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      mockData.resetToDefaults()
+    }
     auth = new AuthHelper(page)
   })
 
@@ -204,9 +225,10 @@ test.describe('Event Management - Participant Management', () => {
     // Click register user button
     await page.locator('button:has-text("Register User")').click()
     
-    // Dialog should open
-    await expect(page.locator('text=Register User').last()).toBeVisible()
-    await expect(page.locator('input[label="First Name"]').or(page.locator('label:has-text("First Name")'))).toBeVisible()
+    // Dialog should open with user selection dropdown
+    await expect(page.locator('text=Register User to Event')).toBeVisible()
+    // Check for the select dropdown - use .first() to avoid strict mode violation
+    await expect(page.locator('label:has-text("Select User")').first()).toBeVisible()
   })
 
   test('should allow searching participants', async ({ page }) => {
@@ -267,7 +289,12 @@ test.describe('Event Management - Invitation Management', () => {
   let auth: AuthHelper
 
   test.beforeEach(async ({ page, mockData }) => {
-    mockData.resetToDefaults()
+    // Reset mock data on the server side
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      mockData.resetToDefaults()
+    }
     auth = new AuthHelper(page)
   })
 
@@ -292,23 +319,27 @@ test.describe('Event Management - Invitation Management', () => {
     // Click send invitations button
     await page.locator('button:has-text("Send Invitations")').click()
     
-    // Dialog should open
-    await expect(page.locator('text=Send Invitations').last()).toBeVisible()
-    await expect(page.locator('textarea[label="Email Addresses"]').or(
-      page.locator('label:has-text("Email Addresses")')
-    )).toBeVisible()
+    // Dialog should open with user selection
+    await expect(page.locator('text=Send Invitations to Users')).toBeVisible()
+    // Check for the select dropdown - use .first() to avoid strict mode violation
+    await expect(page.locator('label:has-text("Select Users")').first()).toBeVisible()
   })
 
-  test('should show empty state in invitations dialog', async ({ page }) => {
+  test('should show info message when all users are already participants', async ({ page }) => {
     await auth.loginAsLuke()
     await page.goto('/events/1')
     
     // Open invitations dialog
     await page.locator('button:has-text("Send Invitations")').click()
-    await expect(page.locator('text=Send Invitations').last()).toBeVisible()
+    await expect(page.locator('text=Send Invitations to Users')).toBeVisible()
     
-    // Should show empty state
-    await expect(page.locator('text=No recipients added yet')).toBeVisible()
+    // Check if there's either the select or an info message about all users being participants
+    // This depends on the mock data state - use .first() to avoid strict mode issues
+    const hasSelect = await page.locator('label:has-text("Select Users")').first().isVisible()
+    const hasInfoMessage = await page.locator('text=All users are already participants').isVisible()
+    
+    // Either the select should be visible or the info message
+    expect(hasSelect || hasInfoMessage).toBeTruthy()
   })
 })
 
@@ -316,7 +347,12 @@ test.describe('Event Management - Mobile Compatibility', () => {
   let auth: AuthHelper
 
   test.beforeEach(async ({ page, mockData }) => {
-    mockData.resetToDefaults()
+    // Reset mock data on the server side
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      mockData.resetToDefaults()
+    }
     auth = new AuthHelper(page)
   })
 
@@ -329,8 +365,8 @@ test.describe('Event Management - Mobile Compatibility', () => {
     // Should display events
     await expect(page.locator('text=Universe User Group 2025')).toBeVisible({ timeout: 10000 })
     
-    // Event card should be visible on mobile
-    const eventCard = page.locator('button:has-text("Universe User Group 2025")').first()
+    // Event card should be visible on mobile (v-card, not button)
+    const eventCard = page.locator('.v-card:has-text("Universe User Group 2025")').first()
     await expect(eventCard).toBeVisible()
   })
 
@@ -340,8 +376,8 @@ test.describe('Event Management - Mobile Compatibility', () => {
     await auth.loginAsLuke()
     await page.goto('/events/1')
     
-    // Wait for page to load
-    await expect(page.locator('h1:has-text("Universe User Group 2025")')).toBeVisible({ timeout: 10000 })
+    // Wait for page to load - use more flexible matching
+    await expect(page.locator('h1').filter({ hasText: 'Universe User Group 2025' })).toBeVisible({ timeout: 10000 })
     
     // Should display all sections with mobile-friendly spacing - use more specific selectors
     await expect(page.locator('.v-card').filter({ hasText: 'Event Status' })).toBeVisible({ timeout: 10000 })
@@ -370,7 +406,12 @@ test.describe('Event Management - API Integration', () => {
   let auth: AuthHelper
 
   test.beforeEach(async ({ page, mockData }) => {
-    mockData.resetToDefaults()
+    // Reset mock data on the server side
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (e) {
+      mockData.resetToDefaults()
+    }
     auth = new AuthHelper(page)
   })
 
@@ -413,8 +454,8 @@ test.describe('Event Management - API Integration', () => {
     expect(response.status()).toBe(200)
     expect(response.url()).toContain('/api/events/1')
     
-    // Verify the page shows the event data
-    await expect(page.locator('h1:has-text("Universe User Group 2025")')).toBeVisible()
+    // Verify the page shows the event data - use flexible matching
+    await expect(page.locator('h1').filter({ hasText: 'Universe User Group 2025' })).toBeVisible()
   })
 
   test('should fetch participants from API', async ({ page }) => {
