@@ -144,12 +144,9 @@ const userItems = computed(() => {
         <v-card>
           <v-card-title class="d-flex justify-space-between align-center flex-wrap">
             <span :class="$vuetify.display.smAndDown ? 'text-h6' : 'text-h5'">User Management</span>
-            <div :class="$vuetify.display.smAndDown ? 'mt-2 w-100' : ''">
+            <div class="d-flex ga-2" :class="$vuetify.display.smAndDown ? 'mt-2' : ''">
               <v-btn
                 color="primary"
-                :block="$vuetify.display.smAndDown"
-                class="mr-2"
-                :class="$vuetify.display.smAndDown ? 'mb-2' : ''"
                 @click="showAddDialog = true"
               >
                 <v-icon left>mdi-account-plus</v-icon>
@@ -157,7 +154,6 @@ const userItems = computed(() => {
               </v-btn>
               <v-btn
                 color="secondary"
-                :block="$vuetify.display.smAndDown"
                 @click="showCsvDialog = true"
               >
                 <v-icon left>mdi-file-upload</v-icon>
