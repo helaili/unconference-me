@@ -153,21 +153,7 @@ onMounted(async () => {
       You must be registered as a participant for this event to submit topics.
     </v-alert>
     
-    <!-- Topics List -->
-    <TopicList
-      :topics="topics"
-      :user-participant-id="participantId"
-      :is-admin="isAdmin"
-      :loading="loading"
-      :ranking="ranking"
-      :ranking-enabled="rankingEnabled"
-      @edit="handleEdit"
-      @delete="handleDelete"
-      @like="handleLikeTopic"
-      @unlike="handleUnlikeTopic"
-      @change-status="handleChangeStatus"
-    />
-    
+
     <!-- Delete Confirmation Dialog -->
     <v-dialog v-model="deleteDialog" max-width="500">
       <v-card>
