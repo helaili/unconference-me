@@ -25,7 +25,7 @@ export default defineEventHandler(async (event) => {
     // Remove passwords from response
     const sanitizedUsers = users.map(u => ({
       ...u,
-      password: undefined
+      password: u.password ? '****' : undefined
     }))
     
     return { 
