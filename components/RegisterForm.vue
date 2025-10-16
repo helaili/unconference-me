@@ -171,7 +171,7 @@
                 data-testid="register-submit-button"
                 color="primary" 
                 :block="$vuetify.display.smAndDown"
-                class="mb-4"
+                class="mb-4 register-submit-button"
             >
                 {{ useGitHubAuth ? 'Register with GitHub' : 'Register' }}
             </v-btn>
@@ -194,3 +194,12 @@
         </div>
     </v-card>
 </template>
+
+<style scoped>
+@media (max-width: 599px) {
+  .register-submit-button {
+    width: 100% !important;
+    min-width: 100% !important;
+  }
+}
+</style>
