@@ -5,7 +5,7 @@ import logger from '../utils/logger'
  * Base Service Class that handles both mock data and CosmosDB
  * 
  * This service automatically determines whether to use mock data or CosmosDB
- * based on the APP_ENV environment variable.
+ * based on the APP_ENV runtime configuration.
  */
 export abstract class BaseService<T extends { id: string }> {
   protected abstract readonly containerName: string
@@ -21,11 +21,12 @@ export abstract class BaseService<T extends { id: string }> {
   }
 
   private initializeCosmosClient(): void {
-    const appEnv = process.env.APP_ENV
+    const config = useRuntimeConfig()
+    const appEnv = config.appEnv
     
     // Only initialize CosmosDB client for staging and production environments
     if (appEnv === 'staging' || appEnv === 'production') {
-      const connectionString = process.env.COSMODB_PRIMARY_CONNECTION_STRING
+      const connectionString = config.cosmosdb.connectionString
       
       if (!connectionString) {
         logger.error('COSMODB_PRIMARY_CONNECTION_STRING environment variable is required for staging/production')
@@ -43,7 +44,8 @@ export abstract class BaseService<T extends { id: string }> {
     if (this.isInitialized || !this.client) return
 
     try {
-      const databaseName = process.env.COSMODB_DATABASE || 'unconference-me'
+      const config = useRuntimeConfig()
+      const databaseName = config.cosmosdb.database
       
       // Get or create database
       const { database } = await this.client.databases.createIfNotExists({
@@ -67,7 +69,8 @@ export abstract class BaseService<T extends { id: string }> {
   }
 
   protected async isUsingCosmosDB(): Promise<boolean> {
-    const appEnv = process.env.APP_ENV
+    const config = useRuntimeConfig()
+    const appEnv = config.appEnv
     return appEnv === 'staging' || appEnv === 'production'
   }
 

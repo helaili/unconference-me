@@ -107,6 +107,13 @@ export default defineNuxtConfig({
     },
     topicsFilePath: process.env.NUXT_TOPICS_FILE_PATH,
     usersFilePath: process.env.NUXT_USERS_FILE_PATH,
+    // Server-side only config
+    appEnv: process.env.APP_ENV || 'development',
+    logLevel: process.env.UNCONFERENCE_ME_LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+    cosmosdb: {
+      connectionString: process.env.COSMODB_PRIMARY_CONNECTION_STRING,
+      database: process.env.COSMODB_DATABASE || 'unconference-me'
+    },
     public: {
       devMode: process.env.APP_ENV === 'development',
       authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
