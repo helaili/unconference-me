@@ -51,7 +51,10 @@ export class StagingDatabasePopulator {
       { id: 'users', partitionKey: '/email' },
       { id: 'events', partitionKey: '/id' },
       { id: 'participants', partitionKey: '/eventId' },
-      { id: 'assignments', partitionKey: '/eventId' }
+      { id: 'assignments', partitionKey: '/eventId' },
+      { id: 'topics', partitionKey: '/eventId' },
+      { id: 'organizers', partitionKey: '/eventId' },
+      { id: 'topicRankings', partitionKey: '/eventId' }
     ]
 
     for (const containerDef of containers) {
@@ -78,6 +81,9 @@ export class StagingDatabasePopulator {
       await this.populateUsers()
       await this.populateEvents()
       await this.populateParticipants()
+      await this.populateTopics()
+      await this.populateOrganizers()
+      await this.populateTopicRankings()
       await this.populateAssignments()
       
       logger.info('Staging database population completed successfully')
@@ -96,8 +102,8 @@ export class StagingDatabasePopulator {
     for (const user of users) {
       try {
         await container.items.upsert({
-          id: user.email, // Use email as document id
-          ...user
+          ...user,
+          id: user.email // Use email as document id (override the user.id if needed)
         })
         logger.debug(`User '${user.email}' persisted to staging database`)
       } catch (error) {
@@ -151,6 +157,72 @@ export class StagingDatabasePopulator {
     }
     
     logger.info('Participants persisted to database successfully')
+  }
+
+  private async populateTopics(): Promise<void> {
+    const container = this.database.container('topics')
+    const topics = mockData.getTopics()
+    
+    logger.info(`Populating ${topics.length} topics into CosmosDB`)
+    
+    for (const topic of topics) {
+      try {
+        await container.items.upsert({
+          ...topic,
+          id: topic.id
+        })
+        logger.debug(`Topic '${topic.id}' persisted to staging database`)
+      } catch (error) {
+        logger.error(`Failed to persist topic '${topic.id}' to database`, { error })
+        throw error
+      }
+    }
+    
+    logger.info('Topics persisted to database successfully')
+  }
+
+  private async populateOrganizers(): Promise<void> {
+    const container = this.database.container('organizers')
+    const organizers = mockData.getOrganizers()
+    
+    logger.info(`Populating ${organizers.length} organizers into CosmosDB`)
+    
+    for (const organizer of organizers) {
+      try {
+        await container.items.upsert({
+          ...organizer,
+          id: organizer.id
+        })
+        logger.debug(`Organizer '${organizer.id}' persisted to staging database`)
+      } catch (error) {
+        logger.error(`Failed to persist organizer '${organizer.id}' to database`, { error })
+        throw error
+      }
+    }
+    
+    logger.info('Organizers persisted to database successfully')
+  }
+
+  private async populateTopicRankings(): Promise<void> {
+    const container = this.database.container('topicRankings')
+    const rankings = mockData.getTopicRankings()
+    
+    logger.info(`Populating ${rankings.length} topic rankings into CosmosDB`)
+    
+    for (const ranking of rankings) {
+      try {
+        await container.items.upsert({
+          ...ranking,
+          id: ranking.id
+        })
+        logger.debug(`Topic ranking '${ranking.id}' persisted to staging database`)
+      } catch (error) {
+        logger.error(`Failed to persist topic ranking '${ranking.id}' to database`, { error })
+        throw error
+      }
+    }
+    
+    logger.info('Topic rankings persisted to database successfully')
   }
 
   private async populateAssignments(): Promise<void> {

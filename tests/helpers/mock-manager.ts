@@ -73,7 +73,7 @@ export class MockDataManager {
     // This allows tests to run synchronously while still using secure hashed passwords
     const hashedPassword = '$2b$12$LGtR/rq3C67ODqfZiN.5Z.6JAuj4VBO7n8J4hWAtDbPLVD/hjkt5G' // "changeme"
     
-    return [
+    const users: User[] = [
       {
         id: "luke@rebels.com",
         firstname: "Luke",
@@ -115,6 +115,45 @@ export class MockDataManager {
         updatedAt: new Date('2024-01-01')
       }
     ]
+
+    // Generate 145 additional users (to reach ~150 total, accounting for 130 participants + 15 organizers with some overlap)
+    const firstNames = [
+      'Emma', 'Liam', 'Olivia', 'Noah', 'Ava', 'Ethan', 'Sophia', 'Mason', 'Isabella', 'William',
+      'Mia', 'James', 'Charlotte', 'Benjamin', 'Amelia', 'Lucas', 'Harper', 'Henry', 'Evelyn', 'Alexander',
+      'Abigail', 'Michael', 'Emily', 'Daniel', 'Elizabeth', 'Matthew', 'Sofia', 'Jackson', 'Avery', 'Sebastian',
+      'Ella', 'Jack', 'Scarlett', 'Aiden', 'Grace', 'Owen', 'Chloe', 'Samuel', 'Victoria', 'David',
+      'Madison', 'Joseph', 'Luna', 'Carter', 'Penelope', 'Wyatt', 'Layla', 'John', 'Riley', 'Dylan'
+    ]
+    
+    const lastNames = [
+      'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez',
+      'Hernandez', 'Lopez', 'Gonzalez', 'Wilson', 'Anderson', 'Thomas', 'Taylor', 'Moore', 'Jackson', 'Martin',
+      'Lee', 'Perez', 'Thompson', 'White', 'Harris', 'Sanchez', 'Clark', 'Ramirez', 'Lewis', 'Robinson',
+      'Walker', 'Young', 'Allen', 'King', 'Wright', 'Scott', 'Torres', 'Nguyen', 'Hill', 'Flores',
+      'Green', 'Adams', 'Nelson', 'Baker', 'Hall', 'Rivera', 'Campbell', 'Mitchell', 'Carter', 'Roberts'
+    ]
+
+    for (let i = 5; i <= 149; i++) {
+      const firstName = firstNames[i % firstNames.length]!
+      const lastName = lastNames[Math.floor(i / firstNames.length) % lastNames.length]!
+      const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${i}@github.com`
+      
+      // First 15 additional users are organizers, rest are participants
+      const role = i <= 19 ? 'Organizer' : 'Participant'
+      
+      users.push({
+        id: email,
+        firstname: firstName,
+        lastname: lastName,
+        email,
+        password: hashedPassword,
+        role,
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
+      })
+    }
+
+    return users
   }
 
   getUsers(): User[] {
@@ -173,11 +212,11 @@ export class MockDataManager {
         updatedAt: new Date('2025-10-01T00:00:00Z'),
         settings: {
           enableTopicRanking: true,
-          minTopicsToRank: 3,
+          minTopicsToRank: 6,
           enableAutoAssignment: false,
           maxTopicsPerParticipant: 3,
           requireApproval: false,
-          maxParticipants: 100
+          maxParticipants: 150
         }
       },
       {
@@ -249,7 +288,7 @@ export class MockDataManager {
   // ==================== PARTICIPANTS ====================
 
   private getDefaultParticipants(): Participant[] {
-    return [
+    const participants: Participant[] = [
       {
         id: 'participant-luke',
         eventId: '1',
@@ -261,42 +300,6 @@ export class MockDataManager {
         registrationDate: new Date('2025-08-01T00:00:00Z'),
         createdAt: new Date('2025-08-01T00:00:00Z'),
         updatedAt: new Date('2025-08-01T00:00:00Z')
-      },
-      {
-        id: 'participant-1',
-        eventId: '1',
-        userId: 'user-1',
-        email: 'john.doe@example.com',
-        firstname: 'John',
-        lastname: 'Doe',
-        status: 'confirmed',
-        registrationDate: new Date('2025-09-01T00:00:00Z'),
-        createdAt: new Date('2025-09-01T00:00:00Z'),
-        updatedAt: new Date('2025-09-01T00:00:00Z')
-      },
-      {
-        id: 'participant-2',
-        eventId: '1',
-        userId: 'user-2',
-        email: 'jane.smith@example.com',
-        firstname: 'Jane',
-        lastname: 'Smith',
-        status: 'checked-in',
-        registrationDate: new Date('2025-09-02T00:00:00Z'),
-        createdAt: new Date('2025-09-02T00:00:00Z'),
-        updatedAt: new Date('2025-10-01T00:00:00Z')
-      },
-      {
-        id: 'participant-3',
-        eventId: '1',
-        userId: 'user-3',
-        email: 'bob.johnson@example.com',
-        firstname: 'Bob',
-        lastname: 'Johnson',
-        status: 'registered',
-        registrationDate: new Date('2025-09-05T00:00:00Z'),
-        createdAt: new Date('2025-09-05T00:00:00Z'),
-        updatedAt: new Date('2025-09-05T00:00:00Z')
       },
       {
         id: 'participant-darth',
@@ -311,6 +314,34 @@ export class MockDataManager {
         updatedAt: new Date('2025-09-06T00:00:00Z')
       }
     ]
+
+    const statuses: Array<'registered' | 'confirmed' | 'checked-in'> = ['registered', 'confirmed', 'checked-in']
+    
+    // Generate 128 more participants for event '1' (total 130)
+    // Using users 20-147 (128 users)
+    for (let i = 20; i <= 147; i++) {
+      const userEmail = this.getDefaultUsers()[i]?.email
+      if (!userEmail) continue
+      
+      const user = this.getDefaultUsers()[i]!
+      const status = statuses[i % 3]!
+      const daysAgo = Math.floor((i - 20) / 3) // Spread registrations over ~42 days
+      
+      participants.push({
+        id: `participant-${i}`,
+        eventId: '1',
+        userId: userEmail,
+        email: userEmail,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        status,
+        registrationDate: new Date(Date.UTC(2025, 8, 1) - daysAgo * 24 * 60 * 60 * 1000), // Starting from Sept 1
+        createdAt: new Date(Date.UTC(2025, 8, 1) - daysAgo * 24 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.UTC(2025, 8, 1) - daysAgo * 24 * 60 * 60 * 1000)
+      })
+    }
+
+    return participants
   }
 
   getParticipants(): Participant[] {
@@ -468,73 +499,80 @@ export class MockDataManager {
   // ==================== TOPICS ====================
 
   private getDefaultTopics(): Topic[] {
-    return [
-      {
-        id: 'topic-1',
-        eventId: '1',
-        title: 'GitHub Copilot Best Practices',
-        description: 'Discussion on how to effectively use GitHub Copilot in daily development workflow',
-        proposedBy: 'participant-1',
-        status: 'approved',
-        createdAt: new Date('2025-09-15T00:00:00Z'),
-        updatedAt: new Date('2025-09-15T00:00:00Z'),
-        metadata: {
-          tags: ['github', 'ai', 'productivity']
-        }
-      },
-      {
-        id: 'topic-2',
-        eventId: '1',
-        title: 'AI and the Future of Development',
-        description: 'Exploring how AI is transforming software development and what it means for developers',
-        proposedBy: 'participant-2',
-        status: 'approved',
-        createdAt: new Date('2025-09-16T00:00:00Z'),
-        updatedAt: new Date('2025-09-16T00:00:00Z'),
-        metadata: {
-          tags: ['ai', 'future', 'development']
-        }
-      },
-      {
-        id: 'topic-3',
-        eventId: '1',
-        title: 'Cloud Native Architecture Patterns',
-        description: 'Discussing modern cloud-native design patterns and best practices',
-        proposedBy: 'participant-1',
-        status: 'approved',
-        createdAt: new Date('2025-09-17T00:00:00Z'),
-        updatedAt: new Date('2025-09-17T00:00:00Z'),
-        metadata: {
-          tags: ['cloud', 'architecture', 'patterns']
-        }
-      },
-      {
-        id: 'topic-4',
-        eventId: '1',
-        title: 'DevSecOps in Practice',
-        description: 'Integrating security into the DevOps pipeline',
-        proposedBy: 'participant-3',
-        status: 'proposed',
-        createdAt: new Date('2025-09-18T00:00:00Z'),
-        updatedAt: new Date('2025-09-18T00:00:00Z'),
-        metadata: {
-          tags: ['security', 'devops']
-        }
-      },
-      {
-        id: 'topic-darth',
-        eventId: '1',
-        title: 'Darth Topic',
-        description: 'A topic created by Darth for testing',
-        proposedBy: 'participant-darth',
-        status: 'proposed',
-        createdAt: new Date('2025-09-19T00:00:00Z'),
-        updatedAt: new Date('2025-09-19T00:00:00Z'),
-        metadata: {
-          tags: ['test']
-        }
-      }
+    // 40 GitHub-related topics covering Actions, Copilot, Advanced Security, 
+    // enterprise management, developer experience, productivity, project management
+    const topicData = [
+      { title: 'GitHub Copilot Best Practices', description: 'Share tips and tricks for getting the most out of GitHub Copilot in daily development', tags: ['copilot', 'ai', 'productivity'] },
+      { title: 'Advanced GitHub Actions Workflows', description: 'Complex workflow patterns, reusable workflows, and CI/CD optimization strategies', tags: ['actions', 'ci-cd', 'automation'] },
+      { title: 'Code Security with GitHub Advanced Security', description: 'Leveraging CodeQL, secret scanning, and dependency review for secure code', tags: ['security', 'codeql', 'advanced-security'] },
+      { title: 'GitHub Enterprise Management at Scale', description: 'Managing large GitHub Enterprise deployments, policies, and user access', tags: ['enterprise', 'management', 'scale'] },
+      { title: 'Improving Developer Experience with GitHub', description: 'Tools, workflows, and practices that enhance developer productivity and satisfaction', tags: ['developer-experience', 'productivity'] },
+      { title: 'GitHub Projects for Agile Teams', description: 'Using GitHub Projects for sprint planning, backlog management, and team collaboration', tags: ['project-management', 'agile', 'planning'] },
+      { title: 'Copilot Chat: AI-Powered Code Reviews', description: 'Using Copilot Chat to improve code quality and perform intelligent code reviews', tags: ['copilot', 'code-review', 'ai'] },
+      { title: 'GitHub Actions Matrix Strategies', description: 'Running tests across multiple environments, OS versions, and configurations', tags: ['actions', 'testing', 'ci-cd'] },
+      { title: 'Secret Detection and Remediation', description: 'Preventing secrets in code and responding to secret scanning alerts', tags: ['security', 'secrets', 'advanced-security'] },
+      { title: 'GitHub Enterprise Cloud vs Server', description: 'Comparing deployment options and migration strategies for enterprise teams', tags: ['enterprise', 'cloud', 'server'] },
+      { title: 'Inner Source with GitHub', description: 'Building an inner source culture using GitHub collaboration features', tags: ['developer-experience', 'collaboration', 'culture'] },
+      { title: 'Automating Project Workflows', description: 'GitHub Actions + Projects automation for streamlined project management', tags: ['project-management', 'actions', 'automation'] },
+      { title: 'Copilot for Documentation', description: 'Using AI to generate, improve, and maintain technical documentation', tags: ['copilot', 'documentation', 'productivity'] },
+      { title: 'Deployment Protection Rules', description: 'Controlling deployments with required reviewers and wait timers', tags: ['actions', 'deployment', 'security'] },
+      { title: 'Dependency Review and Updates', description: 'Managing dependencies with Dependabot and dependency review', tags: ['security', 'dependencies', 'advanced-security'] },
+      { title: 'GitHub Enterprise Audit Logs', description: 'Monitoring and analyzing enterprise activity for compliance and security', tags: ['enterprise', 'audit', 'compliance'] },
+      { title: 'Custom GitHub Actions Development', description: 'Creating reusable GitHub Actions using JavaScript, Docker, or composite actions', tags: ['actions', 'development', 'automation'] },
+      { title: 'Measuring Developer Productivity', description: 'Metrics, insights, and analytics for understanding developer effectiveness', tags: ['productivity', 'metrics', 'developer-experience'] },
+      { title: 'Issue Templates and Forms', description: 'Standardizing issue creation with templates and structured forms', tags: ['project-management', 'issues', 'templates'] },
+      { title: 'Copilot Workspace Deep Dive', description: 'Exploring Copilot Workspace for end-to-end development workflows', tags: ['copilot', 'workspace', 'productivity'] },
+      { title: 'GitHub Actions Self-Hosted Runners', description: 'Deploying, scaling, and securing self-hosted runner infrastructure', tags: ['actions', 'runners', 'infrastructure'] },
+      { title: 'Code Scanning with Custom Queries', description: 'Writing custom CodeQL queries for organization-specific security rules', tags: ['security', 'codeql', 'advanced-security'] },
+      { title: 'GitHub Enterprise SAML and SSO', description: 'Configuring authentication and authorization for enterprise users', tags: ['enterprise', 'authentication', 'security'] },
+      { title: 'Pull Request Best Practices', description: 'Creating effective PRs, review processes, and merge strategies', tags: ['developer-experience', 'code-review', 'collaboration'] },
+      { title: 'GitHub Roadmaps and Planning', description: 'Long-term planning with GitHub Projects roadmaps and milestones', tags: ['project-management', 'planning', 'roadmap'] },
+      { title: 'Copilot Training and Adoption', description: 'Strategies for rolling out Copilot across development teams', tags: ['copilot', 'training', 'adoption'] },
+      { title: 'Continuous Deployment Strategies', description: 'Blue-green, canary, and progressive deployment patterns with Actions', tags: ['actions', 'deployment', 'ci-cd'] },
+      { title: 'Security Advisories and CVEs', description: 'Managing security vulnerabilities and coordinating disclosures', tags: ['security', 'vulnerabilities', 'advanced-security'] },
+      { title: 'GitHub Enterprise Backup and DR', description: 'Disaster recovery planning and backup strategies for GitHub Enterprise', tags: ['enterprise', 'backup', 'disaster-recovery'] },
+      { title: 'Monorepo Management with GitHub', description: 'Strategies for managing large monorepos, code ownership, and CODEOWNERS', tags: ['developer-experience', 'monorepo', 'management'] },
+      { title: 'Team Sync and Retrospectives', description: 'Using GitHub Discussions and Projects for team communication', tags: ['project-management', 'team', 'communication'] },
+      { title: 'Copilot for Testing', description: 'Generating unit tests, integration tests, and test fixtures with AI', tags: ['copilot', 'testing', 'productivity'] },
+      { title: 'GitHub Actions Caching Strategies', description: 'Optimizing workflow performance with effective caching', tags: ['actions', 'performance', 'optimization'] },
+      { title: 'Supply Chain Security', description: 'Securing the software supply chain with dependency graphs and SBOM', tags: ['security', 'supply-chain', 'advanced-security'] },
+      { title: 'Enterprise Migration Planning', description: 'Migrating to GitHub Enterprise from other platforms', tags: ['enterprise', 'migration', 'planning'] },
+      { title: 'Developer Onboarding Programs', description: 'Creating effective onboarding experiences for new developers', tags: ['developer-experience', 'onboarding', 'training'] },
+      { title: 'Automated Release Management', description: 'Release automation, changelog generation, and semantic versioning', tags: ['project-management', 'releases', 'automation'] },
+      { title: 'GitHub Copilot vs Other AI Tools', description: 'Comparing GitHub Copilot with alternative AI coding assistants', tags: ['copilot', 'ai', 'comparison'] },
+      { title: 'Multi-Platform Mobile CI/CD', description: 'Building iOS and Android apps with GitHub Actions', tags: ['actions', 'mobile', 'ci-cd'] },
+      { title: 'Zero Trust Security Architecture', description: 'Implementing zero trust principles in GitHub workflows and deployments', tags: ['security', 'zero-trust', 'architecture'] }
     ]
+
+    const topics: Topic[] = []
+    const participants = this.getDefaultParticipants()
+    
+    // Distribute topics among participants (some participants propose multiple topics)
+    for (let i = 0; i < 40; i++) {
+      const topicInfo = topicData[i]!
+      // Use participants 20-60 as proposers (first 40 participants after luke and darth)
+      const proposerIndex = 20 + (i % 40)
+      const proposerId = `participant-${proposerIndex}`
+      
+      const daysAgo = Math.floor(i / 2) // Topics proposed over ~20 days
+      const createdDate = new Date(Date.UTC(2025, 8, 5) - daysAgo * 24 * 60 * 60 * 1000)
+      
+      topics.push({
+        id: `topic-${i + 1}`,
+        eventId: '1',
+        title: topicInfo.title,
+        description: topicInfo.description,
+        proposedBy: proposerId,
+        status: 'approved',
+        createdAt: createdDate,
+        updatedAt: createdDate,
+        metadata: {
+          tags: topicInfo.tags
+        }
+      })
+    }
+
+    return topics
   }
 
   getTopics(): Topic[] {
@@ -655,33 +693,47 @@ export class MockDataManager {
   // ==================== ORGANIZERS ====================
 
   private getDefaultOrganizers(): Organizer[] {
-    return [
-      {
-        id: 'organizer-1',
+    const organizers: Organizer[] = []
+    const users = this.getDefaultUsers()
+    
+    // Create 15 organizers for event '1'
+    // Use the organizer users (indices 2, 5-19)
+    const organizerUserIndices = [2, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    
+    for (let i = 0; i < 15; i++) {
+      const userIndex = organizerUserIndices[i]!
+      const user = users[userIndex]!
+      const isOwner = i === 0 // First organizer is the owner
+      const isAdmin = i > 0 && i <= 5 // First 5 non-owner organizers are admins
+      
+      organizers.push({
+        id: `organizer-${i + 1}`,
         eventId: '1',
-        userId: 'user-org-1',
-        email: 'organizer@example.com',
-        firstname: 'Event',
-        lastname: 'Organizer',
-        role: 'owner',
+        userId: user.email,
+        email: user.email,
+        firstname: user.firstname,
+        lastname: user.lastname,
+        role: isOwner ? 'owner' : (isAdmin ? 'admin' : 'moderator'),
         status: 'active',
         createdAt: new Date('2025-01-01T00:00:00Z'),
         updatedAt: new Date('2025-01-01T00:00:00Z'),
         permissions: {
-          canEditEvent: true,
-          canDeleteEvent: true,
+          canEditEvent: isOwner || isAdmin,
+          canDeleteEvent: isOwner,
           canApproveParticipants: true,
-          canRemoveParticipants: true,
+          canRemoveParticipants: isOwner || isAdmin,
           canApproveTopics: true,
           canRejectTopics: true,
           canScheduleTopics: true,
           canManageAssignments: true,
-          canRunAutoAssignment: true,
+          canRunAutoAssignment: isOwner || isAdmin,
           canViewReports: true,
-          canExportData: true
+          canExportData: isOwner || isAdmin
         }
-      }
-    ]
+      })
+    }
+
+    return organizers
   }
 
   getOrganizers(): Organizer[] {
@@ -781,7 +833,53 @@ export class MockDataManager {
   // ==================== TOPIC RANKINGS ====================
 
   private getDefaultTopicRankings(): TopicRanking[] {
-    return []
+    const rankings: TopicRanking[] = []
+    const topics = this.getDefaultTopics()
+    const topicIds = topics.map(t => t.id)
+    
+    // Get all participants for event '1'
+    const participants = this.getDefaultParticipants().filter(p => p.eventId === '1')
+    
+    // 5 participants who haven't ranked (about 4% of 130)
+    const participantsWithoutRankings = new Set([
+      'participant-143', 'participant-144', 'participant-145', 'participant-146', 'participant-147'
+    ])
+    
+    for (const participant of participants) {
+      // Skip the participants who haven't ranked
+      if (participantsWithoutRankings.has(participant.id)) {
+        continue
+      }
+      
+      // Determine how many topics this participant will rank (minimum 6)
+      // Most rank 6-15 topics, some rank more
+      const numTopicsToRank = Math.min(
+        6 + Math.floor(Math.random() * 10), // 6-15 topics
+        topicIds.length
+      )
+      
+      // Shuffle and select random topics
+      const shuffledTopicIds = [...topicIds].sort(() => Math.random() - 0.5)
+      const rankedTopicIds = shuffledTopicIds.slice(0, numTopicsToRank)
+      
+      // Random date within the last 30 days
+      const daysAgo = Math.floor(Math.random() * 30)
+      const lastViewedDate = new Date(Date.UTC(2025, 9, 16) - daysAgo * 24 * 60 * 60 * 1000)
+      const lastRankedDate = new Date(lastViewedDate.getTime() + Math.random() * 24 * 60 * 60 * 1000)
+      
+      rankings.push({
+        id: `ranking-${participant.id}`,
+        participantId: participant.id,
+        eventId: '1',
+        rankedTopicIds,
+        lastViewedAt: lastViewedDate,
+        lastRankedAt: lastRankedDate,
+        createdAt: lastViewedDate,
+        updatedAt: lastRankedDate
+      })
+    }
+    
+    return rankings
   }
 
   getTopicRankings(): TopicRanking[] {

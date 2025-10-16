@@ -16,7 +16,7 @@ interface CosmosConfig {
  */
 export class ProductionDatabasePopulator {
   private client: CosmosClient
-  private database: Database
+  private database!: Database
   private config: CosmosConfig
 
   constructor(config: CosmosConfig) {
@@ -49,7 +49,10 @@ export class ProductionDatabasePopulator {
       { id: 'users', partitionKey: '/email' },
       { id: 'events', partitionKey: '/id' },
       { id: 'participants', partitionKey: '/eventId' },
-      { id: 'assignments', partitionKey: '/eventId' }
+      { id: 'assignments', partitionKey: '/eventId' },
+      { id: 'topics', partitionKey: '/eventId' },
+      { id: 'organizers', partitionKey: '/eventId' },
+      { id: 'topicRankings', partitionKey: '/eventId' }
     ]
 
     for (const containerDef of containers) {
@@ -98,8 +101,8 @@ export class ProductionDatabasePopulator {
     
     try {
       await container.items.upsert({
-        id: defaultEvent.id,
-        ...defaultEvent
+        ...defaultEvent,
+        id: defaultEvent.id
       })
       logger.info(`Default event '${defaultEvent.name}' added to production database`)
     } catch (error) {
@@ -159,12 +162,18 @@ async function populateProductionWithMockServices(): Promise<void> {
     const users = mockData.getUsers()
     const events = mockData.getEvents()
     const participants = mockData.getParticipants()
+    const topics = mockData.getTopics()
+    const organizers = mockData.getOrganizers()
+    const rankings = mockData.getTopicRankings()
     const assignments = mockData.getAssignments()
     
     logger.info(`Production mock data summary:`)
     logger.info(`- Users: ${users.length}`)
     logger.info(`- Events: ${events.length}`)
     logger.info(`- Participants: ${participants.length}`)
+    logger.info(`- Topics: ${topics.length}`)
+    logger.info(`- Organizers: ${organizers.length}`)
+    logger.info(`- Topic Rankings: ${rankings.length}`)
     logger.info(`- Assignments: ${assignments.length}`)
     
     logger.info('Production mock data from mock-manager is ready and validated')
