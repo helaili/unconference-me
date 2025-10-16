@@ -131,5 +131,18 @@ export default defineNuxtConfig({
         transformAssetUrls,
       },
     },
+    optimizeDeps: {
+      exclude: ['@azure/cosmos']
+    },
+    ssr: {
+      noExternal: ['@azure/cosmos']
+    },
+    define: {
+      // Make process.env available in client code when services are accidentally bundled
+      'process.env.APP_ENV': JSON.stringify(process.env.APP_ENV || 'development'),
+      'process.env.COSMODB_DATABASE': JSON.stringify(process.env.COSMODB_DATABASE || 'unconference-me'),
+      // These should never be exposed to client, but we define empty strings as fallback
+      'process.env.COSMODB_PRIMARY_CONNECTION_STRING': JSON.stringify(''),
+    }
   },
 })

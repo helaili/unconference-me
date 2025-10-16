@@ -7,10 +7,14 @@ import logger from '../utils/logger'
  * This service automatically determines whether to use mock data or CosmosDB
  * based on the APP_ENV environment variable.
  * 
- * Note: We use process.env instead of useRuntimeConfig() because services are
- * instantiated as singletons at module initialization time, before the Nuxt
- * context is available. This is especially important for Azure Static Web Apps
- * where the Nuxt instance may not be available during service initialization.
+ * Note: Services should only run on the server side. We use process.env directly
+ * instead of useRuntimeConfig() because services are instantiated as singletons at
+ * module initialization time, before the Nuxt context is available. This is especially
+ * important for Azure Static Web Apps where the Nuxt instance may not be available
+ * during service initialization.
+ * 
+ * The process.env variables are made available via Vite's define configuration in
+ * nuxt.config.ts to handle cases where service code is accidentally bundled for client.
  */
 export abstract class BaseService<T extends { id: string }> {
   protected abstract readonly containerName: string
