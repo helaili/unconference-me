@@ -29,7 +29,7 @@ export class MockDataInitializer {
       {
         id: 'darth@empire.com',
         firstname: "Darth",
-        lastname: "Vador", 
+        lastname: "Vader", 
         email: "darth@empire.com",
         password: hashedPassword,
         role: "Participant",

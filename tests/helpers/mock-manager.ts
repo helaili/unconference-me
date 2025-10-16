@@ -3,6 +3,7 @@ import type { Event } from '../../types/event'
 import type { Participant, ParticipantAssignment } from '../../types/participant'
 import type { Topic } from '../../types/topic'
 import type { Invitation } from '../../types/invitation'
+import type { TopicRanking } from '../../types/topicRanking'
 import type { Organizer } from '../../types/organizer'
 
 /**
@@ -20,6 +21,7 @@ export class MockDataManager {
   private _assignments: ParticipantAssignment[] = []
   private _topics: Topic[] = []
   private _invitations: Invitation[] = []
+  private _topicRankings: TopicRanking[] = []
   private _organizers: Organizer[] = []
 
   private constructor() {
@@ -46,6 +48,7 @@ export class MockDataManager {
     this._assignments = this.getDefaultAssignments()
     this._topics = this.getDefaultTopics()
     this._invitations = this.getDefaultInvitations()
+    this._topicRankings = this.getDefaultTopicRankings()
     this._organizers = this.getDefaultOrganizers()
   }
 
@@ -59,6 +62,7 @@ export class MockDataManager {
     this._assignments = []
     this._topics = []
     this._invitations = []
+    this._topicRankings = []
     this._organizers = []
   }
 
@@ -67,7 +71,7 @@ export class MockDataManager {
   private getDefaultUsers(): User[] {
     // Pre-hashed version of "changeme" using bcrypt
     // This allows tests to run synchronously while still using secure hashed passwords
-    const hashedPassword = '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2' // "changeme"
+    const hashedPassword = '$2b$12$LGtR/rq3C67ODqfZiN.5Z.6JAuj4VBO7n8J4hWAtDbPLVD/hjkt5G' // "changeme"
     
     return [
       {
@@ -83,8 +87,28 @@ export class MockDataManager {
       {
         id: "darth@empire.com",
         firstname: "Darth",
-        lastname: "Vador",
+        lastname: "Vader",
         email: "darth@empire.com",
+        password: hashedPassword,
+        role: "Participant",
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: "organizer@example.com",
+        firstname: "Jane",
+        lastname: "Organizer",
+        email: "organizer@example.com",
+        password: hashedPassword,
+        role: "Organizer",
+        createdAt: new Date('2024-01-01'),
+        updatedAt: new Date('2024-01-01')
+      },
+      {
+        id: "unregistered@example.com",
+        firstname: "Unregistered",
+        lastname: "User",
+        email: "unregistered@example.com",
         password: hashedPassword,
         role: "Participant",
         createdAt: new Date('2024-01-01'),
@@ -149,10 +173,35 @@ export class MockDataManager {
         updatedAt: new Date('2025-10-01T00:00:00Z'),
         settings: {
           enableTopicRanking: true,
+          minTopicsToRank: 3,
           enableAutoAssignment: false,
           maxTopicsPerParticipant: 3,
           requireApproval: false,
           maxParticipants: 100
+        }
+      },
+      {
+        id: '2',
+        name: 'Galaxy Meetup 2025',
+        description: 'Another unconference event',
+        location: 'Remote',
+        startDate: new Date('2025-11-15T10:00:00Z'),
+        endDate: new Date('2025-11-15T16:00:00Z'),
+        numberOfRounds: 2,
+        discussionsPerRound: 4,
+        idealGroupSize: 6,
+        minGroupSize: 4,
+        maxGroupSize: 8,
+        status: 'published',
+        createdAt: new Date('2025-01-15T00:00:00Z'),
+        updatedAt: new Date('2025-10-15T00:00:00Z'),
+        settings: {
+          enableTopicRanking: false,
+          minTopicsToRank: 0,
+          enableAutoAssignment: true,
+          maxTopicsPerParticipant: 2,
+          requireApproval: true,
+          maxParticipants: 50
         }
       }
     ]
@@ -168,6 +217,10 @@ export class MockDataManager {
 
   addEvent(event: Event): void {
     this._events.push(event)
+  }
+
+  setEvents(events: Event[]): void {
+    this._events = [...events]
   }
 
   updateEvent(id: string, updates: Partial<Event>): boolean {
@@ -197,6 +250,18 @@ export class MockDataManager {
 
   private getDefaultParticipants(): Participant[] {
     return [
+      {
+        id: 'participant-luke',
+        eventId: '1',
+        userId: 'luke@rebels.com',
+        email: 'luke@rebels.com',
+        firstname: 'Luke',
+        lastname: 'Skywalker',
+        status: 'registered',
+        registrationDate: new Date('2025-08-01T00:00:00Z'),
+        createdAt: new Date('2025-08-01T00:00:00Z'),
+        updatedAt: new Date('2025-08-01T00:00:00Z')
+      },
       {
         id: 'participant-1',
         eventId: '1',
@@ -232,6 +297,18 @@ export class MockDataManager {
         registrationDate: new Date('2025-09-05T00:00:00Z'),
         createdAt: new Date('2025-09-05T00:00:00Z'),
         updatedAt: new Date('2025-09-05T00:00:00Z')
+      },
+      {
+        id: 'participant-darth',
+        eventId: '1',
+        userId: 'darth@empire.com',
+        email: 'darth@empire.com',
+        firstname: 'Darth',
+        lastname: 'Vader',
+        status: 'registered',
+        registrationDate: new Date('2025-09-06T00:00:00Z'),
+        createdAt: new Date('2025-09-06T00:00:00Z'),
+        updatedAt: new Date('2025-09-06T00:00:00Z')
       }
     ]
   }
@@ -442,6 +519,19 @@ export class MockDataManager {
         updatedAt: new Date('2025-09-18T00:00:00Z'),
         metadata: {
           tags: ['security', 'devops']
+        }
+      },
+      {
+        id: 'topic-darth',
+        eventId: '1',
+        title: 'Darth Topic',
+        description: 'A topic created by Darth for testing',
+        proposedBy: 'participant-darth',
+        status: 'proposed',
+        createdAt: new Date('2025-09-19T00:00:00Z'),
+        updatedAt: new Date('2025-09-19T00:00:00Z'),
+        metadata: {
+          tags: ['test']
         }
       }
     ]
@@ -686,6 +776,51 @@ export class MockDataManager {
       invitations: this._invitations.length,
       organizers: this._organizers.length
     }
+  }
+
+  // ==================== TOPIC RANKINGS ====================
+
+  private getDefaultTopicRankings(): TopicRanking[] {
+    return []
+  }
+
+  getTopicRankings(): TopicRanking[] {
+    return [...this._topicRankings]
+  }
+
+  getTopicRankingById(id: string): TopicRanking | undefined {
+    return this._topicRankings.find(r => r.id === id)
+  }
+
+  getTopicRankingByParticipantAndEvent(participantId: string, eventId: string): TopicRanking | null {
+    return this._topicRankings.find(r => r.participantId === participantId && r.eventId === eventId) || null
+  }
+
+  getTopicRankingsByEventId(eventId: string): TopicRanking[] {
+    return this._topicRankings.filter(r => r.eventId === eventId)
+  }
+
+  addTopicRanking(ranking: TopicRanking): void {
+    this._topicRankings.push(ranking)
+  }
+
+  updateTopicRanking(id: string, updates: Partial<TopicRanking>): boolean {
+    const index = this._topicRankings.findIndex(r => r.id === id)
+    if (index === -1) return false
+    
+    this._topicRankings[index] = {
+      ...this._topicRankings[index]!,
+      ...updates
+    }
+    return true
+  }
+
+  removeTopicRanking(id: string): boolean {
+    const index = this._topicRankings.findIndex(r => r.id === id)
+    if (index === -1) return false
+    
+    this._topicRankings.splice(index, 1)
+    return true
   }
 }
 

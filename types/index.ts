@@ -33,3 +33,9 @@ export type {
 
 // Invitation types
 export type { Invitation } from './invitation'
+
+// Topic Ranking types
+export type { 
+  TopicRanking,
+  TopicUpdate 
+} from './topicRanking'

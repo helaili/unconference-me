@@ -116,7 +116,8 @@ export class UserService extends BaseService<User> {
         )
         return users.length > 0 ? users[0]! : null
       } else {
-        return mockData.getUsers().find(u => u.email === email) || null
+        // Use case-insensitive email lookup for mock data
+        return mockData.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) || null
       }
     } catch (error) {
       logger.error('Failed to fetch user by email including deleted', { email, error })

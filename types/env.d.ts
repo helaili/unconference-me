@@ -5,8 +5,6 @@ declare module '@nuxt/schema' {
       eventLocation: string
       eventName: string
       devMode: boolean
-      defaultUserName: string
-      defaultUserPassword: string
       authUrl: string
     }
   }

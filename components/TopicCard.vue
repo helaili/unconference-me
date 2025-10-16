@@ -7,12 +7,19 @@ interface Props {
   topic: Topic
   userParticipantId?: string
   isAdmin?: boolean
+  rank?: number | null
+  rankingEnabled?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  rankingEnabled: false
+})
+
 const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
+  like: [topicId: string]
+  unlike: [topicId: string]
   'change-status': [topicId: string, status: Topic['status']]
 }>()
 
@@ -49,6 +56,14 @@ const handleDelete = () => {
   emit('delete', props.topic.id)
 }
 
+const handleLike = () => {
+  emit('like', props.topic.id)
+}
+
+const handleUnlike = () => {
+  emit('unlike', props.topic.id)
+}
+
 const handleChangeStatus = (status: Topic['status']) => {
   emit('change-status', props.topic.id, status)
 }
@@ -57,15 +72,39 @@ const handleChangeStatus = (status: Topic['status']) => {
 <template>
   <v-card class="d-flex flex-column" height="100%">
     <v-card-title class="d-flex align-center">
-      <v-icon :icon="statusIcon(topic.status)" :color="statusColor(topic.status)" class="mr-2" />
-      {{ topic.title }}
-      <v-spacer />
-      <v-chip :color="statusColor(topic.status)" variant="tonal" size="small">
-        {{ topic.status }}
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
+          <v-icon 
+            :icon="statusIcon(topic.status)" 
+            :color="statusColor(topic.status)" 
+            class="mr-2"
+            v-bind="tooltipProps"
+          />
+        </template>
+        Status: {{ topic.status }}
+      </v-tooltip>
+      <span class="flex-grow-1">{{ topic.title }}</span>
+      <v-chip
+        v-if="rank"
+        color="primary"
+        variant="elevated"
+        size="small"
+        class="mr-2"
+      >
+        #{{ rank }}
       </v-chip>
     </v-card-title>
     
     <v-card-text class="flex-grow-1">
+      <div class="text-caption text-grey mb-2">
+        <span v-if="topic.updatedAt === topic.createdAt">
+          Proposed: {{ new Date(topic.createdAt).toLocaleDateString() }}
+        </span>
+        <span v-else>
+          Updated: {{ new Date(topic.updatedAt).toLocaleDateString() }}
+        </span>
+      </div>
+      
       <p v-if="topic.description" class="mb-3">
         {{ topic.description }}
       </p>
@@ -81,16 +120,30 @@ const handleChangeStatus = (status: Topic['status']) => {
           {{ tag }}
         </v-chip>
       </div>
-      
-      <div class="text-caption text-grey">
-        Proposed: {{ new Date(topic.createdAt).toLocaleDateString() }}
-        <span v-if="topic.updatedAt !== topic.createdAt">
-          • Updated: {{ new Date(topic.updatedAt).toLocaleDateString() }}
-        </span>
-      </div>
     </v-card-text>
     
-    <v-card-actions v-if="canEdit || canDelete || isAdmin">
+    <v-card-actions v-if="rankingEnabled || canEdit || canDelete || isAdmin">
+      <!-- Like button and ranking display -->
+      <v-btn
+        v-if="rankingEnabled && !rank"
+        variant="text"
+        color="primary"
+        @click="handleLike"
+      >
+        <v-icon start>mdi-heart-outline</v-icon>
+        Like
+      </v-btn>
+      <v-btn
+        v-if="rankingEnabled && rank"
+        variant="text"
+        color="primary"
+        @click="handleUnlike"
+      >
+        <v-icon start>mdi-heart</v-icon>
+        Liked
+      </v-btn>
+      
+      <!-- Admin status menu -->
       <v-menu v-if="isAdmin" :close-on-content-click="true">
         <template #activator="{ props: menuProps }">
           <v-btn
@@ -154,6 +207,8 @@ const handleChangeStatus = (status: Topic['status']) => {
       </v-menu>
       
       <v-spacer />
+      
+      <!-- Edit and Delete buttons -->
       <v-btn
         v-if="canEdit && topic.status !== 'rejected'"
         variant="text"

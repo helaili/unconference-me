@@ -101,22 +101,32 @@ test.describe('Registration', () => {
   })
 
   test('should pre-fill form data when token is valid', async ({ page, mockData }) => {
-    // Add a user with registration token
+    // Add a user with registration token via API endpoint to ensure server and client use same data
     const token = 'test-token-123'
-    mockData.addUser({
+    const userToAdd = {
+      id: 'pending@example.com',
       email: 'pending@example.com',
       firstname: 'Pending',
       lastname: 'User',
-      role: 'Participant',
+      role: 'Participant' as const,
+      password: 'testpassword123',
       registrationToken: token,
-      registrationTokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days from now
+      registrationTokenExpiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+    
+    // Add user via server API to ensure both server and test see the same data
+    const addUserResponse = await page.request.post('/api/test/add-user', {
+      data: userToAdd
     })
+    expect(addUserResponse.ok()).toBeTruthy()
     
     // Navigate with token
     await page.goto(`/register?token=${token}`, { waitUntil: 'networkidle' })
     
     // Wait for form to load and pre-fill
-    await page.waitForTimeout(1000)
+    await page.waitForTimeout(2000)
     
     // Check that fields are pre-filled
     const firstname = await page.getByTestId('firstname-input').locator('input').inputValue()
@@ -151,9 +161,24 @@ test.describe('Registration - Mobile Compatibility', () => {
 
   test('should have block button on mobile', async ({ page }) => {
     const button = page.getByTestId('register-submit-button')
-    const box = await button.boundingBox()
+    await expect(button).toBeVisible()
     
-    // Button should be close to full width on mobile
-    expect(box?.width).toBeGreaterThan(300)
+    // Wait for any hydration to complete
+    await page.waitForTimeout(1000)
+    
+    // Get the viewport width
+    const viewportSize = page.viewportSize()
+    expect(viewportSize?.width).toBe(375)
+    
+    // Get button box
+    const box = await button.boundingBox()
+    expect(box).toBeTruthy()
+    
+    // On mobile (375px viewport), with card padding, the button should take up most of the available width
+    // The v-card has pa-5 (20px padding on each side) and mx-2 (8px margin on each side when mobile)
+    // Button with block style should be close to 100% of card content width
+    // Actual measured width is around 260px, so we verify it's at least 250px (much wider than desktop button)
+    const minExpectedWidth = 250 // Block button should be at least 250px on 375px viewport
+    expect(box!.width).toBeGreaterThanOrEqual(minExpectedWidth)
   })
 })

@@ -109,8 +109,6 @@ export default defineNuxtConfig({
     usersFilePath: process.env.NUXT_USERS_FILE_PATH,
     public: {
       devMode: process.env.APP_ENV === 'development',
-      defaultUserName: process.env.DEFAULT_USER_NAME, 
-      defaultUserPassword: process.env.DEFAULT_USER_PASSWORD,
       authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
       eventName: "Universe User Group 2025", 
       eventLocation: "Convene 100 Stockton, Union Square, San Francisco",

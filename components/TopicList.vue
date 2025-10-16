@@ -7,22 +7,28 @@ interface Props {
   userParticipantId?: string
   isAdmin?: boolean
   loading?: boolean
+  ranking?: any
+  rankingEnabled?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   loading: false,
-  isAdmin: false
+  isAdmin: false,
+  rankingEnabled: false
 })
 
 const emit = defineEmits<{
   edit: [topic: Topic]
   delete: [topicId: string]
+  like: [topicId: string]
+  unlike: [topicId: string]
   'change-status': [topicId: string, status: Topic['status']]
 }>()
 
 const searchQuery = ref('')
 const statusFilter = ref<string>('all')
 const showMyTopicsOnly = ref(false)
+const showFavoritesOnly = ref(false)
 
 const statusOptions = [
   { value: 'all', title: 'All Topics' },
@@ -31,6 +37,12 @@ const statusOptions = [
   { value: 'scheduled', title: 'Scheduled' },
   { value: 'completed', title: 'Completed' }
 ]
+
+const getRankForTopic = (topicId: string): number | null => {
+  if (!props.ranking?.rankedTopicIds) return null
+  const index = props.ranking.rankedTopicIds.indexOf(topicId)
+  return index >= 0 ? index + 1 : null
+}
 
 const filteredTopics = computed(() => {
   let filtered = [...props.topics]
@@ -55,6 +67,11 @@ const filteredTopics = computed(() => {
     filtered = filtered.filter(t => t.proposedBy === props.userParticipantId)
   }
   
+  // Filter to show only favorites/ranked topics
+  if (showFavoritesOnly.value && props.ranking?.rankedTopicIds) {
+    filtered = filtered.filter(t => props.ranking.rankedTopicIds.includes(t.id))
+  }
+  
   // Don't show rejected topics to regular users
   if (!props.isAdmin) {
     filtered = filtered.filter(t => t.status !== 'rejected')
@@ -72,6 +89,14 @@ const handleEdit = (topic: Topic) => {
 
 const handleDelete = (topicId: string) => {
   emit('delete', topicId)
+}
+
+const handleLike = (topicId: string) => {
+  emit('like', topicId)
+}
+
+const handleUnlike = (topicId: string) => {
+  emit('unlike', topicId)
 }
 
 const handleChangeStatus = (topicId: string, status: Topic['status']) => {
@@ -118,11 +143,19 @@ const handleChangeStatus = (topicId: string, status: Topic['status']) => {
           />
         </v-col>
         
-        <v-col cols="12" md="2" class="d-flex align-center">
+        <v-col cols="12" md="4" class="d-flex align-center">
           <v-checkbox
             v-if="userParticipantId"
             v-model="showMyTopicsOnly"
             label="My Topics"
+            density="comfortable"
+            hide-details
+            class="mr-4"
+          />
+          <v-checkbox
+            v-if="rankingEnabled"
+            v-model="showFavoritesOnly"
+            label="Favorites"
             density="comfortable"
             hide-details
           />
@@ -164,8 +197,12 @@ const handleChangeStatus = (topicId: string, status: Topic['status']) => {
             :topic="topic"
             :user-participant-id="userParticipantId"
             :is-admin="isAdmin"
+            :rank="getRankForTopic(topic.id)"
+            :ranking-enabled="rankingEnabled"
             @edit="handleEdit"
             @delete="handleDelete"
+            @like="handleLike"
+            @unlike="handleUnlike"
             @change-status="handleChangeStatus"
             class="flex-grow-1"
           />

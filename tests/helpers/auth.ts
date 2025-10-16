@@ -27,7 +27,7 @@ export class AuthHelper {
   async loginAsVader() {
     await this.loginAs('darth@empire.com', 'changeme');
     await expect(this.page).toHaveURL('/dashboard');
-    await expect(this.page.locator('text=Welcome, User!')).toBeVisible();
+    await expect(this.page.locator('text=User Dashboard')).toBeVisible();
   }
 
   async expectToBeOnLoginPage() {

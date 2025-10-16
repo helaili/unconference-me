@@ -7,6 +7,14 @@ test.describe('Admin Dashboard', () => {
   test.beforeEach(async ({ page, mockData }) => {
     // Ensure we have default mock data for each test
     mockData.resetToDefaults()
+    
+    // Also reset server-side mock data
+    try {
+      await page.request.post('/api/test/reset-mock-data')
+    } catch (error) {
+      console.warn('Failed to reset server-side mock data:', error)
+    }
+    
     auth = new AuthHelper(page)
   })
 
@@ -88,7 +96,7 @@ test.describe('Admin Dashboard', () => {
     await expect(page).toHaveURL('/dashboard');
     
     // Should see the user welcome message
-    await expect(page.locator('text=Welcome, User!')).toBeVisible();
+    await expect(page.locator('text=Welcome, Darth!')).toBeVisible();
     
     // Should NOT see admin-specific components
     await expect(page.locator('text=Event Configuration')).not.toBeVisible();

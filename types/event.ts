@@ -32,6 +32,9 @@ export interface EventSettings {
   // Allow participants to rank topics
   enableTopicRanking?: boolean
   
+  // Minimum number of topics a participant must rank
+  minTopicsToRank?: number
+  
   // Allow automatic assignment of participants to discussions
   enableAutoAssignment?: boolean
   
