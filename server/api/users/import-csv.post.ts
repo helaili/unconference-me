@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 import crypto from 'crypto'
 
 const bodySchema = z.object({
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
     
     const body = await readValidatedBody(event, bodySchema.parse)
     
-    logger.debug('Admin importing users from CSV')
+    console.log('Admin importing users from CSV')
     
     // Parse CSV data
     const lines = body.csvData.trim().split('\n')
@@ -102,7 +101,7 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    logger.info(`Admin imported ${imported} users from CSV`)
+    console.log(`Admin imported ${imported} users from CSV`)
     
     return { 
       success: true,
@@ -111,7 +110,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('CSV import validation error:', error.message)
+      console.warn('CSV import validation error:', error.message)
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation Error',

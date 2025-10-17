@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 
 const bodySchema = z.object({
   email: z.email(),
@@ -11,12 +10,12 @@ export default defineEventHandler(async (event) => {
   try {
     const { email, password } = await readValidatedBody(event, bodySchema.parse)
     
-    logger.debug(`Attempting login for email: ${email}`)
+    console.log(`Attempting login for email: ${email}`)
     
     // Validate user credentials (includes password verification)
     const user = await userService.validateCredentials(email, password)
     if (!user) {
-      logger.warn(`Login attempt failed for email: ${email}`)
+      console.warn(`Login attempt failed for email: ${email}`)
       throw createError({
         statusCode: 401,
         statusMessage: 'Invalid credentials',
@@ -38,10 +37,10 @@ export default defineEventHandler(async (event) => {
       }
     })
     
-    logger.info(`Successful login for user ${user.email}`)
+    console.log(`Successful login for user ${user.email}`)
     // Cast session to a known shape so TypeScript recognizes the `user` property.
     const typedSession = session as { user?: { name: string; email: string; role: string } }
-    logger.debug(`User session set for user ${typedSession.user?.name} (${typedSession.user?.email}) with role ${typedSession.user?.role}`)
+    console.log(`User session set for user ${typedSession.user?.name} (${typedSession.user?.email}) with role ${typedSession.user?.role}`)
     
     return { 
       success: true, 
@@ -56,7 +55,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('Login validation error:', error.message)
+      console.warn('Login validation error:', error.message)
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation Error',

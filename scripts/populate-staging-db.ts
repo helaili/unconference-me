@@ -1,7 +1,6 @@
 import { CosmosClient } from '@azure/cosmos'
 import type { Database } from '@azure/cosmos'
 import { mockData } from '../tests/helpers/mock-manager'
-import logger from '../utils/logger'
 import { fileURLToPath } from 'url'
 
 interface CosmosConfig {
@@ -28,7 +27,7 @@ export class StagingDatabasePopulator {
 
   async initialize(): Promise<void> {
     try {
-      logger.info('Initializing staging database connection')
+      console.log('Initializing staging database connection')
       
       // Create database if it doesn't exist
       const { database } = await this.client.databases.createIfNotExists({
@@ -39,9 +38,9 @@ export class StagingDatabasePopulator {
       // Create containers
       await this.createContainers()
       
-      logger.info('Staging database initialized successfully')
+      console.log('Staging database initialized successfully')
     } catch (error) {
-      logger.error('Failed to initialize staging database', { error })
+      console.error('Failed to initialize staging database', { error })
       throw error
     }
   }
@@ -60,9 +59,9 @@ export class StagingDatabasePopulator {
           id: containerDef.id,
           partitionKey: containerDef.partitionKey
         })
-        logger.info(`Container '${containerDef.id}' created or already exists`)
+        console.log(`Container '${containerDef.id}' created or already exists`)
       } catch (error) {
-        logger.error(`Failed to create container '${containerDef.id}'`, { error })
+        console.error(`Failed to create container '${containerDef.id}'`, { error })
         throw error
       }
     }
@@ -70,7 +69,7 @@ export class StagingDatabasePopulator {
 
   async populateAllData(): Promise<void> {
     try {
-      logger.info('Starting staging database population with mock data from mock-manager')
+      console.log('Starting staging database population with mock data from mock-manager')
       
       // Reset mock data to ensure consistent state
       mockData.resetToDefaults()
@@ -80,9 +79,9 @@ export class StagingDatabasePopulator {
       await this.populateParticipants()
       await this.populateAssignments()
       
-      logger.info('Staging database population completed successfully')
+      console.log('Staging database population completed successfully')
     } catch (error) {
-      logger.error('Failed to populate staging database', { error })
+      console.error('Failed to populate staging database', { error })
       throw error
     }
   }
@@ -91,7 +90,7 @@ export class StagingDatabasePopulator {
     const container = this.database.container('users')
     const users = mockData.getUsers()
     
-    logger.info(`Populating ${users.length} users into CosmosDB`)
+    console.log(`Populating ${users.length} users into CosmosDB`)
     
     for (const user of users) {
       try {
@@ -99,21 +98,21 @@ export class StagingDatabasePopulator {
           id: user.email, // Use email as document id
           ...user
         })
-        logger.debug(`User '${user.email}' persisted to staging database`)
+        console.log(`User '${user.email}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to persist user '${user.email}' to database`, { error })
+        console.error(`Failed to persist user '${user.email}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Users persisted to database successfully')
+    console.log('Users persisted to database successfully')
   }
 
   private async populateEvents(): Promise<void> {
     const container = this.database.container('events')
     const events = mockData.getEvents()
     
-    logger.info(`Populating ${events.length} events into CosmosDB`)
+    console.log(`Populating ${events.length} events into CosmosDB`)
     
     for (const event of events) {
       try {
@@ -121,21 +120,21 @@ export class StagingDatabasePopulator {
           ...event,
           id: event.id
         })
-        logger.debug(`Event '${event.name}' persisted to staging database`)
+        console.log(`Event '${event.name}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to persist event '${event.id}' to database`, { error })
+        console.error(`Failed to persist event '${event.id}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Events persisted to database successfully')
+    console.log('Events persisted to database successfully')
   }
 
   private async populateParticipants(): Promise<void> {
     const container = this.database.container('participants')
     const participants = mockData.getParticipants()
     
-    logger.info(`Populating ${participants.length} participants into CosmosDB`)
+    console.log(`Populating ${participants.length} participants into CosmosDB`)
     
     for (const participant of participants) {
       try {
@@ -143,21 +142,21 @@ export class StagingDatabasePopulator {
           ...participant,
           id: participant.id
         })
-        logger.debug(`Participant '${participant.id}' persisted to staging database`)
+        console.log(`Participant '${participant.id}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to persist participant '${participant.id}' to database`, { error })
+        console.error(`Failed to persist participant '${participant.id}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Participants persisted to database successfully')
+    console.log('Participants persisted to database successfully')
   }
 
   private async populateAssignments(): Promise<void> {
     const container = this.database.container('assignments')
     const assignments = mockData.getAssignments()
     
-    logger.info(`Populating ${assignments.length} assignments into CosmosDB`)
+    console.log(`Populating ${assignments.length} assignments into CosmosDB`)
     
     for (const assignment of assignments) {
       try {
@@ -165,22 +164,22 @@ export class StagingDatabasePopulator {
           ...assignment,
           id: assignment.id
         })
-        logger.debug(`Assignment '${assignment.id}' persisted to staging database`)
+        console.log(`Assignment '${assignment.id}' persisted to staging database`)
       } catch (error) {
-        logger.error(`Failed to persist assignment '${assignment.id}' to database`, { error })
+        console.error(`Failed to persist assignment '${assignment.id}' to database`, { error })
         throw error
       }
     }
     
-    logger.info('Assignments persisted to database successfully')
+    console.log('Assignments persisted to database successfully')
   }
 
   async cleanup(): Promise<void> {
     try {
-      logger.info('Cleaning up staging database connection')
+      console.log('Cleaning up staging database connection')
       this.client.dispose()
     } catch (error) {
-      logger.error('Failed to cleanup staging database connection', { error })
+      console.error('Failed to cleanup staging database connection', { error })
     }
   }
 }
@@ -211,30 +210,30 @@ async function populateStagingDatabase(): Promise<void> {
 
   // Validate configuration
   if (!config.connectionString) {
-    logger.error('Missing required staging database configuration')
-    logger.error('Please set COSMOS_DB_CONNECTION_STRING_STAGING environment variable')
+    console.error('Missing required staging database configuration')
+    console.error('Please set COSMOS_DB_CONNECTION_STRING_STAGING environment variable')
     throw new Error('COSMOS_DB_CONNECTION_STRING_STAGING environment variable is required')
   }
 
   // Check if connection string looks valid
   if (!config.connectionString.includes('AccountKey=') || config.connectionString.length < 100) {
-    logger.error('CosmosDB connection string appears to be incomplete or invalid')
-    logger.error(`Connection string length: ${config.connectionString.length}`)
-    logger.error(`Connection string preview: ${config.connectionString.substring(0, 50)}...`)
+    console.error('CosmosDB connection string appears to be incomplete or invalid')
+    console.error(`Connection string length: ${config.connectionString.length}`)
+    console.error(`Connection string preview: ${config.connectionString.substring(0, 50)}...`)
     throw new Error('Invalid or incomplete COSMOS_DB_CONNECTION_STRING_STAGING')
   }
 
-  logger.info('Persisting mock data from mock-manager into staging CosmosDB database')
-  logger.info(`Database: ${config.databaseName}`)
+  console.log('Persisting mock data from mock-manager into staging CosmosDB database')
+  console.log(`Database: ${config.databaseName}`)
   
   const populator = new StagingDatabasePopulator(config)
   
   try {
     await populator.initialize()
     await populator.populateAllData()
-    logger.info('Mock data successfully persisted to staging CosmosDB database')
+    console.log('Mock data successfully persisted to staging CosmosDB database')
   } catch (error) {
-    logger.error('Staging database population failed', { 
+    console.error('Staging database population failed', { 
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     })
@@ -250,11 +249,11 @@ const __filename = fileURLToPath(import.meta.url)
 if (process.argv[1] === __filename) {
   populateStagingDatabase()
     .then(() => {
-      logger.info('Script execution completed')
+      console.log('Script execution completed')
       process.exit(0)
     })
     .catch((error) => {
-      logger.error('Script execution failed', { error })
+      console.error('Script execution failed', { error })
       process.exit(1)
     })
 }

@@ -3,7 +3,7 @@
  * Provides functions to initialize mock data with properly hashed passwords
  */
 
-import { PasswordUtils } from '../../utils/password'
+import { PasswordUtils } from '../../server/utils/password'
 import type { User } from '../../types/user'
 
 export class MockDataInitializer {

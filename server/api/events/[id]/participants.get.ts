@@ -1,5 +1,4 @@
-import logger from '../../../../utils/logger'
-import { participantService } from '../../../../services'
+import { participantService } from '../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const id = getRouterParam(event, 'id')
     
-    logger.info(`Fetching participants for event ${id} for user: ${session.user}`)
+    console.log(`Fetching participants for event ${id} for user: ${session.user}`)
     
     if (!id) {
       throw createError({
@@ -34,7 +33,7 @@ export default defineEventHandler(async (event) => {
       stats
     }
   } catch (error) {
-    logger.error('Error fetching participants:', error)
+    console.error('Error fetching participants:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

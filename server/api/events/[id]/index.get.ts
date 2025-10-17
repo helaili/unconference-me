@@ -1,4 +1,3 @@
-import logger from '../../../../utils/logger'
 import { mockData } from '../../../../tests/helpers/mock-manager'
 
 export default defineEventHandler(async (event) => {
@@ -7,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const id = getRouterParam(event, 'id')
     
-    logger.info(`Fetching event ${id} for user: ${session.user}`)
+    console.log(`Fetching event ${id} for user: ${session.user}`)
     
     if (!id) {
       throw createError({
@@ -32,7 +31,7 @@ export default defineEventHandler(async (event) => {
       event: eventData
     }
   } catch (error) {
-    logger.error('Error fetching event:', error)
+    console.error('Error fetching event:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

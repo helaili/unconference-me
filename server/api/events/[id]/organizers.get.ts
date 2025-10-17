@@ -1,6 +1,5 @@
-import logger from '../../../../utils/logger'
-import { organizerService } from '../../../../services'
-import { canManageEvent } from '../../../../utils/access-control'
+import { organizerService } from '../../../services'
+import { canManageEvent } from '../../../utils/access-control'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     
-    logger.info('Fetching organizers for event', { eventId, user: session.user })
+    console.log('Fetching organizers for event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -33,7 +32,7 @@ export default defineEventHandler(async (event) => {
       organizers
     }
   } catch (error) {
-    logger.error('Error fetching organizers:', error)
+    console.error('Error fetching organizers:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

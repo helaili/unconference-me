@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { Organizer } from '../types/organizer'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { Organizer } from '../../types/organizer'
 
 export class OrganizerService extends BaseService<Organizer> {
   protected readonly containerName = 'organizers'
@@ -15,7 +14,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.getOrganizers()
       }
     } catch (error) {
-      logger.error('Failed to fetch all organizers', { error })
+      console.error('Failed to fetch all organizers', { error })
       throw error
     }
   }
@@ -34,7 +33,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.getOrganizerById(id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch organizer by id', { id, error })
+      console.error('Failed to fetch organizer by id', { id, error })
       throw error
     }
   }
@@ -50,7 +49,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.getOrganizersByEventId(eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch organizers by event id', { eventId, error })
+      console.error('Failed to fetch organizers by event id', { eventId, error })
       throw error
     }
   }
@@ -66,7 +65,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.getOrganizersByUserId(userId)
       }
     } catch (error) {
-      logger.error('Failed to fetch organizers by user id', { userId, error })
+      console.error('Failed to fetch organizers by user id', { userId, error })
       throw error
     }
   }
@@ -82,7 +81,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.getOrganizers().filter(o => o.email === email)
       }
     } catch (error) {
-      logger.error('Failed to fetch organizers by email', { email, error })
+      console.error('Failed to fetch organizers by email', { email, error })
       throw error
     }
   }
@@ -98,7 +97,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.getOrganizers().filter(o => o.status === status)
       }
     } catch (error) {
-      logger.error('Failed to fetch organizers by status', { status, error })
+      console.error('Failed to fetch organizers by status', { status, error })
       throw error
     }
   }
@@ -118,7 +117,7 @@ export class OrganizerService extends BaseService<Organizer> {
         ((userId && o.userId === userId) || (email && o.email === email))
       )
     } catch (error) {
-      logger.error('Failed to check if user is organizer', { eventId, userId, email, error })
+      console.error('Failed to check if user is organizer', { eventId, userId, email, error })
       return false
     }
   }
@@ -138,7 +137,7 @@ export class OrganizerService extends BaseService<Organizer> {
         ((userId && o.userId === userId) || (email && o.email === email))
       ) || null
     } catch (error) {
-      logger.error('Failed to get organizer for event', { eventId, userId, email, error })
+      console.error('Failed to get organizer for event', { eventId, userId, email, error })
       return null
     }
   }
@@ -159,7 +158,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return organizer
       }
     } catch (error) {
-      logger.error('Failed to create organizer', { organizerData, error })
+      console.error('Failed to create organizer', { organizerData, error })
       throw error
     }
   }
@@ -193,7 +192,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return updatedOrganizer
       }
     } catch (error) {
-      logger.error('Failed to update organizer', { id, updates, error })
+      console.error('Failed to update organizer', { id, updates, error })
       throw error
     }
   }
@@ -211,7 +210,7 @@ export class OrganizerService extends BaseService<Organizer> {
         return mockData.removeOrganizer(id)
       }
     } catch (error) {
-      logger.error('Failed to delete organizer', { id, error })
+      console.error('Failed to delete organizer', { id, error })
       throw error
     }
   }
@@ -221,7 +220,7 @@ export class OrganizerService extends BaseService<Organizer> {
       const organizer = await this.findById(id)
       return organizer !== null
     } catch (error) {
-      logger.error('Failed to check if organizer exists', { id, error })
+      console.error('Failed to check if organizer exists', { id, error })
       throw error
     }
   }

@@ -1,11 +1,10 @@
 import { CosmosClient, type Database, type Container, type SqlParameter } from '@azure/cosmos'
-import logger from '../utils/logger'
 
 /**
  * Base Service Class that handles both mock data and CosmosDB
  * 
  * This service automatically determines whether to use mock data or CosmosDB
- * based on the APP_ENV environment variable.
+ * based on the runtime configuration.
  */
 export abstract class BaseService<T extends { id: string }> {
   protected abstract readonly containerName: string
@@ -17,25 +16,28 @@ export abstract class BaseService<T extends { id: string }> {
   private isInitialized = false
 
   constructor() {
-    this.initializeCosmosClient()
+    // Constructor is kept empty - initialization happens lazily
   }
 
-  private initializeCosmosClient(): void {
-    const appEnv = process.env.APP_ENV
+  private async initializeCosmosClient(): Promise<void> {
+    if (this.client) return // Already initialized
+
+    const config = useRuntimeConfig()
+    const appEnv = config.appEnv
     
     // Only initialize CosmosDB client for staging and production environments
     if (appEnv === 'staging' || appEnv === 'production') {
-      const connectionString = process.env.COSMODB_PRIMARY_CONNECTION_STRING
+      const connectionString = config.cosmosdb.connectionString
       
       if (!connectionString) {
-        logger.error('COSMODB_PRIMARY_CONNECTION_STRING environment variable is required for staging/production')
+        console.error('COSMODB_PRIMARY_CONNECTION_STRING environment variable is required for staging/production')
         throw new Error('Missing CosmosDB connection string')
       }
 
       this.client = new CosmosClient(connectionString)
-      logger.info(`Initialized CosmosDB client for environment: ${appEnv}`)
+      console.info(`Initialized CosmosDB client for environment: ${appEnv}`)
     } else {
-      logger.info(`Using mock data for environment: ${appEnv || 'development'}`)
+      console.info(`Using mock data for environment: ${appEnv || 'development'}`)
     }
   }
 
@@ -43,7 +45,8 @@ export abstract class BaseService<T extends { id: string }> {
     if (this.isInitialized || !this.client) return
 
     try {
-      const databaseName = process.env.COSMODB_DATABASE || 'unconference-me'
+      const config = useRuntimeConfig()
+      const databaseName = config.cosmosdb.database
       
       // Get or create database
       const { database } = await this.client.databases.createIfNotExists({
@@ -59,15 +62,16 @@ export abstract class BaseService<T extends { id: string }> {
       this.container = container
 
       this.isInitialized = true
-      logger.info(`Container '${this.containerName}' initialized successfully`)
+      console.info(`Container '${this.containerName}' initialized successfully`)
     } catch (error) {
-      logger.error(`Failed to initialize container '${this.containerName}'`, { error })
+      console.error(`Failed to initialize container '${this.containerName}'`, { error })
       throw error
     }
   }
 
   protected async isUsingCosmosDB(): Promise<boolean> {
-    const appEnv = process.env.APP_ENV
+    const config = useRuntimeConfig()
+    const appEnv = config.appEnv
     return appEnv === 'staging' || appEnv === 'production'
   }
 
@@ -75,10 +79,11 @@ export abstract class BaseService<T extends { id: string }> {
     query: string,
     parameters?: SqlParameter[]
   ): Promise<TResult[]> {
-    if (!(await this.isUsingCosmosDB()) || !this.client) {
+    if (!(await this.isUsingCosmosDB())) {
       throw new Error('CosmosDB operations are only available in staging/production environments')
     }
 
+    await this.initializeCosmosClient()
     await this.ensureContainer()
     
     try {
@@ -89,32 +94,34 @@ export abstract class BaseService<T extends { id: string }> {
       
       return resources
     } catch (error) {
-      logger.error('Failed to execute CosmosDB query', { query, parameters, error })
+      console.error('Failed to execute CosmosDB query', { query, parameters, error })
       throw error
     }
   }
 
   protected async cosmosUpsert(item: T): Promise<T> {
-    if (!(await this.isUsingCosmosDB()) || !this.client) {
+    if (!(await this.isUsingCosmosDB())) {
       throw new Error('CosmosDB operations are only available in staging/production environments')
     }
 
+    await this.initializeCosmosClient()
     await this.ensureContainer()
     
     try {
       const { resource } = await this.container!.items.upsert(item)
       return resource as unknown as T
     } catch (error) {
-      logger.error('Failed to upsert item to CosmosDB', { item, error })
+      console.error('Failed to upsert item to CosmosDB', { item, error })
       throw error
     }
   }
 
   protected async cosmosDelete(id: string, partitionKeyValue?: string): Promise<boolean> {
-    if (!(await this.isUsingCosmosDB()) || !this.client) {
+    if (!(await this.isUsingCosmosDB())) {
       throw new Error('CosmosDB operations are only available in staging/production environments')
     }
 
+    await this.initializeCosmosClient()
     await this.ensureContainer()
     
     try {
@@ -124,16 +131,17 @@ export abstract class BaseService<T extends { id: string }> {
       if (error && typeof error === 'object' && 'code' in error && error.code === 404) {
         return false // Item doesn't exist
       }
-      logger.error('Failed to delete item from CosmosDB', { id, partitionKeyValue, error })
+      console.error('Failed to delete item from CosmosDB', { id, partitionKeyValue, error })
       throw error
     }
   }
 
   protected async cosmosReadById(id: string, partitionKeyValue?: string): Promise<T | null> {
-    if (!(await this.isUsingCosmosDB()) || !this.client) {
+    if (!(await this.isUsingCosmosDB())) {
       throw new Error('CosmosDB operations are only available in staging/production environments')
     }
 
+    await this.initializeCosmosClient()
     await this.ensureContainer()
     
     try {
@@ -143,7 +151,7 @@ export abstract class BaseService<T extends { id: string }> {
       if (error && typeof error === 'object' && 'code' in error && error.code === 404) {
         return null // Item doesn't exist
       }
-      logger.error('Failed to read item from CosmosDB', { id, partitionKeyValue, error })
+      console.error('Failed to read item from CosmosDB', { id, partitionKeyValue, error })
       throw error
     }
   }

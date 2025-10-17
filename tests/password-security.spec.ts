@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { PasswordUtils } from '../utils/password'
+import { PasswordUtils } from '../server/utils/password'
 
 test.describe('Password Security', () => {
   test('should hash passwords securely', async () => {

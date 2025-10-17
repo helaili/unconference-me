@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { User } from '../types/user'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { User } from '../../types/user'
 import { PasswordUtils } from '../utils/password'
 
 export class UserService extends BaseService<User> {
@@ -17,7 +16,7 @@ export class UserService extends BaseService<User> {
         return mockData.getUsers().filter(u => !u.deletedAt)
       }
     } catch (error) {
-      logger.error('Failed to fetch all users', { error })
+      console.error('Failed to fetch all users', { error })
       throw error
     }
   }
@@ -30,7 +29,7 @@ export class UserService extends BaseService<User> {
         return mockData.getUsers()
       }
     } catch (error) {
-      logger.error('Failed to fetch all users including deleted', { error })
+      console.error('Failed to fetch all users including deleted', { error })
       throw error
     }
   }
@@ -44,7 +43,7 @@ export class UserService extends BaseService<User> {
         return mockData.getUserByEmail(id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch user by id', { id, error })
+      console.error('Failed to fetch user by id', { id, error })
       throw error
     }
   }
@@ -61,7 +60,7 @@ export class UserService extends BaseService<User> {
         return mockData.getUserByEmail(email) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch user by email', { email, error })
+      console.error('Failed to fetch user by email', { email, error })
       throw error
     }
   }
@@ -73,7 +72,7 @@ export class UserService extends BaseService<User> {
       
       if (existingUser && existingUser.deletedAt) {
         // Restore soft-deleted user
-        logger.info(`Restoring soft-deleted user: ${userData.email}`)
+        console.log(`Restoring soft-deleted user: ${userData.email}`)
         return await this.update(existingUser.id, {
           ...userData,
           deletedAt: undefined,
@@ -102,7 +101,7 @@ export class UserService extends BaseService<User> {
         return user
       }
     } catch (error) {
-      logger.error('Failed to create user', { email: userData.email, error })
+      console.error('Failed to create user', { email: userData.email, error })
       throw error
     }
   }
@@ -120,7 +119,7 @@ export class UserService extends BaseService<User> {
         return mockData.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch user by email including deleted', { email, error })
+      console.error('Failed to fetch user by email including deleted', { email, error })
       throw error
     }
   }
@@ -160,7 +159,7 @@ export class UserService extends BaseService<User> {
         return updatedUser
       }
     } catch (error) {
-      logger.error('Failed to update user', { id, error })
+      console.error('Failed to update user', { id, error })
       throw error
     }
   }
@@ -177,10 +176,10 @@ export class UserService extends BaseService<User> {
         deletedAt: new Date()
       })
 
-      logger.info(`User soft-deleted: ${email}`)
+      console.log(`User soft-deleted: ${email}`)
       return true
     } catch (error) {
-      logger.error('Failed to delete user', { email, error })
+      console.error('Failed to delete user', { email, error })
       throw error
     }
   }
@@ -193,7 +192,7 @@ export class UserService extends BaseService<User> {
         return mockData.removeUser(email)
       }
     } catch (error) {
-      logger.error('Failed to hard delete user', { email, error })
+      console.error('Failed to hard delete user', { email, error })
       throw error
     }
   }
@@ -203,7 +202,7 @@ export class UserService extends BaseService<User> {
       const user = await this.findByEmail(email)
       return user !== null
     } catch (error) {
-      logger.error('Failed to check if user exists', { email, error })
+      console.error('Failed to check if user exists', { email, error })
       throw error
     }
   }
@@ -217,7 +216,7 @@ export class UserService extends BaseService<User> {
 
       // Check if user is soft-deleted
       if (user.deletedAt) {
-        logger.warn(`Login attempt for soft-deleted user: ${email}`)
+        console.warn(`Login attempt for soft-deleted user: ${email}`)
         return null
       }
 
@@ -229,7 +228,7 @@ export class UserService extends BaseService<User> {
       
       return null
     } catch (error) {
-      logger.error('Failed to validate user credentials', { email, error })
+      console.error('Failed to validate user credentials', { email, error })
       throw error
     }
   }

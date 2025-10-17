@@ -1,5 +1,4 @@
-import logger from '../../../../utils/logger'
-import { invitationService, userService, participantService } from '../../../../services'
+import { invitationService, userService, participantService } from '../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,7 +16,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`Sending invitations for event ${eventId}`, { user: session.user })
+    console.log(`Sending invitations for event ${eventId}`, { user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -42,7 +41,7 @@ export default defineEventHandler(async (event) => {
       // Verify user exists and is not soft-deleted
       const user = await userService.findById(userId)
       if (!user || user.deletedAt) {
-        logger.warn(`User ${userId} not found or deleted, skipping invitation`)
+        console.warn(`User ${userId} not found or deleted, skipping invitation`)
         continue
       }
 
@@ -74,7 +73,7 @@ export default defineEventHandler(async (event) => {
       // 3. Handle email delivery failures
     }
     
-    logger.info(`Created ${invitations.length} invitations for event ${eventId}`, {
+    console.log(`Created ${invitations.length} invitations for event ${eventId}`, {
       eventId,
       invitationCount: invitations.length
     })
@@ -85,7 +84,7 @@ export default defineEventHandler(async (event) => {
       sent: invitations.length
     }
   } catch (error) {
-    logger.error('Error sending invitations:', error)
+    console.error('Error sending invitations:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

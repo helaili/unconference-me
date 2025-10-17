@@ -1,12 +1,9 @@
 import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 import type { NuxtPage } from '@nuxt/schema'
-import logger from './utils/logger'
 
-
-logger.info('Loading nuxt.config.ts')
-logger.info(`App Environment: ${process.env.APP_ENV || 'not set'}`)
-logger.info(`Using GitHub Auth: ${process.env.NUXT_AUTH_GITHUB === 'true'}`)
-
+console.log('Loading nuxt.config.ts')
+console.log(`App Environment: ${process.env.APP_ENV || 'not set'}`)
+console.log(`Using GitHub Auth: ${process.env.NUXT_AUTH_GITHUB === 'true'}`)
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -40,7 +37,13 @@ export default defineNuxtConfig({
           apiRuntime: 'node:20'
         }
       }
-    }
+    },
+    // Exclude scripts folder from server bundle
+    ignore: [
+      'scripts/**',
+      'test-results/**',
+      'playwright-report/**'
+    ]
   },
   hooks: {
     'pages:extend' (pages: NuxtPage[]) {
@@ -50,7 +53,6 @@ export default defineNuxtConfig({
         
         for (const page of pages) {
           if (page.name && !publicPages.includes(page.name)) {
-            logger.debug(`Setting authentication middleware for page: ${page.name}`)
             if (!page.meta) {
               page.meta = {}
             }
@@ -58,7 +60,6 @@ export default defineNuxtConfig({
             
             // Add admin requirement for admin pages
             if (adminPages.includes(page.name)) {
-              logger.debug(`Setting admin requirement for page: ${page.name}`)
               page.meta.requiresAdmin = true
             }
           }
@@ -107,6 +108,12 @@ export default defineNuxtConfig({
     },
     topicsFilePath: process.env.NUXT_TOPICS_FILE_PATH,
     usersFilePath: process.env.NUXT_USERS_FILE_PATH,
+    // CosmosDB configuration
+    appEnv: process.env.APP_ENV || 'development',
+    cosmosdb: {
+      connectionString: process.env.COSMODB_PRIMARY_CONNECTION_STRING,
+      database: process.env.COSMODB_DATABASE || 'unconference-me'
+    },
     public: {
       devMode: process.env.APP_ENV === 'development',
       authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
@@ -124,5 +131,21 @@ export default defineNuxtConfig({
         transformAssetUrls,
       },
     },
+    build: {
+      rollupOptions: {
+        external: [
+          // Ensure server-only dependencies are not bundled client-side
+          'bcrypt',
+          '@azure/cosmos'
+        ]
+      }
+    },
+    optimizeDeps: {
+      exclude: [
+        // Exclude server-only packages from client-side optimization
+        'bcrypt',
+        '@azure/cosmos'
+      ]
+    }
   },
 })

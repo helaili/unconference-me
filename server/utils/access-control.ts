@@ -3,7 +3,6 @@
  */
 
 import { organizerService } from '../services'
-import logger from './logger'
 
 /**
  * User session interface (matches nuxt-auth-utils)
@@ -42,7 +41,7 @@ export async function isOrganizer(
     
     return await organizerService.isOrganizer(eventId, userId, email)
   } catch (error) {
-    logger.error('Error checking organizer status', { eventId, error })
+    console.error('Error checking organizer status', { eventId, error })
     return false
   }
 }
@@ -164,7 +163,7 @@ export async function getOrganizerPermissions(
     const organizer = await organizerService.getOrganizerForEvent(eventId, userId, email)
     return organizer?.permissions || null
   } catch (error) {
-    logger.error('Error getting organizer permissions', { eventId, error })
+    console.error('Error getting organizer permissions', { eventId, error })
     return null
   }
 }

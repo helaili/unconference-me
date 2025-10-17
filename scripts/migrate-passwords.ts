@@ -3,9 +3,8 @@
  * This script should be run once after implementing password hashing
  */
 
-import { userService } from '../services/userService'
-import { PasswordUtils } from '../utils/password'
-import logger from '../utils/logger'
+import { userService } from '../server/services/userService'
+import { PasswordUtils } from '../server/utils/password'
 
 interface MigrationStats {
   totalUsers: number
@@ -26,19 +25,19 @@ export class PasswordMigrationService {
     }
 
     try {
-      logger.info('Starting password migration...')
+      console.log('Starting password migration...')
       
       // Get all users
       const users = await userService.findAll()
       stats.totalUsers = users.length
       
-      logger.info(`Found ${stats.totalUsers} users to process`)
+      console.log(`Found ${stats.totalUsers} users to process`)
 
       for (const user of users) {
         try {
           // Skip users without passwords
           if (!user.password) {
-            logger.debug(`Skipping user ${user.email} - no password set`)
+            console.log(`Skipping user ${user.email} - no password set`)
             continue
           }
 
@@ -46,39 +45,39 @@ export class PasswordMigrationService {
 
           // Check if password is already hashed
           if (PasswordUtils.isPasswordHashed(user.password)) {
-            logger.debug(`Skipping user ${user.email} - password already hashed`)
+            console.log(`Skipping user ${user.email} - password already hashed`)
             stats.usersSkipped++
             continue
           }
 
           // Hash the plain text password
-          logger.info(`Hashing password for user: ${user.email}`)
+          console.log(`Hashing password for user: ${user.email}`)
           const hashedPassword = await PasswordUtils.hashPassword(user.password)
 
           // Update user with hashed password
           await userService.update(user.id, { password: hashedPassword })
           
           stats.usersHashed++
-          logger.info(`Successfully hashed password for user: ${user.email}`)
+          console.log(`Successfully hashed password for user: ${user.email}`)
 
         } catch (error) {
           stats.errors++
-          logger.error(`Failed to migrate password for user ${user.email}`, { error })
+          console.error(`Failed to migrate password for user ${user.email}`, error)
         }
       }
 
-      logger.info('Password migration completed', stats)
+      console.log('Password migration completed', stats)
       return stats
 
     } catch (error) {
-      logger.error('Password migration failed', { error })
+      console.error('Password migration failed', error)
       throw error
     }
   }
 
   async validateMigration(): Promise<boolean> {
     try {
-      logger.info('Validating password migration...')
+      console.log('Validating password migration...')
       
       const users = await userService.findAll()
       let allValid = true
@@ -86,22 +85,22 @@ export class PasswordMigrationService {
       for (const user of users) {
         if (user.password) {
           if (!PasswordUtils.isPasswordHashed(user.password)) {
-            logger.error(`User ${user.email} still has plain text password!`)
+            console.error(`User ${user.email} still has plain text password!`)
             allValid = false
           }
         }
       }
 
       if (allValid) {
-        logger.info('Password migration validation passed - all passwords are properly hashed')
+        console.log('Password migration validation passed - all passwords are properly hashed')
       } else {
-        logger.error('Password migration validation failed - some plain text passwords remain')
+        console.error('Password migration validation failed - some plain text passwords remain')
       }
 
       return allValid
 
     } catch (error) {
-      logger.error('Password migration validation failed', { error })
+      console.error('Password migration validation failed', error)
       return false
     }
   }

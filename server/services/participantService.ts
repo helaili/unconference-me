@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { Participant } from '../types/participant'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { Participant } from '../../types/participant'
 
 export class ParticipantService extends BaseService<Participant> {
   protected readonly containerName = 'participants'
@@ -15,7 +14,7 @@ export class ParticipantService extends BaseService<Participant> {
         return mockData.getParticipants()
       }
     } catch (error) {
-      logger.error('Failed to fetch all participants', { error })
+      console.error('Failed to fetch all participants', { error })
       throw error
     }
   }
@@ -34,7 +33,7 @@ export class ParticipantService extends BaseService<Participant> {
         return mockData.getParticipants().find(p => p.id === id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch participant by id', { id, error })
+      console.error('Failed to fetch participant by id', { id, error })
       throw error
     }
   }
@@ -50,7 +49,7 @@ export class ParticipantService extends BaseService<Participant> {
         return mockData.getParticipants().filter(p => p.eventId === eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch participants by event id', { eventId, error })
+      console.error('Failed to fetch participants by event id', { eventId, error })
       throw error
     }
   }
@@ -66,7 +65,7 @@ export class ParticipantService extends BaseService<Participant> {
         return mockData.getParticipants().filter(p => p.userId === userId)
       }
     } catch (error) {
-      logger.error('Failed to fetch participants by user id', { userId, error })
+      console.error('Failed to fetch participants by user id', { userId, error })
       throw error
     }
   }
@@ -82,7 +81,7 @@ export class ParticipantService extends BaseService<Participant> {
         return mockData.getParticipants().filter(p => p.status === status)
       }
     } catch (error) {
-      logger.error('Failed to fetch participants by status', { status, error })
+      console.error('Failed to fetch participants by status', { status, error })
       throw error
     }
   }
@@ -103,7 +102,7 @@ export class ParticipantService extends BaseService<Participant> {
         return participant
       }
     } catch (error) {
-      logger.error('Failed to create participant', { participantData, error })
+      console.error('Failed to create participant', { participantData, error })
       throw error
     }
   }
@@ -137,7 +136,7 @@ export class ParticipantService extends BaseService<Participant> {
         return updatedParticipant
       }
     } catch (error) {
-      logger.error('Failed to update participant', { id, updates, error })
+      console.error('Failed to update participant', { id, updates, error })
       throw error
     }
   }
@@ -155,7 +154,7 @@ export class ParticipantService extends BaseService<Participant> {
         return mockData.removeParticipant(id)
       }
     } catch (error) {
-      logger.error('Failed to delete participant', { id, error })
+      console.error('Failed to delete participant', { id, error })
       throw error
     }
   }
@@ -165,7 +164,7 @@ export class ParticipantService extends BaseService<Participant> {
       const participant = await this.findById(id)
       return participant !== null
     } catch (error) {
-      logger.error('Failed to check if participant exists', { id, error })
+      console.error('Failed to check if participant exists', { id, error })
       throw error
     }
   }

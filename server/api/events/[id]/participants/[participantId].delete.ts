@@ -1,5 +1,4 @@
-import logger from '../../../../../utils/logger'
-import { participantService } from '../../../../../services'
+import { participantService } from '../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const participantId = getRouterParam(event, 'participantId')
     
-    logger.info(`Deleting participant ${participantId} from event ${eventId}`, { user: session.user })
+    console.log(`Deleting participant ${participantId} from event ${eventId}`, { user: session.user })
     
     if (!eventId || !participantId) {
       throw createError({
@@ -27,13 +26,13 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`Participant deleted successfully`, { participantId })
+    console.log(`Participant deleted successfully`, { participantId })
     
     return {
       success: true
     }
   } catch (error) {
-    logger.error('Error deleting participant:', error)
+    console.error('Error deleting participant:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

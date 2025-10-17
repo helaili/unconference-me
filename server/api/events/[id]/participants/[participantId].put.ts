@@ -1,5 +1,4 @@
-import logger from '../../../../../utils/logger'
-import { participantService } from '../../../../../services'
+import { participantService } from '../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -8,7 +7,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const participantId = getRouterParam(event, 'participantId')
     
-    logger.info(`Updating participant ${participantId} for event ${eventId}`, { user: session.user })
+    console.log(`Updating participant ${participantId} for event ${eventId}`, { user: session.user })
     
     if (!eventId || !participantId) {
       throw createError({
@@ -23,14 +22,14 @@ export default defineEventHandler(async (event) => {
     // Update participant
     const participant = await participantService.update(participantId, body)
     
-    logger.info(`Participant updated successfully`, { participantId })
+    console.log(`Participant updated successfully`, { participantId })
     
     return {
       success: true,
       participant
     }
   } catch (error) {
-    logger.error('Error updating participant:', error)
+    console.error('Error updating participant:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

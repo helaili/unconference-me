@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 
 const bodySchema = z.object({
   firstname: z.string().min(1),
@@ -15,13 +14,13 @@ export default defineEventHandler(async (event) => {
     const body = await readValidatedBody(event, bodySchema.parse)
     const { firstname, lastname, email, password, token } = body
     
-    logger.debug(`Registration attempt for email: ${email}`)
+    console.log(`Registration attempt for email: ${email}`)
     
     // Check if user already exists
     const existingUser = await userService.findByEmail(email)
     
     if (existingUser && existingUser.password) {
-      logger.warn(`Registration attempt with existing email: ${email}`)
+      console.warn(`Registration attempt with existing email: ${email}`)
       throw createError({
         statusCode: 400,
         statusMessage: 'User already exists',
@@ -35,7 +34,7 @@ export default defineEventHandler(async (event) => {
     // If token is provided, validate it
     if (token && existingUser) {
       if (existingUser.registrationToken !== token) {
-        logger.warn(`Invalid registration token for email: ${email}`)
+        console.warn(`Invalid registration token for email: ${email}`)
         throw createError({
           statusCode: 400,
           statusMessage: 'Invalid token',
@@ -48,7 +47,7 @@ export default defineEventHandler(async (event) => {
       
       // Check token expiry
       if (existingUser.registrationTokenExpiry && existingUser.registrationTokenExpiry < new Date()) {
-        logger.warn(`Expired registration token for email: ${email}`)
+        console.warn(`Expired registration token for email: ${email}`)
         throw createError({
           statusCode: 400,
           statusMessage: 'Token expired',
@@ -86,7 +85,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`Successful registration for user ${email}`)
+    console.log(`Successful registration for user ${email}`)
     
     return { 
       success: true, 
@@ -99,7 +98,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('Registration validation error:', error.message)
+      console.warn('Registration validation error:', error.message)
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation Error',

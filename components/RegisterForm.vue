@@ -1,6 +1,4 @@
 <script setup lang="ts">
-    import { userService } from '~/services/userService'
-    
     const runtimeConfig = useRuntimeConfig()
     const useGitHubAuth = runtimeConfig.public.authUrl === '/auth/github'
     const route = useRoute()

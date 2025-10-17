@@ -1,5 +1,4 @@
-import logger from '../../../../../utils/logger'
-import { participantService, userService } from '../../../../../services'
+import { participantService, userService } from '../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     
-    logger.info(`Registering user to event ${eventId}`, { user: session.user })
+    console.log(`Registering user to event ${eventId}`, { user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -46,7 +45,7 @@ export default defineEventHandler(async (event) => {
       registrationDate: new Date()
     })
     
-    logger.info(`User registered as participant successfully`, { 
+    console.log(`User registered as participant successfully`, { 
       userId: user.id, 
       participantId: participant.id 
     })
@@ -56,7 +55,7 @@ export default defineEventHandler(async (event) => {
       participant
     }
   } catch (error) {
-    logger.error('Error registering user:', error)
+    console.error('Error registering user:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

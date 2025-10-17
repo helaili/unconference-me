@@ -1,6 +1,5 @@
-import logger from '../../../../../utils/logger'
-import { topicService, participantService } from '../../../../../services'
-import { canDeleteTopic } from '../../../../../utils/access-control'
+import { topicService, participantService } from '../../../../services'
+import { canDeleteTopic } from '../../../../utils/access-control'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,7 +8,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const topicId = getRouterParam(event, 'topicId')
     
-    logger.info('Deleting topic for event', { topicId, eventId, user: session.user })
+    console.log('Deleting topic for event', { topicId, eventId, user: session.user })
     
     if (!eventId || !topicId) {
       throw createError({
@@ -51,14 +50,14 @@ export default defineEventHandler(async (event) => {
     // Perform soft delete by updating status to rejected
     await topicService.update(topicId, { status: 'rejected' })
     
-    logger.info(`Topic soft deleted successfully: ${topicId}`)
+    console.log(`Topic soft deleted successfully: ${topicId}`)
     
     return {
       success: true,
       message: 'Topic deleted successfully'
     }
   } catch (error) {
-    logger.error('Error deleting topic:', error)
+    console.error('Error deleting topic:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }
