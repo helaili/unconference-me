@@ -1,5 +1,4 @@
-import logger from '../../../utils/logger'
-import { invitationService, eventService } from '../../../services'
+import { invitationService, eventService } from '../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -14,7 +13,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`Fetching invitations for user ${userEmail}`)
+    console.log(`Fetching invitations for user ${userEmail}`)
     
     // Get pending invitations for this user (email is used as userId)
     const invitations = await invitationService.findPendingByUserId(userEmail)
@@ -35,7 +34,7 @@ export default defineEventHandler(async (event) => {
       invitations: enrichedInvitations
     }
   } catch (error) {
-    logger.error('Error fetching user invitations:', error)
+    console.error('Error fetching user invitations:', error)
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to fetch invitations',

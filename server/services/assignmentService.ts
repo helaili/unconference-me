@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { ParticipantAssignment } from '../types/participant'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { ParticipantAssignment } from '../../types/participant'
 
 export class AssignmentService extends BaseService<ParticipantAssignment> {
   protected readonly containerName = 'assignments'
@@ -15,7 +14,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.getAssignments()
       }
     } catch (error) {
-      logger.error('Failed to fetch all assignments', { error })
+      console.error('Failed to fetch all assignments', { error })
       throw error
     }
   }
@@ -34,7 +33,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.getAssignments().find(a => a.id === id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch assignment by id', { id, error })
+      console.error('Failed to fetch assignment by id', { id, error })
       throw error
     }
   }
@@ -50,7 +49,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.getAssignmentsByEventId(eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch assignments by event id', { eventId, error })
+      console.error('Failed to fetch assignments by event id', { eventId, error })
       throw error
     }
   }
@@ -66,7 +65,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.getAssignments().filter(a => a.participantId === participantId)
       }
     } catch (error) {
-      logger.error('Failed to fetch assignments by participant id', { participantId, error })
+      console.error('Failed to fetch assignments by participant id', { participantId, error })
       throw error
     }
   }
@@ -82,7 +81,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.getAssignments().filter(a => a.topicId === topicId)
       }
     } catch (error) {
-      logger.error('Failed to fetch assignments by topic id', { topicId, error })
+      console.error('Failed to fetch assignments by topic id', { topicId, error })
       throw error
     }
   }
@@ -103,7 +102,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         )
       }
     } catch (error) {
-      logger.error('Failed to fetch assignments by round', { eventId, roundNumber, error })
+      console.error('Failed to fetch assignments by round', { eventId, roundNumber, error })
       throw error
     }
   }
@@ -119,7 +118,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.getAssignments().filter(a => a.status === status)
       }
     } catch (error) {
-      logger.error('Failed to fetch assignments by status', { status, error })
+      console.error('Failed to fetch assignments by status', { status, error })
       throw error
     }
   }
@@ -140,7 +139,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return assignment
       }
     } catch (error) {
-      logger.error('Failed to create assignment', { assignmentData, error })
+      console.error('Failed to create assignment', { assignmentData, error })
       throw error
     }
   }
@@ -174,7 +173,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return updatedAssignment
       }
     } catch (error) {
-      logger.error('Failed to update assignment', { id, updates, error })
+      console.error('Failed to update assignment', { id, updates, error })
       throw error
     }
   }
@@ -192,7 +191,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         return mockData.removeAssignment(id)
       }
     } catch (error) {
-      logger.error('Failed to delete assignment', { id, error })
+      console.error('Failed to delete assignment', { id, error })
       throw error
     }
   }
@@ -202,7 +201,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
       const assignment = await this.findById(id)
       return assignment !== null
     } catch (error) {
-      logger.error('Failed to check if assignment exists', { id, error })
+      console.error('Failed to check if assignment exists', { id, error })
       throw error
     }
   }
@@ -218,7 +217,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
       
       return results
     } catch (error) {
-      logger.error('Failed to bulk create assignments', { count: assignments.length, error })
+      console.error('Failed to bulk create assignments', { count: assignments.length, error })
       throw error
     }
   }

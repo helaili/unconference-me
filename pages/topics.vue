@@ -56,7 +56,11 @@ const fetchTopics = async () => {
   try {
     const response = await $fetch(`/api/events/${eventId}/topics`)
     if (response.success) {
-      topics.value = response.topics
+      topics.value = response.topics.map((t: any) => ({
+        ...t,
+        createdAt: new Date(t.createdAt),
+        updatedAt: new Date(t.updatedAt)
+      }))
     }
   } catch (err: any) {
     console.error('Error fetching topics:', err)
@@ -70,13 +74,26 @@ const fetchEventData = async () => {
   try {
     const eventResponse = await $fetch(`/api/events/${eventId}`)
     if (eventResponse.success && eventResponse.event) {
-      event.value = eventResponse.event as Event
+      // Convert date strings to Date objects for type safety
+      const rawEvent = eventResponse.event
+      event.value = {
+        ...rawEvent,
+        startDate: rawEvent.startDate ? new Date(rawEvent.startDate) : undefined,
+        endDate: rawEvent.endDate ? new Date(rawEvent.endDate) : undefined,
+        createdAt: rawEvent.createdAt ? new Date(rawEvent.createdAt) : undefined,
+        updatedAt: rawEvent.updatedAt ? new Date(rawEvent.updatedAt) : undefined
+      } as Event
     }
     
     // Fetch participants to find current user's participant ID
     const participantsResponse = await $fetch(`/api/events/${eventId}/participants`)
     if (participantsResponse.success && participantsResponse.participants) {
-      const participants = participantsResponse.participants as Participant[]
+      const participants = (participantsResponse.participants as any[]).map((p: any) => ({
+        ...p,
+        registrationDate: p.registrationDate ? new Date(p.registrationDate) : undefined,
+        createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+        updatedAt: p.updatedAt ? new Date(p.updatedAt) : undefined
+      })) as Participant[]
       participant.value = participants.find(p => p.email === user.value?.email) || null
     }
     

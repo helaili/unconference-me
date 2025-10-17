@@ -1,8 +1,7 @@
 import { z } from 'zod'
 import type { Topic } from '../../../../../types/topic'
-import logger from '../../../../../utils/logger'
-import { topicService, participantService } from '../../../../../services'
-import { canEditTopic, canChangeTopicStatus } from '../../../../../utils/access-control'
+import { topicService, participantService } from '../../../../services'
+import { canEditTopic, canChangeTopicStatus } from '../../../../utils/access-control'
 
 // Validation schema for updating a topic
 const updateTopicSchema = z.object({
@@ -20,7 +19,7 @@ export default defineEventHandler(async (event) => {
     const topicId = getRouterParam(event, 'topicId')
     const body = await readBody(event)
     
-    logger.info('Updating topic for event', { topicId, eventId, user: session.user })
+    console.log('Updating topic for event', { topicId, eventId, user: session.user })
     
     if (!eventId || !topicId) {
       throw createError({
@@ -81,7 +80,7 @@ export default defineEventHandler(async (event) => {
     
     const updatedTopic = await topicService.update(topicId, updates)
     
-    logger.info(`Topic updated successfully: ${topicId}`)
+    console.log(`Topic updated successfully: ${topicId}`)
     
     return {
       success: true,
@@ -89,7 +88,7 @@ export default defineEventHandler(async (event) => {
       message: 'Topic updated successfully'
     }
   } catch (error) {
-    logger.error('Error updating topic:', error)
+    console.error('Error updating topic:', error)
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,

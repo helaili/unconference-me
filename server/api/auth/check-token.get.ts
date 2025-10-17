@@ -1,5 +1,4 @@
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -17,14 +16,14 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.debug(`Checking registration token: ${token}`)
+    console.log(`Checking registration token: ${token}`)
     
     // Find user by token
     const users = await userService.findAll()
     const user = users.find(u => u.registrationToken === token)
     
     if (!user) {
-      logger.warn(`Invalid registration token: ${token}`)
+      console.warn(`Invalid registration token: ${token}`)
       throw createError({
         statusCode: 404,
         statusMessage: 'Invalid token',
@@ -37,7 +36,7 @@ export default defineEventHandler(async (event) => {
     
     // Check token expiry
     if (user.registrationTokenExpiry && user.registrationTokenExpiry < new Date()) {
-      logger.warn(`Expired registration token: ${token}`)
+      console.warn(`Expired registration token: ${token}`)
       throw createError({
         statusCode: 400,
         statusMessage: 'Token expired',
@@ -48,7 +47,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`Valid registration token found for user: ${user.email}`)
+    console.log(`Valid registration token found for user: ${user.email}`)
     
     return { 
       success: true,
@@ -59,7 +58,7 @@ export default defineEventHandler(async (event) => {
       }
     }
   } catch (error) {
-    logger.error('Error checking registration token:', error)
+    console.error('Error checking registration token:', error)
     throw error
   }
 })

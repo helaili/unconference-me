@@ -1,12 +1,11 @@
-import logger from '../../../utils/logger'
-import { eventService } from '../../../services'
+import { eventService } from '../../services'
 
 export default defineEventHandler(async (event) => {
   try {
     // Require authentication
     const session = await requireUserSession(event)
     
-    logger.info('Fetching events list for authenticated user', { user: session.user })
+    console.log('Fetching events list for authenticated user', { user: session.user })
     
     // Get events using the service layer (automatically uses CosmosDB or mock data based on environment)
     const events = await eventService.findAll()
@@ -16,7 +15,7 @@ export default defineEventHandler(async (event) => {
       events
     }
   } catch (error) {
-    logger.error('Error fetching events:', error)
+    console.error('Error fetching events:', error)
     throw createError({
       statusCode: 500,
       statusMessage: 'Failed to fetch events',

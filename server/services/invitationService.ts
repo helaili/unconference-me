@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { Invitation } from '../types/invitation'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { Invitation } from '../../types/invitation'
 
 export class InvitationService extends BaseService<Invitation> {
   protected readonly containerName = 'invitations'
@@ -15,7 +14,7 @@ export class InvitationService extends BaseService<Invitation> {
         return mockData.getInvitations()
       }
     } catch (error) {
-      logger.error('Failed to fetch all invitations', { error })
+      console.error('Failed to fetch all invitations', { error })
       throw error
     }
   }
@@ -32,7 +31,7 @@ export class InvitationService extends BaseService<Invitation> {
         return mockData.getInvitations().find(i => i.id === id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch invitation by id', { id, error })
+      console.error('Failed to fetch invitation by id', { id, error })
       throw error
     }
   }
@@ -48,7 +47,7 @@ export class InvitationService extends BaseService<Invitation> {
         return mockData.getInvitations().filter(i => i.eventId === eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch invitations by event id', { eventId, error })
+      console.error('Failed to fetch invitations by event id', { eventId, error })
       throw error
     }
   }
@@ -64,7 +63,7 @@ export class InvitationService extends BaseService<Invitation> {
         return mockData.getInvitations().filter(i => i.userId === userId)
       }
     } catch (error) {
-      logger.error('Failed to fetch invitations by user id', { userId, error })
+      console.error('Failed to fetch invitations by user id', { userId, error })
       throw error
     }
   }
@@ -83,7 +82,7 @@ export class InvitationService extends BaseService<Invitation> {
         return mockData.getInvitations().filter(i => i.userId === userId && i.status === 'pending')
       }
     } catch (error) {
-      logger.error('Failed to fetch pending invitations by user id', { userId, error })
+      console.error('Failed to fetch pending invitations by user id', { userId, error })
       throw error
     }
   }
@@ -104,7 +103,7 @@ export class InvitationService extends BaseService<Invitation> {
         return invitation
       }
     } catch (error) {
-      logger.error('Failed to create invitation', { invitationData, error })
+      console.error('Failed to create invitation', { invitationData, error })
       throw error
     }
   }
@@ -138,7 +137,7 @@ export class InvitationService extends BaseService<Invitation> {
         return updatedInvitation
       }
     } catch (error) {
-      logger.error('Failed to update invitation', { id, updates, error })
+      console.error('Failed to update invitation', { id, updates, error })
       throw error
     }
   }
@@ -155,7 +154,7 @@ export class InvitationService extends BaseService<Invitation> {
         return mockData.removeInvitation(id)
       }
     } catch (error) {
-      logger.error('Failed to delete invitation', { id, error })
+      console.error('Failed to delete invitation', { id, error })
       throw error
     }
   }
@@ -165,7 +164,7 @@ export class InvitationService extends BaseService<Invitation> {
       const invitation = await this.findById(id)
       return invitation !== null
     } catch (error) {
-      logger.error('Failed to check if invitation exists', { id, error })
+      console.error('Failed to check if invitation exists', { id, error })
       throw error
     }
   }

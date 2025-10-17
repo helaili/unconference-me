@@ -1,8 +1,7 @@
 import { z } from 'zod'
 import { eventSchema } from '../../../../types/schemas'
-import logger from '../../../../utils/logger'
-import { eventService } from '../../../../services'
-import { canManageEvent } from '../../../../utils/access-control'
+import { eventService } from '../../../services'
+import { canManageEvent } from '../../../utils/access-control'
 
 // Validation schema for update (all fields optional except required metadata)
 const updateEventSchema = z.object({
@@ -58,7 +57,7 @@ export default defineEventHandler(async (event) => {
     // Parse and validate request body
     const body = await readValidatedBody(event, updateEventSchema.parse)
     
-    logger.info(`Updating event ${id} for user: ${session.user?.email}`)
+    console.log(`Updating event ${id} for user: ${session.user?.email}`)
     
     // Validate group sizes if provided
     const minSize = body.minGroupSize ?? existingEvent.minGroupSize
@@ -85,7 +84,7 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     
-    logger.info(`Event updated successfully: ${id}`)
+    console.log(`Event updated successfully: ${id}`)
     
     return {
       success: true,
@@ -93,7 +92,7 @@ export default defineEventHandler(async (event) => {
       message: 'Event updated successfully'
     }
   } catch (error) {
-    logger.error('Error updating event:', error)
+    console.error('Error updating event:', error)
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,

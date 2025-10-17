@@ -1,5 +1,4 @@
-import { userService } from '~/services'
-import logger from '~/utils/logger'
+import { userService } from '~/server/services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -39,14 +38,14 @@ export default defineEventHandler(async (event) => {
       role: role || 'Participant'
     })
 
-    logger.info(`User updated: ${email}`)
+    console.log(`User updated: ${email}`)
 
     return {
       success: true,
       user: updatedUser
     }
   } catch (error: any) {
-    logger.error('Failed to update user', { error })
+    console.error('Failed to update user', { error })
     throw createError({
       statusCode: error.statusCode || 500,
       statusMessage: error.statusMessage || 'Failed to update user'

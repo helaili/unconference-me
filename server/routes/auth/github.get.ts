@@ -1,12 +1,11 @@
-import logger from '~/utils/logger'
-import { userService } from '~/services/userService'
+import { userService } from '~/server/services/userService'
 
 export default defineOAuthGitHubEventHandler({
     config: {
       emailRequired: true
     },
     async onSuccess(event, { user: githubUser }) {
-      logger.debug(`GitHub OAuth success: ${githubUser.login}`)
+      console.log(`GitHub OAuth success: ${githubUser.login}`)
       
       const query = getQuery(event)
       const token = query.token as string
@@ -30,7 +29,7 @@ export default defineOAuthGitHubEventHandler({
           if (userByToken) {
             // Validate token expiry
             if (userByToken.registrationTokenExpiry && userByToken.registrationTokenExpiry < new Date()) {
-              logger.warn(`Expired registration token during GitHub OAuth: ${token}`)
+              console.warn(`Expired registration token during GitHub OAuth: ${token}`)
               return sendRedirect(event, '/register?error=token_expired')
             }
             user = userByToken
@@ -63,7 +62,7 @@ export default defineOAuthGitHubEventHandler({
           })
         }
         
-        logger.info(`GitHub OAuth successful for user: ${user.email}`)
+        console.log(`GitHub OAuth successful for user: ${user.email}`)
         
         await setUserSession(event, {
           user: {
@@ -76,13 +75,13 @@ export default defineOAuthGitHubEventHandler({
         
         return sendRedirect(event, '/dashboard')
       } catch (error) {
-        logger.error('Error processing GitHub OAuth:', error)
+        console.error('Error processing GitHub OAuth:', error)
         return sendRedirect(event, '/register?error=auth_failed')
       }
     },
     // Optional, will return a json error and 401 status code by default
     onError(event, error) {
-      logger.error('GitHub OAuth error:', error)
+      console.error('GitHub OAuth error:', error)
       return sendRedirect(event, '/')
     },
   })

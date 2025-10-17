@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import logger from '../../../../utils/logger'
-import { organizerService, userService } from '../../../../services'
-import { canManageEvent } from '../../../../utils/access-control'
+import { organizerService, userService } from '../../../services'
+import { canManageEvent } from '../../../utils/access-control'
 
 // Validation schema for adding an organizer
 const addOrganizerSchema = z.object({
@@ -30,7 +29,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const body = await readBody(event)
     
-    logger.info('Adding organizer to event', { eventId, user: session.user })
+    console.log('Adding organizer to event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -55,7 +54,7 @@ export default defineEventHandler(async (event) => {
     try {
       user = await userService.findByEmail(validatedData.email)
     } catch (err) {
-      logger.info('User not found, will create organizer with email only', { email: validatedData.email })
+      console.log('User not found, will create organizer with email only', { email: validatedData.email })
     }
     
     // Check if organizer already exists for this event
@@ -130,7 +129,7 @@ export default defineEventHandler(async (event) => {
       permissions
     })
     
-    logger.info(`Organizer added successfully: ${newOrganizer.id}`)
+    console.log(`Organizer added successfully: ${newOrganizer.id}`)
     
     return {
       success: true,
@@ -138,7 +137,7 @@ export default defineEventHandler(async (event) => {
       message: 'Organizer added successfully'
     }
   } catch (error) {
-    logger.error('Error adding organizer:', error)
+    console.error('Error adding organizer:', error)
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,

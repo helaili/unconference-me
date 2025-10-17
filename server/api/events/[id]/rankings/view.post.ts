@@ -1,5 +1,4 @@
-import logger from '../../../../../utils/logger'
-import { eventService, topicRankingService, participantService } from '../../../../../services'
+import { eventService, topicRankingService, participantService } from '../../../../services'
 
 /**
  * Update the last viewed timestamp for a participant's ranking
@@ -11,7 +10,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     
-    logger.info('Updating last viewed timestamp for event', { eventId, user: session.user })
+    console.log('Updating last viewed timestamp for event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -64,7 +63,7 @@ export default defineEventHandler(async (event) => {
       ranking
     }
   } catch (error) {
-    logger.error('Error updating last viewed timestamp:', error)
+    console.error('Error updating last viewed timestamp:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

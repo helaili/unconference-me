@@ -1,8 +1,7 @@
 import { CosmosClient } from '@azure/cosmos'
 import type { Database } from '@azure/cosmos'
 import { mockData } from '../tests/helpers/mock-manager'
-import logger from '../utils/logger'
-import { PasswordUtils } from '../utils/password'
+import { PasswordUtils } from '../server/utils/password'
 import { fileURLToPath } from 'url'
 import { dirname } from 'path'
 
@@ -26,7 +25,7 @@ export class ProductionDatabasePopulator {
 
   async initialize(): Promise<void> {
     try {
-      logger.info('Initializing production database connection')
+      console.log('Initializing production database connection')
       
       // Create database if it doesn't exist
       const { database } = await this.client.databases.createIfNotExists({
@@ -37,9 +36,9 @@ export class ProductionDatabasePopulator {
       // Create containers
       await this.createContainers()
       
-      logger.info('Production database initialized successfully')
+      console.log('Production database initialized successfully')
     } catch (error) {
-      logger.error('Failed to initialize production database', { error })
+      console.error('Failed to initialize production database', { error })
       throw error
     }
   }
@@ -58,9 +57,9 @@ export class ProductionDatabasePopulator {
           id: containerDef.id,
           partitionKey: containerDef.partitionKey
         })
-        logger.info(`Container '${containerDef.id}' created or already exists`)
+        console.log(`Container '${containerDef.id}' created or already exists`)
       } catch (error) {
-        logger.error(`Failed to create container '${containerDef.id}'`, { error })
+        console.error(`Failed to create container '${containerDef.id}'`, { error })
         throw error
       }
     }
@@ -68,7 +67,7 @@ export class ProductionDatabasePopulator {
 
   async populateMinimalData(): Promise<void> {
     try {
-      logger.info('Starting production database population with minimal default data')
+      console.log('Starting production database population with minimal default data')
       
       // Reset mock data to ensure consistent state
       mockData.resetToDefaults()
@@ -76,9 +75,9 @@ export class ProductionDatabasePopulator {
       // Only populate the default event for production
       await this.populateDefaultEvent()
       
-      logger.info('Production database population completed successfully')
+      console.log('Production database population completed successfully')
     } catch (error) {
-      logger.error('Failed to populate production database', { error })
+      console.error('Failed to populate production database', { error })
       throw error
     }
   }
@@ -90,20 +89,20 @@ export class ProductionDatabasePopulator {
     // Only take the first (default) event
     const defaultEvent = events[0]
     if (!defaultEvent) {
-      logger.warn('No default event found in mock data')
+      console.warn('No default event found in mock data')
       return
     }
     
-    logger.info(`Populating default event: ${defaultEvent.name}`)
+    console.log(`Populating default event: ${defaultEvent.name}`)
     
     try {
       await container.items.upsert({
         id: defaultEvent.id,
         ...defaultEvent
       })
-      logger.info(`Default event '${defaultEvent.name}' added to production database`)
+      console.log(`Default event '${defaultEvent.name}' added to production database`)
     } catch (error) {
-      logger.error(`Failed to add default event '${defaultEvent.id}'`, { error })
+      console.error(`Failed to add default event '${defaultEvent.id}'`, { error })
       throw error
     }
   }
@@ -130,19 +129,19 @@ export class ProductionDatabasePopulator {
     
     try {
       await container.items.upsert(adminUser)
-      logger.info(`Admin user '${adminEmail}' created in production database with hashed password`)
+      console.log(`Admin user '${adminEmail}' created in production database with hashed password`)
     } catch (error) {
-      logger.error(`Failed to create admin user '${adminEmail}'`, { error })
+      console.error(`Failed to create admin user '${adminEmail}'`, { error })
       throw error
     }
   }
 
   async cleanup(): Promise<void> {
     try {
-      logger.info('Cleaning up production database connection')
+      console.log('Cleaning up production database connection')
       this.client.dispose()
     } catch (error) {
-      logger.error('Failed to cleanup production database connection', { error })
+      console.error('Failed to cleanup production database connection', { error })
     }
   }
 }
@@ -150,7 +149,7 @@ export class ProductionDatabasePopulator {
 // Mock service population for production (used in Copilot mode)
 async function populateProductionWithMockServices(): Promise<void> {
   try {
-    logger.info('Starting production mock service population with data from mock-manager')
+    console.log('Starting production mock service population with data from mock-manager')
     
     // Reset mock data to ensure consistent state
     mockData.resetToDefaults()
@@ -161,17 +160,17 @@ async function populateProductionWithMockServices(): Promise<void> {
     const participants = mockData.getParticipants()
     const assignments = mockData.getAssignments()
     
-    logger.info(`Production mock data summary:`)
-    logger.info(`- Users: ${users.length}`)
-    logger.info(`- Events: ${events.length}`)
-    logger.info(`- Participants: ${participants.length}`)
-    logger.info(`- Assignments: ${assignments.length}`)
+    console.log(`Production mock data summary:`)
+    console.log(`- Users: ${users.length}`)
+    console.log(`- Events: ${events.length}`)
+    console.log(`- Participants: ${participants.length}`)
+    console.log(`- Assignments: ${assignments.length}`)
     
-    logger.info('Production mock data from mock-manager is ready and validated')
-    logger.info('Production mock service population completed successfully')
+    console.log('Production mock data from mock-manager is ready and validated')
+    console.log('Production mock service population completed successfully')
     
   } catch (error) {
-    logger.error('Failed to populate production with mock services', { error })
+    console.error('Failed to populate production with mock services', { error })
     throw error
   }
 }
@@ -180,7 +179,7 @@ async function populateProductionWithMockServices(): Promise<void> {
 async function populateProductionDatabase(): Promise<void> {
   // Check if running in Copilot mode - always use mock services in this case
   if (process.env.APP_ENV === 'copilot') {
-    logger.info('Running in Copilot mode, using mock services as required by project architecture')
+    console.log('Running in Copilot mode, using mock services as required by project architecture')
     await populateProductionWithMockServices()
     return
   }
@@ -192,7 +191,7 @@ async function populateProductionDatabase(): Promise<void> {
 
   // Validate configuration
   if (!config.connectionString) {
-    logger.info('Production database connection string not available, using mock services')
+    console.log('Production database connection string not available, using mock services')
     await populateProductionWithMockServices()
     return
   }
@@ -210,12 +209,12 @@ async function populateProductionDatabase(): Promise<void> {
     if (adminEmail && adminPassword) {
       await populator.createAdminUser(adminEmail, adminPassword)
     } else {
-      logger.warn('No admin user credentials provided - skipping admin user creation')
+      console.warn('No admin user credentials provided - skipping admin user creation')
     }
     
-    logger.info('Production database population completed successfully')
+    console.log('Production database population completed successfully')
   } catch (error) {
-    logger.error('Production database population failed', { error })
+    console.error('Production database population failed', { error })
     throw error
   } finally {
     await populator.cleanup()
@@ -229,11 +228,11 @@ const __dirname = dirname(__filename)
 if (process.argv[1] === __filename) {
   populateProductionDatabase()
     .then(() => {
-      logger.info('Script execution completed')
+      console.log('Script execution completed')
       process.exit(0)
     })
     .catch((error) => {
-      logger.error('Script execution failed', { error })
+      console.error('Script execution failed', { error })
       process.exit(1)
     })
 }

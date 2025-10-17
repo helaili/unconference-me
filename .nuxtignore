@@ -1,0 +1,7 @@
+# Exclude scripts folder from Nuxt build
+scripts/
+scripts/**
+
+# Exclude test results and reports from build
+test-results/
+playwright-report/

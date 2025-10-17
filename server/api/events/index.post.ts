@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import logger from '../../../utils/logger'
-import { eventService } from '../../../services'
-import { isAdmin } from '../../../utils/access-control'
+import { eventService } from '../../services'
+import { isAdmin } from '../../utils/access-control'
 
 // Validation schema for creating an event
 const createEventSchema = z.object({
@@ -41,7 +40,7 @@ export default defineEventHandler(async (event) => {
     
     const body = await readBody(event)
     
-    logger.info('Creating new event', { user: session.user })
+    console.log('Creating new event', { user: session.user })
     
     // Validate request body
     const validatedData = createEventSchema.parse(body)
@@ -90,7 +89,7 @@ export default defineEventHandler(async (event) => {
       settings: validatedData.settings
     })
     
-    logger.info(`Event created successfully: ${newEvent.id}`)
+    console.log(`Event created successfully: ${newEvent.id}`)
     
     return {
       success: true,
@@ -98,7 +97,7 @@ export default defineEventHandler(async (event) => {
       message: 'Event created successfully'
     }
   } catch (error) {
-    logger.error('Error creating event:', error)
+    console.error('Error creating event:', error)
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,

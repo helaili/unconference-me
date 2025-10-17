@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { Topic } from '../types/topic'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { Topic } from '../../types/topic'
 
 export class TopicService extends BaseService<Topic> {
   protected readonly containerName = 'topics'
@@ -15,7 +14,7 @@ export class TopicService extends BaseService<Topic> {
         return mockData.getTopics()
       }
     } catch (error) {
-      logger.error('Failed to fetch all topics', { error })
+      console.log('Failed to fetch all topics', { error })
       throw error
     }
   }
@@ -34,7 +33,7 @@ export class TopicService extends BaseService<Topic> {
         return mockData.getTopicById(id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch topic by id', { id, error })
+      console.log('Failed to fetch topic by id', { id, error })
       throw error
     }
   }
@@ -50,7 +49,7 @@ export class TopicService extends BaseService<Topic> {
         return mockData.getTopicsByEventId(eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch topics by event id', { eventId, error })
+      console.log('Failed to fetch topics by event id', { eventId, error })
       throw error
     }
   }
@@ -66,7 +65,7 @@ export class TopicService extends BaseService<Topic> {
         return mockData.getTopicsByProposer(proposedBy)
       }
     } catch (error) {
-      logger.error('Failed to fetch topics by proposer', { proposedBy, error })
+      console.log('Failed to fetch topics by proposer', { proposedBy, error })
       throw error
     }
   }
@@ -82,7 +81,7 @@ export class TopicService extends BaseService<Topic> {
         return mockData.getTopics().filter(t => t.status === status)
       }
     } catch (error) {
-      logger.error('Failed to fetch topics by status', { status, error })
+      console.log('Failed to fetch topics by status', { status, error })
       throw error
     }
   }
@@ -139,7 +138,7 @@ export class TopicService extends BaseService<Topic> {
 
       return topics
     } catch (error) {
-      logger.error('Failed to search topics', { eventId, options, error })
+      console.log('Failed to search topics', { eventId, options, error })
       throw error
     }
   }
@@ -160,7 +159,7 @@ export class TopicService extends BaseService<Topic> {
         return topic
       }
     } catch (error) {
-      logger.error('Failed to create topic', { topicData, error })
+      console.log('Failed to create topic', { topicData, error })
       throw error
     }
   }
@@ -194,7 +193,7 @@ export class TopicService extends BaseService<Topic> {
         return updatedTopic
       }
     } catch (error) {
-      logger.error('Failed to update topic', { id, updates, error })
+      console.log('Failed to update topic', { id, updates, error })
       throw error
     }
   }
@@ -212,7 +211,7 @@ export class TopicService extends BaseService<Topic> {
         return mockData.removeTopic(id)
       }
     } catch (error) {
-      logger.error('Failed to delete topic', { id, error })
+      console.log('Failed to delete topic', { id, error })
       throw error
     }
   }
@@ -222,7 +221,7 @@ export class TopicService extends BaseService<Topic> {
       const topic = await this.findById(id)
       return topic !== null
     } catch (error) {
-      logger.error('Failed to check if topic exists', { id, error })
+      console.log('Failed to check if topic exists', { id, error })
       throw error
     }
   }

@@ -1,5 +1,4 @@
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -20,7 +19,7 @@ export default defineEventHandler(async (event) => {
     
     const email = decodeURIComponent(getRouterParam(event, 'email') || '')
     
-    logger.debug(`Admin deleting user: ${email}`)
+    console.log(`Admin deleting user: ${email}`)
     
     const success = await userService.delete(email)
     
@@ -35,14 +34,14 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`Admin deleted user: ${email}`)
+    console.log(`Admin deleted user: ${email}`)
     
     return { 
       success: true,
       message: 'User deleted successfully'
     }
   } catch (error) {
-    logger.error('Error deleting user:', error)
+    console.error('Error deleting user:', error)
     throw error
   }
 })

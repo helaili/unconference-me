@@ -1,5 +1,4 @@
-import logger from '../../../../../utils/logger'
-import { eventService, topicRankingService, participantService } from '../../../../../services'
+import { eventService, topicRankingService, participantService } from '../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -7,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     
-    logger.info('Fetching topic ranking for event', { eventId, user: session.user })
+    console.log('Fetching topic ranking for event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -44,7 +43,7 @@ export default defineEventHandler(async (event) => {
       ranking
     }
   } catch (error) {
-    logger.error('Error fetching topic ranking:', error)
+    console.error('Error fetching topic ranking:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

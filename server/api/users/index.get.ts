@@ -1,5 +1,4 @@
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -18,7 +17,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.debug('Fetching all users')
+    console.log('Fetching all users')
     
     const users = await userService.findAll()
     
@@ -33,7 +32,7 @@ export default defineEventHandler(async (event) => {
       users: sanitizedUsers
     }
   } catch (error) {
-    logger.error('Error fetching users:', error)
+    console.error('Error fetching users:', error)
     throw error
   }
 })

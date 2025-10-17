@@ -1,6 +1,5 @@
 import { populateStagingDatabase } from './populate-staging-db'
 import { populateProductionDatabase } from './populate-production-db'
-import logger  from '../utils/logger'
 import { fileURLToPath } from 'url'
 
 /**
@@ -17,7 +16,7 @@ function getEnvironmentFromArgs(): Environment {
   const env = process.argv[2]?.toLowerCase()
   
   if (!env || !VALID_ENVIRONMENTS.includes(env as Environment)) {
-    logger.error('Invalid or missing environment argument')
+    console.error('Invalid or missing environment argument')
     console.error('Usage: npm run populate:staging OR npm run populate:production')
     console.error('Available environments:', VALID_ENVIRONMENTS.join(', '))
     process.exit(1)
@@ -29,7 +28,7 @@ function getEnvironmentFromArgs(): Environment {
 async function runPopulation(): Promise<void> {
   const environment = getEnvironmentFromArgs()
   
-  logger.info(`Starting ${environment} database population`)
+  console.info(`Starting ${environment} database population`)
   
   try {
     switch (environment) {
@@ -43,9 +42,9 @@ async function runPopulation(): Promise<void> {
         throw new Error(`Unsupported environment: ${environment}`)
     }
     
-    logger.info(`${environment} database population completed successfully`)
+    console.info(`${environment} database population completed successfully`)
   } catch (error) {
-    logger.error(`${environment} database population failed`, { 
+    console.error(`${environment} database population failed`, { 
       error: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined
     })
@@ -59,11 +58,11 @@ const __filename = fileURLToPath(import.meta.url)
 if (process.argv[1] === __filename) {
   runPopulation()
     .then(() => {
-      logger.info('Database population script completed')
+      console.info('Database population script completed')
       process.exit(0)
     })
     .catch((error) => {
-      logger.error('Database population script failed', { error })
+      console.error('Database population script failed', { error })
       process.exit(1)
     })
 }

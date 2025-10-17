@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { TopicRanking } from '../types/topicRanking'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { TopicRanking } from '../../types/topicRanking'
 
 export class TopicRankingService extends BaseService<TopicRanking> {
   protected readonly containerName = 'topicRankings'
@@ -15,7 +14,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return mockData.getTopicRankings()
       }
     } catch (error) {
-      logger.error('Failed to fetch all topic rankings', { error })
+      console.error('Failed to fetch all topic rankings', { error })
       throw error
     }
   }
@@ -34,7 +33,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return mockData.getTopicRankingById(id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch topic ranking by id', { id, error })
+      console.error('Failed to fetch topic ranking by id', { id, error })
       throw error
     }
   }
@@ -54,7 +53,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return mockData.getTopicRankingByParticipantAndEvent(participantId, eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch topic ranking by participant and event', { participantId, eventId, error })
+      console.error('Failed to fetch topic ranking by participant and event', { participantId, eventId, error })
       throw error
     }
   }
@@ -70,7 +69,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return mockData.getTopicRankingsByEventId(eventId)
       }
     } catch (error) {
-      logger.error('Failed to fetch topic rankings by event id', { eventId, error })
+      console.error('Failed to fetch topic rankings by event id', { eventId, error })
       throw error
     }
   }
@@ -91,7 +90,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return ranking
       }
     } catch (error) {
-      logger.error('Failed to create topic ranking', { rankingData, error })
+      console.error('Failed to create topic ranking', { rankingData, error })
       throw error
     }
   }
@@ -125,7 +124,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return updatedRanking
       }
     } catch (error) {
-      logger.error('Failed to update topic ranking', { id, updates, error })
+      console.error('Failed to update topic ranking', { id, updates, error })
       throw error
     }
   }
@@ -143,7 +142,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         return mockData.removeTopicRanking(id)
       }
     } catch (error) {
-      logger.error('Failed to delete topic ranking', { id, error })
+      console.error('Failed to delete topic ranking', { id, error })
       throw error
     }
   }
@@ -153,7 +152,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
       const ranking = await this.findById(id)
       return ranking !== null
     } catch (error) {
-      logger.error('Failed to check if topic ranking exists', { id, error })
+      console.error('Failed to check if topic ranking exists', { id, error })
       throw error
     }
   }

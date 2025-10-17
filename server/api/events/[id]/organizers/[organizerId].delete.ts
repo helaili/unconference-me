@@ -1,6 +1,5 @@
-import logger from '../../../../../utils/logger'
-import { organizerService } from '../../../../../services'
-import { canManageEvent } from '../../../../../utils/access-control'
+import { organizerService } from '../../../../services'
+import { canManageEvent } from '../../../../utils/access-control'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -9,7 +8,7 @@ export default defineEventHandler(async (event) => {
     const eventId = getRouterParam(event, 'id')
     const organizerId = getRouterParam(event, 'organizerId')
     
-    logger.info('Removing organizer from event', { eventId, organizerId, user: session.user })
+    console.log('Removing organizer from event', { eventId, organizerId, user: session.user })
     
     if (!eventId || !organizerId) {
       throw createError({
@@ -45,14 +44,14 @@ export default defineEventHandler(async (event) => {
     // Delete the organizer
     await organizerService.delete(organizerId)
     
-    logger.info(`Organizer removed successfully: ${organizerId}`)
+    console.log(`Organizer removed successfully: ${organizerId}`)
     
     return {
       success: true,
       message: 'Organizer removed successfully'
     }
   } catch (error) {
-    logger.error('Error removing organizer:', error)
+    console.error('Error removing organizer:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

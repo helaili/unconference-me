@@ -1,5 +1,4 @@
-import logger from '../../../../utils/logger'
-import { invitationService, participantService } from '../../../../services'
+import { invitationService, participantService } from '../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -15,7 +14,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    logger.info(`User ${userEmail} responding to invitation ${invitationId}`)
+    console.log(`User ${userEmail} responding to invitation ${invitationId}`)
     
     if (!invitationId) {
       throw createError({
@@ -82,7 +81,7 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    logger.info(`Invitation ${invitationId} ${newStatus} by user ${userEmail}`)
+    console.log(`Invitation ${invitationId} ${newStatus} by user ${userEmail}`)
     
     return {
       success: true,
@@ -90,7 +89,7 @@ export default defineEventHandler(async (event) => {
       invitation: await invitationService.findById(invitationId)
     }
   } catch (error) {
-    logger.error('Error responding to invitation:', error)
+    console.error('Error responding to invitation:', error)
     if (error && typeof error === 'object' && 'statusCode' in error) {
       throw error
     }

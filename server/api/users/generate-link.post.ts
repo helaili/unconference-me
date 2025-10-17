@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 import crypto from 'crypto'
 
 const bodySchema = z.object({
@@ -26,7 +25,7 @@ export default defineEventHandler(async (event) => {
     
     const body = await readValidatedBody(event, bodySchema.parse)
     
-    logger.debug(`Admin generating registration link for: ${body.email}`)
+    console.log(`Admin generating registration link for: ${body.email}`)
     
     // Find user
     const user = await userService.findByEmail(body.email)
@@ -60,7 +59,7 @@ export default defineEventHandler(async (event) => {
     
     const registrationLink = `${protocol}://${host}/register?token=${registrationToken}`
     
-    logger.info(`Admin generated registration link for user: ${user.email}`)
+    console.log(`Admin generated registration link for user: ${user.email}`)
     
     return { 
       success: true,
@@ -69,7 +68,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('Generate link validation error:', error.message)
+      console.warn('Generate link validation error:', error.message)
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation Error',

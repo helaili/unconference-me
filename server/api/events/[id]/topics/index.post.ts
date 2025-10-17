@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import logger from '../../../../../utils/logger'
-import { eventService, participantService, topicService } from '../../../../../services'
-import { isAdmin } from '../../../../../utils/access-control'
+import { eventService, participantService, topicService } from '../../../../services'
+import { isAdmin } from '../../../../utils/access-control'
 
 // Validation schema for creating a topic
 const createTopicSchema = z.object({
@@ -16,7 +15,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
     const body = await readBody(event)
-    logger.info('Creating topic for event', { eventId, user: session.user })
+    console.log('Creating topic for event', { eventId, user: session.user })
     
     if (!eventId) {
       throw createError({
@@ -91,7 +90,7 @@ export default defineEventHandler(async (event) => {
       metadata: validatedData.tags ? { tags: validatedData.tags } : undefined
     })
     
-    logger.info(`Topic created successfully: ${newTopic.id}`)
+    console.log(`Topic created successfully: ${newTopic.id}`)
     
     return {
       success: true,
@@ -99,7 +98,7 @@ export default defineEventHandler(async (event) => {
       message: 'Topic submitted successfully'
     }
   } catch (error) {
-    logger.error('Error creating topic:', error)
+    console.error('Error creating topic:', error)
     if (error instanceof z.ZodError) {
       throw createError({
         statusCode: 400,

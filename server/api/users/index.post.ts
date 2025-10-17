@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import logger from '../../../utils/logger'
-import { userService } from '../../../services/userService'
+import { userService } from '../../services/userService'
 import crypto from 'crypto'
 
 const bodySchema = z.object({
@@ -29,7 +28,7 @@ export default defineEventHandler(async (event) => {
     
     const body = await readValidatedBody(event, bodySchema.parse)
     
-    logger.debug(`Admin adding user: ${body.email}`)
+    console.log(`Admin adding user: ${body.email}`)
     
     // Check if user already exists
     const existingUser = await userService.findByEmail(body.email)
@@ -58,7 +57,7 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     
-    logger.info(`Admin created user: ${user.email}`)
+    console.log(`Admin created user: ${user.email}`)
     
     return { 
       success: true,
@@ -72,7 +71,7 @@ export default defineEventHandler(async (event) => {
     }
   } catch (error) {
     if (error instanceof z.ZodError) {
-      logger.warn('User creation validation error:', error.message)
+      console.warn('User creation validation error:', error.message)
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation Error',

@@ -1,7 +1,6 @@
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
-import type { Event } from '../types/event'
-import logger from '../utils/logger'
+import { mockData } from '../../tests/helpers/mock-manager'
+import type { Event } from '../../types/event'
 
 export class EventService extends BaseService<Event> {
   protected readonly containerName = 'events'
@@ -15,7 +14,7 @@ export class EventService extends BaseService<Event> {
         return mockData.getEvents()
       }
     } catch (error) {
-      logger.error('Failed to fetch all events', { error })
+      console.error('Failed to fetch all events', error)
       throw error
     }
   }
@@ -28,7 +27,7 @@ export class EventService extends BaseService<Event> {
         return mockData.getEventById(id) || null
       }
     } catch (error) {
-      logger.error('Failed to fetch event by id', { id, error })
+      console.error('Failed to fetch event by id', { id, error })
       throw error
     }
   }
@@ -44,7 +43,7 @@ export class EventService extends BaseService<Event> {
         return mockData.getEvents().filter(event => event.status === status)
       }
     } catch (error) {
-      logger.error('Failed to fetch events by status', { status, error })
+      console.error('Failed to fetch events by status', { status, error })
       throw error
     }
   }
@@ -65,7 +64,7 @@ export class EventService extends BaseService<Event> {
         return event
       }
     } catch (error) {
-      logger.error('Failed to create event', { eventData, error })
+      console.error('Failed to create event', { eventData, error })
       throw error
     }
   }
@@ -99,7 +98,7 @@ export class EventService extends BaseService<Event> {
         return updatedEvent
       }
     } catch (error) {
-      logger.error('Failed to update event', { id, updates, error })
+      console.error('Failed to update event', { id, updates, error })
       throw error
     }
   }
@@ -112,7 +111,7 @@ export class EventService extends BaseService<Event> {
         return mockData.removeEvent(id)
       }
     } catch (error) {
-      logger.error('Failed to delete event', { id, error })
+      console.error('Failed to delete event', { id, error })
       throw error
     }
   }
@@ -122,7 +121,7 @@ export class EventService extends BaseService<Event> {
       const event = await this.findById(id)
       return event !== null
     } catch (error) {
-      logger.error('Failed to check if event exists', { id, error })
+      console.error('Failed to check if event exists', { id, error })
       throw error
     }
   }

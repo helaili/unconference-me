@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt'
-import logger from './logger'
 
 /**
  * Password utility functions for secure password handling
@@ -15,10 +14,10 @@ export class PasswordUtils {
   static async hashPassword(plainPassword: string): Promise<string> {
     try {
       const hashedPassword = await bcrypt.hash(plainPassword, this.SALT_ROUNDS)
-      logger.debug('Password hashed successfully')
+      console.debug('Password hashed successfully')
       return hashedPassword
     } catch (error) {
-      logger.error('Failed to hash password', { error })
+      console.error('Failed to hash password', { error })
       throw new Error('Password hashing failed')
     }
   }
@@ -32,10 +31,10 @@ export class PasswordUtils {
   static async verifyPassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
     try {
       const isMatch = await bcrypt.compare(plainPassword, hashedPassword)
-      logger.debug('Password verification completed', { isMatch })
+      console.debug('Password verification completed', { isMatch })
       return isMatch
     } catch (error) {
-      logger.error('Failed to verify password', { error })
+      console.error('Failed to verify password', { error })
       throw new Error('Password verification failed')
     }
   }
