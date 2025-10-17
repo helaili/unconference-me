@@ -85,16 +85,23 @@ const fetchEventData = async () => {
       } as Event
     }
     
-    // Fetch participants to find current user's participant ID
-    const participantsResponse = await $fetch(`/api/events/${eventId}/participants`)
-    if (participantsResponse.success && participantsResponse.participants) {
-      const participants = (participantsResponse.participants as any[]).map((p: any) => ({
-        ...p,
-        registrationDate: p.registrationDate ? new Date(p.registrationDate) : undefined,
-        createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
-        updatedAt: p.updatedAt ? new Date(p.updatedAt) : undefined
-      })) as Participant[]
-      participant.value = participants.find(p => p.email === user.value?.email) || null
+    // Fetch current user's participant record for this event
+    try {
+      const participantResponse: any = await $fetch(`/api/events/${eventId}/participants/me`)
+      if (participantResponse.success && participantResponse.participant) {
+        const p = participantResponse.participant
+        participant.value = {
+          ...p,
+          registrationDate: p.registrationDate ? new Date(p.registrationDate) : undefined,
+          createdAt: p.createdAt ? new Date(p.createdAt) : undefined,
+          updatedAt: p.updatedAt ? new Date(p.updatedAt) : undefined
+        } as Participant
+      } else {
+        participant.value = null
+      }
+    } catch (err) {
+      // User is not a participant for this event
+      participant.value = null
     }
     
     // Fetch ranking if enabled

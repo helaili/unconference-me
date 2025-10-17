@@ -70,6 +70,26 @@ export class ParticipantService extends BaseService<Participant> {
     }
   }
 
+  async findByEventIdAndEmail(eventId: string, email: string): Promise<Participant | null> {
+    try {
+      if (await this.isUsingCosmosDB()) {
+        const participants = await this.executeCosmosQuery<Participant>(
+          'SELECT * FROM c WHERE c.eventId = @eventId AND c.email = @email',
+          [
+            { name: '@eventId', value: eventId },
+            { name: '@email', value: email }
+          ]
+        )
+        return participants.length > 0 ? participants[0]! : null
+      } else {
+        return mockData.getParticipants().find(p => p.eventId === eventId && p.email === email) || null
+      }
+    } catch (error) {
+      console.error('Failed to fetch participant by event id and email', { eventId, email, error })
+      throw error
+    }
+  }
+
   async findByStatus(status: string): Promise<Participant[]> {
     try {
       if (await this.isUsingCosmosDB()) {
