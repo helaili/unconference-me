@@ -1,4 +1,5 @@
 import { userService } from '../../services/userService'
+import { getMockDataStore } from '../../utils/mock-data-context'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -16,14 +17,22 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    console.log(`Checking registration token: ${token}`)
+    // Find user by token - use context-aware mock data if in test mode
+    const isUsingMockData = process.env.APP_ENV === 'copilot' || process.env.APP_ENV === 'development' || process.env.APP_ENV === 'test'
     
-    // Find user by token
-    const users = await userService.findAll()
-    const user = users.find(u => u.registrationToken === token)
+    let user
+    if (isUsingMockData) {
+      // Get the appropriate mock data store based on test context
+      const store = getMockDataStore(event)
+      const users = store.getUsers()
+      user = users.find(u => u.registrationToken === token)
+    } else {
+      // Use the service for CosmosDB
+      const users = await userService.findAll()
+      user = users.find(u => u.registrationToken === token)
+    }
     
     if (!user) {
-      console.warn(`Invalid registration token: ${token}`)
       throw createError({
         statusCode: 404,
         statusMessage: 'Invalid token',

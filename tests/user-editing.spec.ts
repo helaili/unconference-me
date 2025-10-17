@@ -24,23 +24,25 @@ test.describe('User Editing', () => {
   })
 
   test('should open edit dialog when clicking edit button', async ({ page }) => {
-    // Find and click the first edit button
-    const editButton = page.locator('button:has-text("Edit"), button:has(svg.mdi-pencil)').first()
+    // Find and click the first edit button using icon selector (works on mobile and desktop)
+    const editButton = page.locator('button:has(.mdi-pencil)').first()
     await editButton.click()
     
     // Verify edit dialog is visible
     await expect(page.locator('text=Edit User')).toBeVisible()
     
-    // Verify form fields are visible and have values
-    const firstNameInput = page.locator('input[type="text"]').first()
-    await expect(firstNameInput).toBeVisible()
-    const value = await firstNameInput.inputValue()
-    expect(value.length).toBeGreaterThan(0)
+    // Verify Email field is visible and disabled (this is a unique aspect of the edit form)
+    const emailInput = page.locator('input[type="email"]')
+    await expect(emailInput).toBeVisible()
+    await expect(emailInput).toBeDisabled()
+    
+    // Verify the hint text is present
+    await expect(page.locator('text=Email cannot be changed')).toBeVisible()
   })
 
   test('should update user information', async ({ page }) => {
-    // Click edit on first user
-    const editButton = page.locator('button:has-text("Edit"), button:has(svg.mdi-pencil)').first()
+    // Click edit on first user using icon selector (works on mobile and desktop)
+    const editButton = page.locator('button:has(.mdi-pencil)').first()
     await editButton.click()
     
     // Wait for dialog
@@ -69,8 +71,8 @@ test.describe('User Editing', () => {
   })
 
   test('should not allow changing email address', async ({ page }) => {
-    // Click edit on first user
-    const editButton = page.locator('button:has-text("Edit"), button:has(svg.mdi-pencil)').first()
+    // Click edit on first user using icon selector (works on mobile and desktop)
+    const editButton = page.locator('button:has(.mdi-pencil)').first()
     await editButton.click()
     
     // Wait for dialog
@@ -101,7 +103,7 @@ test.describe('User Editing', () => {
     }
     
     if (participantRow) {
-      const editButton = participantRow.locator('button:has-text("Edit"), button:has(svg.mdi-pencil)')
+      const editButton = participantRow.locator('button:has(.mdi-pencil)')
       await editButton.click()
       
       // Wait for dialog
@@ -126,8 +128,8 @@ test.describe('User Editing', () => {
     // Get original first name
     const originalName = await page.locator('tbody tr').first().locator('td').first().textContent()
     
-    // Click edit
-    const editButton = page.locator('button:has-text("Edit"), button:has(svg.mdi-pencil)').first()
+    // Click edit using icon selector (works on mobile and desktop)
+    const editButton = page.locator('button:has(.mdi-pencil)').first()
     await editButton.click()
     
     // Wait for dialog
@@ -149,8 +151,8 @@ test.describe('User Editing', () => {
   })
 
   test('should show error message if update fails', async ({ page }) => {
-    // Click edit
-    const editButton = page.locator('button:has-text("Edit"), button:has(svg.mdi-pencil)').first()
+    // Click edit using icon selector (works on mobile and desktop)
+    const editButton = page.locator('button:has(.mdi-pencil)').first()
     await editButton.click()
     
     // Wait for dialog
