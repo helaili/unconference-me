@@ -22,10 +22,17 @@
     onMounted(async () => {
         if (registrationData.token) {
             try {
+                // Build query params for the API call
+                // Include test-context-id if present (for test isolation)
+                const params = new URLSearchParams({ token: registrationData.token })
+                if (route.query['test-context-id']) {
+                    params.append('test-context-id', route.query['test-context-id'] as string)
+                }
+                
                 const response = await $fetch<{ 
                     success: boolean
                     user?: { firstname: string; lastname: string; email: string }
-                }>(`/api/auth/check-token?token=${registrationData.token}`)
+                }>(`/api/auth/check-token?${params.toString()}`)
                 
                 if (response.success && response.user) {
                     registrationData.firstname = response.user.firstname || ''
