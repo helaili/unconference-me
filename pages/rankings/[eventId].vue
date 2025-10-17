@@ -71,11 +71,17 @@ const fetchData = async () => {
       return
     }
     
-    // Fetch participants to find current user's participant ID
-    const participantsResponse = await $fetch(`/api/events/${eventId.value}/participants`)
-    if (participantsResponse.success && participantsResponse.participants) {
-      const participants = participantsResponse.participants as Participant[]
-      participant.value = participants.find(p => p.email === user.value?.email) || null
+    // Fetch current user's participant record for this event
+    try {
+      const participantResponse: any = await $fetch(`/api/events/${eventId.value}/participants/me`)
+      if (participantResponse.success && participantResponse.participant) {
+        participant.value = participantResponse.participant as Participant
+      } else {
+        participant.value = null
+      }
+    } catch (err) {
+      // User is not a participant for this event
+      participant.value = null
     }
     
     // Non-admin users must be participants

@@ -39,12 +39,17 @@ const fetchRankingTasks = async () => {
       // Skip if ranking is not enabled
       if (!event.settings?.enableTopicRanking) continue
       
-      // Fetch participants to find current user
-      const participantsResponse = await $fetch(`/api/events/${event.id}/participants`)
-      if (!participantsResponse.success || !participantsResponse.participants) continue
-      
-      const participants = participantsResponse.participants as Participant[]
-      const participant = participants.find(p => p.email === user.value?.email)
+      // Fetch current user's participant record for this event
+      let participant: Participant | null = null
+      try {
+        const participantResponse: any = await $fetch(`/api/events/${event.id}/participants/me`)
+        if (participantResponse.success && participantResponse.participant) {
+          participant = participantResponse.participant as Participant
+        }
+      } catch (err) {
+        // User is not a participant for this event
+        continue
+      }
       
       if (!participant) continue
       
