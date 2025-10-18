@@ -10,7 +10,7 @@ Make sure to install dependencies:
 # npm
 npm install
 
-# Install Playwright browsers for testing
+# Install Playwright browsers for testing (chromium, webkit, firefox, and their headless variants)
 npx playwright install
 ```
 
