@@ -28,7 +28,11 @@ const fetchAssignments = async () => {
       return
     }
     
-    events.value = eventsResponse.events as Event[]
+    events.value = (eventsResponse.events as any[]).map(e => ({
+      ...e,
+      startDate: e.startDate ? new Date(e.startDate) : undefined,
+      endDate: e.endDate ? new Date(e.endDate) : undefined
+    })) as Event[]
     
     // Fetch assignments for each event
     for (const event of events.value) {
