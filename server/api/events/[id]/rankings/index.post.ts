@@ -46,16 +46,22 @@ export default defineEventHandler(async (event) => {
       })
     }
     
+    // Get the current minimum topics requirement for the event
+    const minTopicsToRank = eventData.settings?.minTopicsToRank || 3
+    
     // Check if ranking already exists
     const existingRanking = await topicRankingService.findByParticipantAndEvent(participant.id, eventId)
+    
+    const now = new Date()
     
     let ranking
     if (existingRanking) {
       // Update existing ranking
       ranking = await topicRankingService.update(existingRanking.id, {
         rankedTopicIds,
-        lastRankedAt: new Date(),
-        lastViewedAt: new Date()
+        lastRankedAt: now,
+        lastViewedAt: now,
+        minTopicsAtLastRanking: minTopicsToRank
       })
     } else {
       // Create new ranking
@@ -63,8 +69,11 @@ export default defineEventHandler(async (event) => {
         participantId: participant.id,
         eventId,
         rankedTopicIds,
-        lastViewedAt: new Date(),
-        lastRankedAt: new Date()
+        lastViewedAt: now,
+        lastRankedAt: now,
+        minTopicsAtLastRanking: minTopicsToRank,
+        createdAt: now,
+        updatedAt: now
       })
     }
     

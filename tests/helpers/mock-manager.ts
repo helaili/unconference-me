@@ -173,7 +173,7 @@ export class MockDataManager {
         updatedAt: new Date('2025-10-01T00:00:00Z'),
         settings: {
           enableTopicRanking: true,
-          minTopicsToRank: 3,
+          minTopicsToRank: 6,
           enableAutoAssignment: false,
           maxTopicsPerParticipant: 3,
           requireApproval: false,
@@ -229,9 +229,16 @@ export class MockDataManager {
     
     // Ensure required fields are preserved  
     const currentEvent = this._events[index]!
+    
+    // Deep merge settings object if it exists in updates
+    const mergedSettings = updates.settings 
+      ? { ...currentEvent.settings, ...updates.settings }
+      : currentEvent.settings
+    
     this._events[index] = {
       ...currentEvent,
       ...updates,
+      settings: mergedSettings,
       id: updates.id ?? currentEvent.id,
       name: updates.name ?? currentEvent.name,
       updatedAt: new Date()

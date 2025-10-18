@@ -12,7 +12,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  minRanking: 3,
+  minRanking: 6,
   isAdmin: false
 })
 
@@ -30,6 +30,20 @@ const saving = ref(false)
 // Computed
 const minRankingMet = computed(() => {
   return rankedTopics.value.length >= props.minRanking
+})
+
+const minRankingIncreased = computed(() => {
+  if (!props.ranking?.minTopicsAtLastRanking) return false
+  return props.minRanking > props.ranking.minTopicsAtLastRanking
+})
+
+const currentRankedCount = computed(() => {
+  if (!props.ranking?.rankedTopicIds) return 0
+  return props.ranking.rankedTopicIds.length
+})
+
+const needsMoreRankings = computed(() => {
+  return minRankingIncreased.value && currentRankedCount.value < props.minRanking
 })
 
 const newOrUpdatedTopics = computed((): Set<string> => {
@@ -184,6 +198,25 @@ const saveRanking = async () => {
             <strong>You must rank at least {{ minRanking }} topics</strong> before saving.
           </p>
         </div>
+      </v-alert>
+      
+      <v-alert 
+        v-if="needsMoreRankings"
+        type="error"
+        variant="tonal"
+        class="mb-4"
+        icon="mdi-alert-circle"
+        prominent
+      >
+        <strong>Action Required:</strong> The minimum number of topics to rank has increased from 
+        {{ ranking?.minTopicsAtLastRanking }} to {{ minRanking }}.
+        <span v-if="currentRankedCount < minRanking">
+          You currently have {{ currentRankedCount }} topic(s) ranked, but you need to rank at least 
+          {{ minRanking }} topics to meet the new requirement.
+        </span>
+        <span v-else>
+          Please review and save your rankings to confirm they meet the new requirement.
+        </span>
       </v-alert>
       
       <v-alert 

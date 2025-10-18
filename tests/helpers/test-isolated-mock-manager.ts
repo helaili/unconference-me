@@ -152,6 +152,13 @@ class MockDataStore {
   updateEvent(id: string, updates: Partial<Event>): boolean {
     const event = this._events.find(e => e.id === id)
     if (event) {
+      // Deep merge settings if provided
+      if (updates.settings) {
+        updates = {
+          ...updates,
+          settings: { ...event.settings, ...updates.settings }
+        }
+      }
       Object.assign(event, updates)
       return true
     }

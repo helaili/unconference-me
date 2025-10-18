@@ -87,7 +87,7 @@ const fetchRankingTasks = async () => {
       }
       
       // Determine if task is complete
-      const minRanking = event.settings?.minTopicsToRank || 3
+      const minRanking = event.settings?.minTopicsToRank || 6
       const isComplete = ranking?.rankedTopicIds && ranking.rankedTopicIds.length >= minRanking
       
       // Task needs attention if incomplete or there are new topics

@@ -82,7 +82,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-card :elevation="$vuetify.display.smAndDown ? 1 : 2" class="mb-4">
+  <v-card v-if="loading || invitations.length > 0" :elevation="$vuetify.display.smAndDown ? 1 : 2" class="mb-4">
     <v-card-title class="d-flex align-center">
       <v-icon class="mr-2" color="primary">mdi-email-receive</v-icon>
       <span>Pending Invitations</span>
