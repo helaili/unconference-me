@@ -102,6 +102,11 @@ onMounted(() => {
           @save="fetchEventData"
         />
         
+        <AssignmentGenerator
+          :event="event"
+          @refresh="fetchEventData"
+        />
+        
         <AssignmentList :assignments="assignments" />
       </div>
       
@@ -114,10 +119,13 @@ onMounted(() => {
       <!-- Pending invitations front and center for users -->
       <PendingInvitations />
       
+      <!-- User assignments -->
+      <UserAssignmentCard />
+      
       <!-- Topic ranking tasks -->
       <RankingTasks />
       
-      <p>Welcome, {{ user?.firstname }}! View your event invitations and ranking tasks above.</p>
+      <p>Welcome, {{ user?.firstname }}! View your event invitations, assignments, and ranking tasks above.</p>
       <!-- Additional user-specific content goes here -->
     </div>
   </v-container>
