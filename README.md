@@ -9,6 +9,9 @@ Make sure to install dependencies:
 ```bash
 # npm
 npm install
+
+# Install Playwright browsers for testing
+npx playwright install chromium webkit
 ```
 
 ### Azure deployment setup
@@ -76,3 +79,26 @@ bun run preview
 ```
 
 Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+
+## Testing
+
+Run Playwright tests:
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in headed mode (with browser UI)
+npm run test:headed
+
+# Run tests in UI mode (interactive)
+npm run test:ui
+
+# Run only mobile compatibility tests
+npm run test:mobile
+
+# View test report
+npm run test:report
+```
+
+**Note:** Make sure you have installed Playwright browsers first (see Setup section above).
