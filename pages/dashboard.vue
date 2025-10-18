@@ -3,13 +3,16 @@
 import { ref, onMounted } from 'vue'
 import type { User as UnconferenceUser }  from '~/types/user'
 import type { Event } from '~/types/event'
-import type { ParticipantAssignment } from '~/types/participant'
+import type { ParticipantAssignment, Participant } from '~/types/participant'
+import type { Topic } from '~/types/topic'
 
 const { user } = useUserSession() as { user: Ref<UnconferenceUser | null> }
 const isAdmin = ref(user.value?.role === 'Admin')
 
 const event = ref<Event | null>(null)
 const assignments = ref<ParticipantAssignment[]>([])
+const topics = ref<Topic[]>([])
+const participants = ref<Participant[]>([])
 const participantStats = ref<any>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -41,10 +44,17 @@ const fetchEventData = async () => {
       assignments.value = assignmentsResponse.assignments as any
     }
     
-    // Fetch participant stats
+    // Fetch topics
+    const topicsResponse = await $fetch('/api/events/1/topics')
+    if (topicsResponse.success) {
+      topics.value = topicsResponse.topics as any
+    }
+    
+    // Fetch participant stats and participants
     const participantsResponse = await $fetch('/api/events/1/participants')
     if (participantsResponse.success) {
       participantStats.value = participantsResponse.stats
+      participants.value = participantsResponse.participants as any
     }
   } catch (err) {
     console.error('Error fetching event data:', err)
@@ -110,7 +120,18 @@ onMounted(() => {
           @refresh="fetchEventData"
         />
         
-        <AssignmentList :assignments="assignments" />
+        <AssignmentList 
+          :assignments="assignments"
+          class="mb-4"
+        />
+        
+        <AdminAssignmentsByTopic
+          :assignments="assignments"
+          :topics="topics"
+          :participants="participants"
+          :number-of-rounds="event.numberOfRounds"
+          :loading="loading"
+        />
       </div>
       
       <v-alert v-else type="info" variant="tonal" class="mt-4">
