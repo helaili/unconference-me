@@ -14,6 +14,9 @@ const participantStats = ref<any>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
 
+// Track whether user has completed rankings
+const hasCompletedRankings = ref(false)
+
 useSeoMeta({
   title: 'Dashboard',
   description: 'Your unconference dashboard'
@@ -29,13 +32,13 @@ const fetchEventData = async () => {
     // Fetch event details
     const eventResponse = await $fetch('/api/events/1')
     if (eventResponse.success && eventResponse.event) {
-      event.value = eventResponse.event as Event
+      event.value = eventResponse.event as unknown as Event
     }
     
     // Fetch assignments
     const assignmentsResponse = await $fetch('/api/events/1/assignments')
     if (assignmentsResponse.success) {
-      assignments.value = assignmentsResponse.assignments
+      assignments.value = assignmentsResponse.assignments as any
     }
     
     // Fetch participant stats
@@ -59,7 +62,7 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
     })
     
     if (response.success && response.event) {
-      event.value = response.event as Event
+      event.value = response.event as unknown as Event
     }
   } catch (err) {
     console.error('Error updating event:', err)
@@ -121,8 +124,11 @@ onMounted(() => {
       <!-- Pending invitations front and center for users -->
       <PendingInvitations />
       
-      <!-- Topic ranking tasks -->
-      <RankingTasks />
+      <!-- User's top ranked topics (shown when rankings are complete) -->
+      <UserTopRankings @has-rankings="hasCompletedRankings = $event" />
+      
+      <!-- Topic ranking tasks (shown when rankings are incomplete) -->
+      <RankingTasks v-if="!hasCompletedRankings" />
       
       <!-- User assignments -->
       <UserAssignmentCard />
