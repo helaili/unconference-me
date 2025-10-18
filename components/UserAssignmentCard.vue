@@ -15,6 +15,7 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const events = ref<Event[]>([])
 const assignmentsByEvent = ref<Map<string, EnrichedAssignment[]>>(new Map())
+const expandedPanels = ref<number[]>([])
 
 const fetchAssignments = async () => {
   loading.value = true
@@ -55,6 +56,13 @@ const eventsWithAssignments = computed(() => {
     return assignments && assignments.length > 0
   })
 })
+
+// Expand all panels by default when events with assignments are loaded
+watch(eventsWithAssignments, (newEvents) => {
+  if (newEvents.length > 0 && expandedPanels.value.length === 0) {
+    expandedPanels.value = newEvents.map((_, index) => index)
+  }
+}, { immediate: true })
 
 const getAssignmentsByRound = (eventId: string) => {
   const assignments = assignmentsByEvent.value.get(eventId) || []
@@ -147,7 +155,9 @@ onMounted(() => {
       
       <div v-else>
         <v-expansion-panels 
+          v-model="expandedPanels"
           variant="accordion"
+          multiple
           :class="$vuetify.display.smAndDown ? 'mobile-panels' : ''"
         >
           <v-expansion-panel
