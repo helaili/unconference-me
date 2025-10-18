@@ -1,5 +1,5 @@
 import type { Event } from '../../types/event'
-import type { Participant, ParticipantAssignment  } from '../../types/participant'
+import type { Participant, ParticipantAssignment } from '../../types/participant'
 import type { Topic } from '../../types/topic'
 import type { TopicRanking } from '../../types/topicRanking'
 

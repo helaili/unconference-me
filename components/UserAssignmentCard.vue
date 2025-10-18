@@ -1,18 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import type { ParticipantAssignment } from '~/types/participant'
 import type { Event } from '~/types/event'
 
-interface EnrichedAssignment {
-  id: string
-  participantId: string
-  topicId: string
-  eventId: string
-  roundNumber: number
-  groupNumber: number
-  assignmentMethod: 'manual' | 'automatic' | 'self-selected'
-  status: 'assigned' | 'confirmed' | 'declined' | 'completed'
-  createdAt: Date
-  updatedAt: Date
+interface EnrichedAssignment extends ParticipantAssignment {
   topic: {
     id: string
     title: string
