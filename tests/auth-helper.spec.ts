@@ -18,8 +18,8 @@ test.describe('Authentication with Helper', () => {
   test('should login as Vader (User) using helper', async ({ page }) => {
     await auth.loginAsVader();
     
-    // Verify user-specific content
-    await expect(page.locator('text=Welcome, Darth! View your event invitations and ranking tasks above')).toBeVisible();
+    // Verify user-specific content - updated to match actual dashboard text
+    await expect(page.locator('text=Welcome, Darth! View your event invitations, assignments, and ranking tasks above')).toBeVisible();
   });
 
   test('should redirect unauthenticated user to login', async ({ page }) => {
