@@ -15,6 +15,10 @@ export interface TopicRanking {
   // Timestamp when the ranking was last updated
   lastRankedAt?: Date
   
+  // The minimum number of topics required at the time of last ranking
+  // Used to detect when admin increases the minimum requirement
+  minTopicsAtLastRanking?: number
+  
   // Metadata
   createdAt: Date
   updatedAt: Date
