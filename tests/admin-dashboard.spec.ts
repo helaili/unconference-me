@@ -28,8 +28,8 @@ test.describe('Admin Dashboard', () => {
     // Check for Event Status component
     await expect(page.locator('text=Event Status')).toBeVisible({ timeout: 10000 });
     
-    // Check for Event Configuration component
-    await expect(page.locator('text=Event Configuration')).toBeVisible();
+    // Check for Event Configuration component - use first occurrence in card title
+    await expect(page.locator('.v-card-title >> text=Event Configuration').first()).toBeVisible();
     
     // Check for Assignment List component
     await expect(page.locator('text=Current Assignments')).toBeVisible();
@@ -50,8 +50,8 @@ test.describe('Admin Dashboard', () => {
     await auth.loginAsLuke();
     await expect(page).toHaveURL('/dashboard');
     
-    // Wait for Event Configuration to load
-    await expect(page.locator('text=Event Configuration')).toBeVisible({ timeout: 10000 });
+    // Wait for Event Configuration to load - use first occurrence in card title
+    await expect(page.locator('.v-card-title >> text=Event Configuration').first()).toBeVisible({ timeout: 10000 });
     
     // Find and click the Edit button in Event Configuration
     const editButton = page.locator('button:has-text("Edit")').first();
@@ -85,8 +85,8 @@ test.describe('Admin Dashboard', () => {
     // Wait for assignments to load
     await expect(page.locator('text=Current Assignments')).toBeVisible({ timeout: 10000 });
     
-    // Assignments should be grouped by round
-    await expect(page.locator('text=Round 1')).toBeVisible();
+    // Assignments should be grouped by round - use more specific selector to avoid strict mode
+    await expect(page.getByRole('button', { name: /Round 1.*assignments?/i }).first()).toBeVisible();
   });
 
   test('should not show admin dashboard features for non-admin users', async ({ page }) => {
