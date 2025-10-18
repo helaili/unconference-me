@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Event } from '~/types/event'
 
 interface Props {
@@ -16,6 +16,17 @@ const emit = defineEmits<{
 const editMode = ref(false)
 const localEvent = ref({ ...props.event })
 const saving = ref(false)
+
+// Watch for changes to props.event and update localEvent when not in edit mode
+watch(() => props.event, (newEvent) => {
+  if (!editMode.value) {
+    console.log('[EventConfiguration] Props changed, updating localEvent')
+    console.log('[EventConfiguration] New props.event:', JSON.stringify(newEvent, null, 2))
+    // Deep clone to ensure we get all nested properties
+    localEvent.value = JSON.parse(JSON.stringify(newEvent))
+    console.log('[EventConfiguration] Updated localEvent:', JSON.stringify(localEvent.value, null, 2))
+  }
+}, { deep: true, immediate: true })
 
 // Validation
 const isValid = computed(() => {
@@ -42,6 +53,7 @@ const saveChanges = async () => {
   
   saving.value = true
   try {
+    console.log('[EventConfiguration] Saving changes:', JSON.stringify(localEvent.value, null, 2))
     emit('update', localEvent.value)
     emit('save')
     editMode.value = false

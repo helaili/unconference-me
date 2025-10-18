@@ -1,4 +1,4 @@
-import { mockData } from '../../../../tests/helpers/mock-manager'
+import { eventService } from '../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const id = getRouterParam(event, 'id')
     
-    console.log(`Fetching event ${id} for user: ${session.user}`)
+    console.log(`[GET /api/events/${id}] Fetching event for user:`, session.user)
     
     if (!id) {
       throw createError({
@@ -15,9 +15,8 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Get event from mock manager
-    // In production, this would fetch from CosmosDB
-    const eventData = mockData.getEventById(id)
+    // Get event from service (handles both CosmosDB and mock data based on APP_ENV)
+    const eventData = await eventService.findById(id)
     
     if (!eventData) {
       throw createError({
@@ -25,6 +24,8 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'Event not found'
       })
     }
+    
+    console.log(`[GET /api/events/${id}] Returning event with updatedAt:`, eventData.updatedAt)
     
     return {
       success: true,

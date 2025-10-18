@@ -64,12 +64,14 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
   successMessage.value = null
   
   try {
+    console.log('[Event Page] Sending update to API:', JSON.stringify(updates, null, 2))
     const response = await $fetch(`/api/events/${eventId.value}`, {
       method: 'PUT',
       body: updates
     })
     
     if (response.success && response.event) {
+      console.log('[Event Page] Received updated event from API:', JSON.stringify(response.event, null, 2))
       event.value = response.event as Event
       successMessage.value = 'Event updated successfully!'
       

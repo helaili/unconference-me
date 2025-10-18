@@ -57,7 +57,9 @@ export default defineEventHandler(async (event) => {
     // Parse and validate request body
     const body = await readValidatedBody(event, updateEventSchema.parse)
     
-    console.log(`Updating event ${id} for user: ${session.user?.email}`)
+    console.log(`[PUT /api/events/${id}] Received update request`)
+    console.log(`[PUT /api/events/${id}] User: ${session.user?.email}`)
+    console.log(`[PUT /api/events/${id}] Body:`, JSON.stringify(body, null, 2))
     
     // Validate group sizes if provided
     const minSize = body.minGroupSize ?? existingEvent.minGroupSize

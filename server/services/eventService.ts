@@ -72,20 +72,28 @@ export class EventService extends BaseService<Event> {
   async update(id: string, updates: Partial<Event>): Promise<Event> {
     try {
       if (await this.isUsingCosmosDB()) {
+        console.log('Updating event in CosmosDB', { id, updates })
         const existingEvent = await this.findById(id)
         if (!existingEvent) {
           throw new Error(`Event with id ${id} not found`)
         }
 
+        // Deep merge settings object if it exists in updates
+        const mergedSettings = updates.settings 
+          ? { ...existingEvent.settings, ...updates.settings }
+          : existingEvent.settings
+
         const updatedEvent: Event = {
           ...existingEvent,
           ...updates,
+          settings: mergedSettings,
           id, // Ensure id doesn't change
           updatedAt: new Date()
         }
 
         return await this.cosmosUpsert(updatedEvent)
       } else {
+        console.log('Updating event in Mock Data', { id, updates })
         const success = mockData.updateEvent(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Event with id ${id} not found`)
