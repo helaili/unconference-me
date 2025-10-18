@@ -16,7 +16,22 @@ const clearing = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const confirmClearDialog = ref(false)
-const statistics = ref<any>(null)
+const statistics = ref<{
+  totalParticipants: number
+  totalAssignments: number
+  participantsFullyAssigned: number
+  participantsPartiallyAssigned: number
+  participantsNotAssigned: number
+  topicsUsed: number
+  averageGroupSize: number
+  roundStatistics: Array<{
+    roundNumber: number
+    topicsScheduled: number
+    participantsAssigned: number
+    groupSizes: number[]
+    averageGroupSize: number
+  }>
+} | null>(null)
 const warnings = ref<string[]>([])
 
 const canGenerate = computed(() => {
@@ -53,9 +68,9 @@ const generateAssignments = async () => {
         successMessage.value = null
       }, 5000)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error generating assignments:', err)
-    error.value = err?.data?.message || 'Failed to generate assignments'
+    error.value = (err as { data?: { message?: string } })?.data?.message || 'Failed to generate assignments'
   } finally {
     generating.value = false
   }
@@ -85,9 +100,9 @@ const clearAssignments = async () => {
         successMessage.value = null
       }, 3000)
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Error clearing assignments:', err)
-    error.value = err?.data?.message || 'Failed to clear assignments'
+    error.value = (err as { data?: { message?: string } })?.data?.message || 'Failed to clear assignments'
   } finally {
     clearing.value = false
   }

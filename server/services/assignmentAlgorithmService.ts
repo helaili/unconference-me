@@ -1,8 +1,7 @@
 import type { Event } from '../../types/event'
-import type { Participant } from '../../types/participant'
+import type { Participant, ParticipantAssignment  } from '../../types/participant'
 import type { Topic } from '../../types/topic'
 import type { TopicRanking } from '../../types/topicRanking'
-import type { ParticipantAssignment } from '../../types/participant'
 
 /**
  * Assignment Algorithm Service
@@ -86,7 +85,6 @@ export class AssignmentAlgorithmService {
     }
 
     // Check if we have enough topics for the discussions
-    const requiredDiscussions = event.numberOfRounds * event.discussionsPerRound
     if (approvedTopics.length < event.discussionsPerRound) {
       warnings.push(`Only ${approvedTopics.length} approved topics available for ${event.discussionsPerRound} discussions per round. Some topics will be repeated.`)
     }
@@ -221,7 +219,7 @@ export class AssignmentAlgorithmService {
         .sort((a, b) => a[1].length - b[1].length)
 
       if (sortedGroups.length > 0) {
-        const [topicId, group] = sortedGroups[0]!
+        const [_topicId, group] = sortedGroups[0]!
         group.push(participant.id)
       } else {
         // All groups are full or participant already assigned to all topics
@@ -286,7 +284,7 @@ export class AssignmentAlgorithmService {
     topics: Topic[],
     topicPopularity: Map<string, number>,
     count: number,
-    participantAssignments: Map<string, Set<string>>
+    _participantAssignments: Map<string, Set<string>>
   ): Topic[] {
     // Sort topics by popularity (descending)
     const sortedTopics = [...topics].sort((a, b) => {
@@ -316,9 +314,9 @@ export class AssignmentAlgorithmService {
     const smallGroups = groupsArray.filter(([_, group]) => group.length < idealSize && group.length < maxSize)
 
     // Move participants from large groups to small groups
-    for (const [largeTopicId, largeGroup] of largeGroups) {
+    for (const [_largeTopicId, largeGroup] of largeGroups) {
       while (largeGroup.length > idealSize && smallGroups.length > 0) {
-        const [smallTopicId, smallGroup] = smallGroups[0]!
+        const [_smallTopicId, smallGroup] = smallGroups[0]!
         
         if (smallGroup.length >= maxSize) {
           smallGroups.shift()

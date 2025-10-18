@@ -1,12 +1,29 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import type { ParticipantAssignment } from '~/types/participant'
 import type { Event } from '~/types/event'
+
+interface EnrichedAssignment {
+  id: string
+  participantId: string
+  topicId: string
+  eventId: string
+  roundNumber: number
+  groupNumber: number
+  assignmentMethod: 'manual' | 'automatic' | 'self-selected'
+  status: 'assigned' | 'confirmed' | 'declined' | 'completed'
+  createdAt: Date
+  updatedAt: Date
+  topic: {
+    id: string
+    title: string
+    description?: string
+  } | null
+}
 
 const loading = ref(false)
 const error = ref<string | null>(null)
 const events = ref<Event[]>([])
-const assignmentsByEvent = ref<Map<string, any[]>>(new Map())
+const assignmentsByEvent = ref<Map<string, EnrichedAssignment[]>>(new Map())
 
 const fetchAssignments = async () => {
   loading.value = true
@@ -26,15 +43,15 @@ const fetchAssignments = async () => {
       try {
         const response = await $fetch(`/api/events/${event.id}/assignments/me`)
         if (response.success && response.assignments) {
-          assignmentsByEvent.value.set(event.id, response.assignments)
+          assignmentsByEvent.value.set(event.id, response.assignments as EnrichedAssignment[])
         }
-      } catch (err) {
+      } catch {
         // No assignments for this event yet
         console.log(`No assignments for event ${event.id}`)
       }
     }
-  } catch (err) {
-    console.error('Error fetching assignments:', err)
+  } catch (_err) {
+    console.error('Error fetching assignments:', _err)
     error.value = 'Failed to load assignments'
   } finally {
     loading.value = false
@@ -50,7 +67,7 @@ const eventsWithAssignments = computed(() => {
 
 const getAssignmentsByRound = (eventId: string) => {
   const assignments = assignmentsByEvent.value.get(eventId) || []
-  const grouped = new Map<number, any[]>()
+  const grouped = new Map<number, EnrichedAssignment[]>()
   
   for (const assignment of assignments) {
     if (!grouped.has(assignment.roundNumber)) {
