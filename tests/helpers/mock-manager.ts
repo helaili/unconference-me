@@ -173,7 +173,7 @@ export class MockDataManager {
         updatedAt: new Date('2025-10-01T00:00:00Z'),
         settings: {
           enableTopicRanking: true,
-          minTopicsToRank: 3,
+          minTopicsToRank: 6,
           enableAutoAssignment: false,
           maxTopicsPerParticipant: 3,
           requireApproval: false,

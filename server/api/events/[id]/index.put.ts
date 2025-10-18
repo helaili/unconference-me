@@ -16,11 +16,12 @@ const updateEventSchema = z.object({
   status: z.enum(['draft', 'published', 'active', 'completed', 'cancelled']).optional(),
   settings: z.object({
     enableTopicRanking: z.boolean().optional(),
+    minTopicsToRank: z.number().int().positive().optional(),
     enableAutoAssignment: z.boolean().optional(),
     maxTopicsPerParticipant: z.number().int().positive().optional(),
     requireApproval: z.boolean().optional(),
     maxParticipants: z.number().int().positive().optional(),
-    customSettings: z.record(z.any()).optional()
+    customSettings: z.record(z.string(), z.any()).optional()
   }).optional()
 })
 

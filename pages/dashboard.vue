@@ -116,16 +116,17 @@ onMounted(() => {
     </div>
     
     <div v-else>
+      <p>Welcome, {{ user?.firstname }}! View your event invitations, assignments, and ranking tasks above.</p>
+      
       <!-- Pending invitations front and center for users -->
       <PendingInvitations />
-      
-      <!-- User assignments -->
-      <UserAssignmentCard />
       
       <!-- Topic ranking tasks -->
       <RankingTasks />
       
-      <p>Welcome, {{ user?.firstname }}! View your event invitations, assignments, and ranking tasks above.</p>
+      <!-- User assignments -->
+      <UserAssignmentCard />
+      
       <!-- Additional user-specific content goes here -->
     </div>
   </v-container>

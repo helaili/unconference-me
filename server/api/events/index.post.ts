@@ -17,11 +17,12 @@ const createEventSchema = z.object({
   status: z.enum(['draft', 'published', 'active', 'completed', 'cancelled']).default('draft'),
   settings: z.object({
     enableTopicRanking: z.boolean().default(true),
+    minTopicsToRank: z.number().int().positive().default(6),
     enableAutoAssignment: z.boolean().default(false),
     maxTopicsPerParticipant: z.number().int().positive().default(3),
     requireApproval: z.boolean().default(false),
     maxParticipants: z.number().int().positive().optional(),
-    customSettings: z.record(z.any()).optional()
+    customSettings: z.record(z.string(), z.any()).optional()
   }).optional()
 })
 
@@ -71,7 +72,15 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Create the event
+    // Create the event with default settings if not provided
+    const defaultSettings = {
+      enableTopicRanking: true,
+      minTopicsToRank: 6,
+      enableAutoAssignment: false,
+      maxTopicsPerParticipant: 3,
+      requireApproval: false
+    }
+    
     const newEvent = await eventService.create({
       name: validatedData.name,
       description: validatedData.description,
@@ -86,7 +95,7 @@ export default defineEventHandler(async (event) => {
       status: validatedData.status,
       createdAt: new Date(),
       updatedAt: new Date(),
-      settings: validatedData.settings
+      settings: validatedData.settings || defaultSettings
     })
     
     console.log(`Event created successfully: ${newEvent.id}`)

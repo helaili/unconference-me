@@ -158,6 +158,20 @@ const saveChanges = async () => {
           </v-col>
           
           <v-col cols="12" md="6">
+            <v-text-field
+              v-model.number="localEvent.settings.minTopicsToRank"
+              label="Minimum Topics to Rank"
+              type="number"
+              :readonly="!editMode"
+              :variant="editMode ? 'outlined' : 'plain'"
+              :disabled="!localEvent.settings.enableTopicRanking"
+              min="1"
+              hint="Minimum number of topics participants must rank"
+              persistent-hint
+            />
+          </v-col>
+          
+          <v-col cols="12" md="6">
             <v-switch
               v-model="localEvent.settings.enableAutoAssignment"
               label="Enable Auto Assignment"

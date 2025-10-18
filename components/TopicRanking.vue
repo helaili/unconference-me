@@ -12,7 +12,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  minRanking: 3,
+  minRanking: 6,
   isAdmin: false
 })
 
