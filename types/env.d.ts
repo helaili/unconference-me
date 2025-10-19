@@ -10,6 +10,7 @@ declare module '@nuxt/schema' {
       eventLocation: string
       eventName: string
       devMode: boolean
+      appEnv: string
       authUrl: string
     }
   }

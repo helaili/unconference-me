@@ -7,7 +7,7 @@ console.log(`Using GitHub Auth: ${process.env.NUXT_AUTH_GITHUB === 'true'}`)
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
-  devtools: { enabled: true },
+  devtools: { enabled: process.env.APP_ENV === 'production' ? false : true },
   css: [
     '~/assets/css/mobile.css'
   ],
@@ -116,6 +116,7 @@ export default defineNuxtConfig({
     },
     public: {
       devMode: process.env.APP_ENV === 'development',
+      appEnv: process.env.APP_ENV || 'development',
       authUrl: process.env.NUXT_AUTH_GITHUB === 'true' ?  '/auth/github' : '/login',
       eventName: "Universe User Group 2025", 
       eventLocation: "Convene 100 Stockton, Union Square, San Francisco",
