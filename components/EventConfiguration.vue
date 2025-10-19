@@ -9,7 +9,6 @@ interface Props {
 const props = defineProps<Props>()
 const emit = defineEmits<{
   update: [event: Partial<Event>]
-  save: []
 }>()
 
 // Local editable state
@@ -54,8 +53,10 @@ const saveChanges = async () => {
   saving.value = true
   try {
     console.log('[EventConfiguration] Saving changes:', JSON.stringify(localEvent.value, null, 2))
+    
+    // Only emit update - the parent should handle both saving and refreshing
     emit('update', localEvent.value)
-    emit('save')
+    
     editMode.value = false
   } finally {
     saving.value = false

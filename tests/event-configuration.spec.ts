@@ -39,12 +39,17 @@ test.describe('Event Configuration Persistence', () => {
     // Save changes
     await page.click('button:has-text("Save Changes")')
     
-    // Wait for save to complete and edit mode to exit
-    await page.waitForTimeout(1500)
+    // Wait for edit mode to exit (Save button disappears, Edit button appears)
+    const editButtonAgain = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
+    await expect(editButtonAgain).toBeVisible({ timeout: 5000 })
+    
+    // Wait a bit more for the component to fully update with new props from API
+    await page.waitForTimeout(1000)
 
     // Click Edit again to verify the values were saved
-    const editButtonAgain = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
     await editButtonAgain.click()
+    
+    // Wait for form to be in edit mode
     await page.waitForTimeout(500)
 
     // Verify changes persisted in the form

@@ -75,6 +75,9 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
       event.value = response.event as Event
       successMessage.value = 'Event updated successfully!'
       
+      // Refresh all event data after successful update
+      await fetchEventData()
+      
       setTimeout(() => {
         successMessage.value = null
       }, 3000)
@@ -258,7 +261,6 @@ onMounted(() => {
         class="mb-4"
         :event="event"
         @update="handleEventUpdate"
-        @save="fetchEventData"
       />
       
       <!-- Organizer Management -->
