@@ -48,7 +48,10 @@ export class ProductionDatabasePopulator {
       { id: 'users', partitionKey: '/email' },
       { id: 'events', partitionKey: '/id' },
       { id: 'participants', partitionKey: '/eventId' },
-      { id: 'assignments', partitionKey: '/eventId' }
+      { id: 'assignments', partitionKey: '/eventId' },
+      { id: 'topics', partitionKey: '/eventId' },
+      { id: 'topicRankings', partitionKey: '/eventId' },
+      { id: 'organizers', partitionKey: '/eventId' }
     ]
 
     for (const containerDef of containers) {
@@ -150,16 +153,53 @@ export class ProductionDatabasePopulator {
 async function populateProductionWithMockServices(): Promise<void> {
   try {
     console.log('Starting production mock service population with data from mock-manager')
-    
+    const hashedPassword = '$2b$12$LGtR/rq3C67ODqfZiN.5Z.6JAuj4VBO7n8J4hWAtDbPLVD/hjkt5G' // "changeme"
+
     // Reset mock data to ensure consistent state
     mockData.resetToDefaults()
     
     // Get all data from mock manager
-    const users = mockData.getUsers()
-    const events = mockData.getEvents()
-    const participants = mockData.getParticipants()
-    const assignments = mockData.getAssignments()
-    
+    const users = [
+      {
+        id: "helaili@github.com",
+        firstname: "Alain",
+        lastname: "Helaili",
+        email: "helaili@github.com",
+        password: hashedPassword,
+        role: "Admin",
+        createdAt: new Date('2025-10-19'),
+        updatedAt: new Date('2025-10-19'),
+      },
+    ]
+    const events = [
+      {
+        id: '1',
+        name: 'Universe User Group 2025',
+        description: 'Annual unconference event for Universe users',
+        location: 'Convene 100 Stockton, Union Square, San Francisco',
+        startDate: new Date('2025-10-27T09:00:00Z'),
+        endDate: new Date('2025-10-27T17:00:00Z'),
+        numberOfRounds: 3,
+        discussionsPerRound: 5,
+        idealGroupSize: 8,
+        minGroupSize: 5,
+        maxGroupSize: 10,
+        status: 'active',
+        createdAt: new Date('2025-10-19T00:00:00Z'),
+        updatedAt: new Date('2025-10-19T00:00:00Z'),
+        settings: {
+          enableTopicRanking: true,
+          minTopicsToRank: 6,
+          enableAutoAssignment: false,
+          maxTopicsPerParticipant: 3,
+          requireApproval: false,
+          maxParticipants: 100
+        }
+      }
+    ]
+    const participants = []
+    const assignments = []
+
     console.log(`Production mock data summary:`)
     console.log(`- Users: ${users.length}`)
     console.log(`- Events: ${events.length}`)
