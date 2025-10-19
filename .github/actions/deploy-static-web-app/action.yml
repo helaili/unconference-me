@@ -119,6 +119,15 @@ runs:
     - name: Build And Deploy
       id: builddeploy
       uses: azure/static-web-apps-deploy@v1
+      env:
+        NUXT_AUTH_GITHUB: ${{ inputs.nuxt-auth-github }}
+        NUXT_SESSION_PASSWORD: ${{ inputs.nuxt-session-password }}
+        GITHUBAPP_CLIENT_ID: ${{ inputs.github-client-id }}
+        GITHUBAPP_CLIENT_SECRET: ${{ inputs.github-client-secret }}
+        RESOURCE_GROUP: ${{ inputs.resource-group }}
+        STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+        COSMOS_DB_CONNECTION_STRING: ${{ inputs.cosmos-db-connection-string }}
+        APP_ENV: ${{ inputs.app-env }}
       with:
         azure_static_web_apps_api_token: ${{ steps.get_token.outputs.token }}
         repo_token: ${{ inputs.github-token }}
