@@ -53,6 +53,13 @@ inputs:
     description: 'Production branch name'
     required: false
     default: 'main'
+  cosmos-db-connection-string: 
+    description: 'Cosmos DB connection string'
+    required: ftruelse
+    default: ''
+  app-env:
+    description: 'Application environment (production/staging)'
+    required: true
 
 outputs:
   app-url:
@@ -86,14 +93,18 @@ runs:
         GITHUBAPP_CLIENT_SECRET: ${{ inputs.github-client-secret }}
         RESOURCE_GROUP: ${{ inputs.resource-group }}
         STATIC_WEB_APP_NAME: ${{ inputs.static-web-app-name }}
+        COSMOS_DB_CONNECTION_STRING: ${{ inputs.cosmos-db-connection-string }}
+        APP_ENV: ${{ inputs.app-env }}
       run: |
         az staticwebapp appsettings set \
           --name "$STATIC_WEB_APP_NAME" \
           --resource-group "$RESOURCE_GROUP" \
           --setting-names NUXT_SESSION_PASSWORD=$NUXT_SESSION_PASSWORD \
                           NUXT_AUTH_GITHUB=$NUXT_AUTH_GITHUB \
-                          GITHUBAPP_CLIENT_ID=$GITHUBAPP_CLIENT_ID GITHUBAPP_CLIENT_SECRET=$GITHUBAPP_CLIENT_SECRET
-                          
+                          GITHUBAPP_CLIENT_ID=$GITHUBAPP_CLIENT_ID GITHUBAPP_CLIENT_SECRET=$GITHUBAPP_CLIENT_SECRET \
+                          COSMOS_DB_CONNECTION_STRING=$COSMOS_DB_CONNECTION_STRING \
+                          APP_ENV=$APP_ENV
+
     - name: Get The Static Web App Deployment Token
       id: get_token
       shell: bash

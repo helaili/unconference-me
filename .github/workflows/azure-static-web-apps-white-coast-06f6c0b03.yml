@@ -20,6 +20,7 @@ env:
   AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
   GITHUBAPP_CLIENT_ID: ${{ secrets.GITHUBAPP_CLIENT_ID }}
   GITHUBAPP_CLIENT_SECRET: ${{ secrets.GITHUBAPP_CLIENT_SECRET }}
+  COSMODB_PRIMARY_CONNECTION_STRING: ${{ secrets.COSMODB_PRIMARY_CONNECTION_STRING }}
 
 permissions:
   id-token: write
@@ -56,6 +57,8 @@ jobs:
           api-location: ".output/server"
           output-location: ".output/public"
           production-branch: "main"
+          cosmos-db-connection-string: ${{ env.COSMODB_PRIMARY_CONNECTION_STRING }}
+          app-env: "production"
           
   build_and_deploy_job_to_pr_environment:
     if: github.event_name == 'pull_request' && github.event.action != 'closed'
@@ -86,6 +89,8 @@ jobs:
           api-location: ".output/server"
           output-location: ".output/public"
           production-branch: "main"
+          cosmos-db-connection-string: ${{ env.COSMODB_PRIMARY_CONNECTION_STRING }}
+          app-env: "staging"
           
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
