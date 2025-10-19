@@ -73,6 +73,9 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
     
     if (response.success && response.event) {
       event.value = response.event as unknown as Event
+      
+      // Refresh all event data after successful update
+      await fetchEventData()
     }
   } catch (err) {
     console.error('Error updating event:', err)
@@ -112,7 +115,6 @@ onMounted(() => {
         <EventConfiguration
           :event="event"
           @update="handleEventUpdate"
-          @save="fetchEventData"
         />
         
         <AssignmentGenerator

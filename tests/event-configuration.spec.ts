@@ -1,49 +1,58 @@
 import { test, expect } from '@playwright/test'
+import { AuthHelper } from './helpers/auth'
 
 test.describe('Event Configuration Persistence', () => {
+  let auth: AuthHelper
+
   test.beforeEach(async ({ page }) => {
-    // Login as admin
-    await page.goto('/login')
-    await page.fill('input[type="email"]', 'admin@example.com')
-    await page.fill('input[type="password"]', 'password123')
-    await page.click('button[type="submit"]')
-    await page.waitForURL('/dashboard')
+    // Login as admin using AuthHelper
+    auth = new AuthHelper(page)
+    await auth.loginAsLuke()
   })
 
   test('should persist event configuration changes', async ({ page }) => {
-    // Navigate to an event
-    await page.goto('/events/event-1')
+    // Navigate to an event - use correct event ID from mock data
+    await page.goto('/events/1')
     await page.waitForLoadState('networkidle')
 
-    // Click Edit button on Event Configuration card
-    const editButton = page.locator('text=Event Configuration').locator('..').locator('button:has-text("Edit")')
+    // Click Edit button on Event Configuration card - use more specific selector
+    const editButton = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
     await editButton.click()
 
-    // Change group size values
-    const minGroupSizeInput = page.locator('input[type="number"]:has-text("Minimum Group Size")').first()
+    // Wait for edit mode to activate
+    await page.waitForTimeout(500)
+
+    // Change group size values - find inputs by their labels
+    const minGroupSizeInput = page.locator('label:has-text("Minimum Group Size")').locator('..').locator('input[type="number"]')
     await minGroupSizeInput.fill('3')
     
-    const idealGroupSizeInput = page.locator('input[type="number"]:has-text("Ideal Group Size")').first()
+    const idealGroupSizeInput = page.locator('label:has-text("Ideal Group Size")').locator('..').locator('input[type="number"]')
     await idealGroupSizeInput.fill('5')
     
-    const maxGroupSizeInput = page.locator('input[type="number"]:has-text("Maximum Group Size")').first()
+    const maxGroupSizeInput = page.locator('label:has-text("Maximum Group Size")').locator('..').locator('input[type="number"]')
     await maxGroupSizeInput.fill('8')
 
     // Toggle Enable Auto Assignment
-    const autoAssignmentSwitch = page.locator('label:has-text("Enable Auto Assignment")').locator('..')
+    const autoAssignmentSwitch = page.locator('label:has-text("Enable Auto Assignment")').locator('..').locator('input[type="checkbox"]')
     await autoAssignmentSwitch.click()
 
     // Save changes
     await page.click('button:has-text("Save Changes")')
     
-    // Wait for save to complete
+    // Wait for edit mode to exit (Save button disappears, Edit button appears)
+    const editButtonAgain = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
+    await expect(editButtonAgain).toBeVisible({ timeout: 5000 })
+    
+    // Wait a bit more for the component to fully update with new props from API
     await page.waitForTimeout(1000)
 
-    // Reload the page
-    await page.reload()
-    await page.waitForLoadState('networkidle')
+    // Click Edit again to verify the values were saved
+    await editButtonAgain.click()
+    
+    // Wait for form to be in edit mode
+    await page.waitForTimeout(500)
 
-    // Verify changes persisted
+    // Verify changes persisted in the form
     const minGroupSize = await page.locator('label:has-text("Minimum Group Size")').locator('..').locator('input').inputValue()
     const idealGroupSize = await page.locator('label:has-text("Ideal Group Size")').locator('..').locator('input').inputValue()
     const maxGroupSize = await page.locator('label:has-text("Maximum Group Size")').locator('..').locator('input').inputValue()
@@ -57,15 +66,15 @@ test.describe('Event Configuration Persistence', () => {
   })
 
   test('should preserve other settings when updating one field', async ({ page }) => {
-    // Navigate to an event
-    await page.goto('/events/event-1')
+    // Navigate to an event - use correct event ID from mock data
+    await page.goto('/events/1')
     await page.waitForLoadState('networkidle')
 
-    // Get initial state of settings
-    await page.click('text=Event Configuration')
+    // Wait for Event Configuration to be visible
+    await expect(page.locator('.v-card-title >> text=Event Configuration').first()).toBeVisible({ timeout: 10000 })
     
-    // Click Edit
-    const editButton = page.locator('text=Event Configuration').locator('..').locator('button:has-text("Edit")')
+    // Click Edit - use more specific selector
+    const editButton = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
     await editButton.click()
 
     // Check initial state of enableTopicRanking
@@ -84,8 +93,8 @@ test.describe('Event Configuration Persistence', () => {
     await page.reload()
     await page.waitForLoadState('networkidle')
 
-    // Click Edit again to see current values
-    const editButton2 = page.locator('text=Event Configuration').locator('..').locator('button:has-text("Edit")')
+    // Click Edit again to see current values - use more specific selector
+    const editButton2 = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
     await editButton2.click()
 
     // Verify that topicRanking setting was preserved

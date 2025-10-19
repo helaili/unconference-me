@@ -43,6 +43,9 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
       event.value = response.event as Event
       successMessage.value = 'Settings saved successfully!'
       
+      // Refresh event data after successful update
+      await fetchEvent()
+      
       // Clear success message after 3 seconds
       setTimeout(() => {
         successMessage.value = null
@@ -94,7 +97,6 @@ onMounted(() => {
       <EventConfiguration
         :event="event"
         @update="handleEventUpdate"
-        @save="fetchEvent"
       />
     </div>
     
