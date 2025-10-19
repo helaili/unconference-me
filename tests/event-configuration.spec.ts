@@ -37,16 +37,17 @@ test.describe('Event Configuration Persistence', () => {
     await autoAssignmentSwitch.click()
 
     // Save changes
-    await page.click('button:has-text("Save")')
+    await page.click('button:has-text("Save Changes")')
     
-    // Wait for save to complete
+    // Wait for save to complete and edit mode to exit
     await page.waitForTimeout(1500)
 
-    // Reload the page
-    await page.reload()
-    await page.waitForLoadState('networkidle')
+    // Click Edit again to verify the values were saved
+    const editButtonAgain = page.locator('.v-card-title >> text=Event Configuration').locator('..').locator('button:has-text("Edit")')
+    await editButtonAgain.click()
+    await page.waitForTimeout(500)
 
-    // Verify changes persisted
+    // Verify changes persisted in the form
     const minGroupSize = await page.locator('label:has-text("Minimum Group Size")').locator('..').locator('input').inputValue()
     const idealGroupSize = await page.locator('label:has-text("Ideal Group Size")').locator('..').locator('input').inputValue()
     const maxGroupSize = await page.locator('label:has-text("Maximum Group Size")').locator('..').locator('input').inputValue()

@@ -65,10 +65,13 @@ test.describe('Assignment Algorithm', () => {
     // Check for user assignment card - use card title with span and add timeout
     await expect(page.locator('.v-card-title >> text=Your Discussion Assignments').first()).toBeVisible({ timeout: 10000 })
 
+    // Wait for loading to finish - the component shows a loading spinner first
+    await expect(page.locator('text=Loading assignments...')).not.toBeVisible({ timeout: 10000 })
+
     // If assignments exist, they should be displayed
-    // Otherwise, should see "No assignments yet" message
+    // Otherwise, should see "No assignments yet" message  
     const noAssignmentsText = page.getByText(/no assignments yet/i)
-    const assignmentsList = page.locator('[data-testid="assignments-list"]')
+    const assignmentsList = page.locator('.v-expansion-panels') // Look for the expansion panels that hold assignments
 
     const hasAssignments = await assignmentsList.isVisible().catch(() => false)
     const hasNoAssignments = await noAssignmentsText.isVisible().catch(() => false)
