@@ -83,20 +83,25 @@ const handleChangeStatus = (status: Topic['status']) => {
         </template>
         Status: {{ topic.status }}
       </v-tooltip>
-      <span class="flex-grow-1">{{ topic.title }}</span>
-      <v-chip
-        v-if="rank"
-        color="primary"
-        variant="elevated"
-        size="small"
-        class="mr-2"
-      >
-        #{{ rank }}
-      </v-chip>
+      <v-tooltip location="bottom">
+        <template #activator="{ props: tooltipProps }">
+          <span class="flex-grow-1 text-truncate" v-bind="tooltipProps">{{ topic.title }}</span>
+        </template>
+        {{ topic.title }}
+      </v-tooltip>
     </v-card-title>
     
     <v-card-text class="flex-grow-1">
       <div class="text-caption text-grey mb-2">
+        <v-chip
+          v-if="rank"
+          color="primary"
+          variant="elevated"
+          size="small"
+          class="mr-2"
+        >
+          #{{ rank }}
+        </v-chip>
         <span v-if="topic.updatedAt === topic.createdAt">
           Proposed: {{ new Date(topic.createdAt).toLocaleDateString() }}
         </span>

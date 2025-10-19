@@ -3,16 +3,22 @@
 import { ref, onMounted } from 'vue'
 import type { User as UnconferenceUser }  from '~/types/user'
 import type { Event } from '~/types/event'
-import type { ParticipantAssignment } from '~/types/participant'
+import type { ParticipantAssignment, Participant } from '~/types/participant'
+import type { Topic } from '~/types/topic'
 
 const { user } = useUserSession() as { user: Ref<UnconferenceUser | null> }
 const isAdmin = ref(user.value?.role === 'Admin')
 
 const event = ref<Event | null>(null)
 const assignments = ref<ParticipantAssignment[]>([])
+const topics = ref<Topic[]>([])
+const participants = ref<Participant[]>([])
 const participantStats = ref<any>(null)
 const loading = ref(false)
 const error = ref<string | null>(null)
+
+// Track whether user has completed rankings
+const hasCompletedRankings = ref(false)
 
 useSeoMeta({
   title: 'Dashboard',
@@ -29,19 +35,26 @@ const fetchEventData = async () => {
     // Fetch event details
     const eventResponse = await $fetch('/api/events/1')
     if (eventResponse.success && eventResponse.event) {
-      event.value = eventResponse.event as Event
+      event.value = eventResponse.event as unknown as Event
     }
     
     // Fetch assignments
     const assignmentsResponse = await $fetch('/api/events/1/assignments')
     if (assignmentsResponse.success) {
-      assignments.value = assignmentsResponse.assignments
+      assignments.value = assignmentsResponse.assignments as any
     }
     
-    // Fetch participant stats
+    // Fetch topics
+    const topicsResponse = await $fetch('/api/events/1/topics')
+    if (topicsResponse.success) {
+      topics.value = topicsResponse.topics as any
+    }
+    
+    // Fetch participant stats and participants
     const participantsResponse = await $fetch('/api/events/1/participants')
     if (participantsResponse.success) {
       participantStats.value = participantsResponse.stats
+      participants.value = participantsResponse.participants as any
     }
   } catch (err) {
     console.error('Error fetching event data:', err)
@@ -59,7 +72,7 @@ const handleEventUpdate = async (updates: Partial<Event>) => {
     })
     
     if (response.success && response.event) {
-      event.value = response.event as Event
+      event.value = response.event as unknown as Event
     }
   } catch (err) {
     console.error('Error updating event:', err)
@@ -102,7 +115,23 @@ onMounted(() => {
           @save="fetchEventData"
         />
         
-        <AssignmentList :assignments="assignments" />
+        <AssignmentGenerator
+          :event="event"
+          @refresh="fetchEventData"
+        />
+        
+        <AssignmentList 
+          :assignments="assignments"
+          class="mb-4"
+        />
+        
+        <AdminAssignmentsByTopic
+          :assignments="assignments"
+          :topics="topics"
+          :participants="participants"
+          :number-of-rounds="event.numberOfRounds"
+          :loading="loading"
+        />
       </div>
       
       <v-alert v-else type="info" variant="tonal" class="mt-4">
@@ -111,13 +140,20 @@ onMounted(() => {
     </div>
     
     <div v-else>
+      <p>Welcome, {{ user?.firstname }}! View your event invitations, assignments, and ranking tasks above.</p>
+      
       <!-- Pending invitations front and center for users -->
       <PendingInvitations />
       
-      <!-- Topic ranking tasks -->
-      <RankingTasks />
+      <!-- User's top ranked topics (shown when rankings are complete) -->
+      <UserTopRankings @has-rankings="hasCompletedRankings = $event" />
       
-      <p>Welcome, {{ user?.firstname }}! View your event invitations and ranking tasks above.</p>
+      <!-- Topic ranking tasks (shown when rankings are incomplete) -->
+      <RankingTasks v-if="!hasCompletedRankings" />
+      
+      <!-- User assignments -->
+      <UserAssignmentCard />
+      
       <!-- Additional user-specific content goes here -->
     </div>
   </v-container>

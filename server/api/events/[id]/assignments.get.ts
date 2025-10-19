@@ -1,4 +1,6 @@
-import { mockData } from '../../../../tests/helpers/mock-manager'
+import { assignmentService } from '../../../services/assignmentService'
+import { participantService } from '../../../services/participantService'
+import { topicService } from '../../../services/topicService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -6,7 +8,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const id = getRouterParam(event, 'id')
     
-    console.log(`Fetching assignments for event ${id} for user: ${session.user}`)
+    console.log(`Fetching assignments for event ${id} for user: ${session.user.email}`)
     
     if (!id) {
       throw createError({
@@ -15,13 +17,35 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    // Get assignments from mock manager
-    // In production, this would fetch from CosmosDB
-    const assignments = mockData.getAssignmentsByEventId(id)
+    // Get assignments for this event
+    const assignments = await assignmentService.findByEventId(id)
+    
+    // Enrich with participant and topic details
+    const enrichedAssignments = await Promise.all(
+      assignments.map(async (assignment) => {
+        const participant = await participantService.findById(assignment.participantId)
+        const topic = await topicService.findById(assignment.topicId)
+        
+        return {
+          ...assignment,
+          participant: participant ? {
+            id: participant.id,
+            firstname: participant.firstname,
+            lastname: participant.lastname,
+            email: participant.email
+          } : null,
+          topic: topic ? {
+            id: topic.id,
+            title: topic.title,
+            description: topic.description
+          } : null
+        }
+      })
+    )
     
     return {
       success: true,
-      assignments
+      assignments: enrichedAssignments
     }
   } catch (error) {
     console.error('Error fetching assignments:', error)

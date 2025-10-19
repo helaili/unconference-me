@@ -16,11 +16,12 @@ const updateEventSchema = z.object({
   status: z.enum(['draft', 'published', 'active', 'completed', 'cancelled']).optional(),
   settings: z.object({
     enableTopicRanking: z.boolean().optional(),
+    minTopicsToRank: z.number().int().positive().optional(),
     enableAutoAssignment: z.boolean().optional(),
     maxTopicsPerParticipant: z.number().int().positive().optional(),
     requireApproval: z.boolean().optional(),
     maxParticipants: z.number().int().positive().optional(),
-    customSettings: z.record(z.any()).optional()
+    customSettings: z.record(z.string(), z.any()).optional()
   }).optional()
 })
 
@@ -57,7 +58,9 @@ export default defineEventHandler(async (event) => {
     // Parse and validate request body
     const body = await readValidatedBody(event, updateEventSchema.parse)
     
-    console.log(`Updating event ${id} for user: ${session.user?.email}`)
+    console.log(`[PUT /api/events/${id}] Received update request`)
+    console.log(`[PUT /api/events/${id}] User: ${session.user?.email}`)
+    console.log(`[PUT /api/events/${id}] Body:`, JSON.stringify(body, null, 2))
     
     // Validate group sizes if provided
     const minSize = body.minGroupSize ?? existingEvent.minGroupSize

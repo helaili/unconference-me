@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Event } from '~/types/event'
 
 interface Props {
@@ -16,6 +16,17 @@ const emit = defineEmits<{
 const editMode = ref(false)
 const localEvent = ref({ ...props.event })
 const saving = ref(false)
+
+// Watch for changes to props.event and update localEvent when not in edit mode
+watch(() => props.event, (newEvent) => {
+  if (!editMode.value) {
+    console.log('[EventConfiguration] Props changed, updating localEvent')
+    console.log('[EventConfiguration] New props.event:', JSON.stringify(newEvent, null, 2))
+    // Deep clone to ensure we get all nested properties
+    localEvent.value = JSON.parse(JSON.stringify(newEvent))
+    console.log('[EventConfiguration] Updated localEvent:', JSON.stringify(localEvent.value, null, 2))
+  }
+}, { deep: true, immediate: true })
 
 // Validation
 const isValid = computed(() => {
@@ -42,6 +53,7 @@ const saveChanges = async () => {
   
   saving.value = true
   try {
+    console.log('[EventConfiguration] Saving changes:', JSON.stringify(localEvent.value, null, 2))
     emit('update', localEvent.value)
     emit('save')
     editMode.value = false
@@ -142,6 +154,20 @@ const saveChanges = async () => {
               label="Enable Topic Ranking"
               :readonly="!editMode"
               color="primary"
+            />
+          </v-col>
+          
+          <v-col cols="12" md="6">
+            <v-text-field
+              v-model.number="localEvent.settings.minTopicsToRank"
+              label="Minimum Topics to Rank"
+              type="number"
+              :readonly="!editMode"
+              :variant="editMode ? 'outlined' : 'plain'"
+              :disabled="!localEvent.settings.enableTopicRanking"
+              min="1"
+              hint="Minimum number of topics participants must rank"
+              persistent-hint
             />
           </v-col>
           
