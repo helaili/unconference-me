@@ -294,7 +294,9 @@ onMounted(() => {
       <InvitationManagement
         :event-id="eventId"
         :participants="participants"
+        :event="event"
         @invite="handleSendInvitations"
+        @refresh="fetchEventData"
       />
     </div>
 
