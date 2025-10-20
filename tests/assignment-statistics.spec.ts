@@ -201,4 +201,36 @@ test.describe('Assignment Statistics', () => {
       await expect(table).toBeVisible()
     }
   })
+
+  test('displays topic occurrence distribution after generating assignments', async ({ page }) => {
+    const auth = new AuthHelper(page)
+    await auth.loginAsLuke()
+
+    await page.waitForTimeout(1000)
+
+    // Generate assignments
+    const generateButton = page.getByRole('button', { name: /generate assignments/i })
+    
+    if (await generateButton.isDisabled()) {
+      test.skip()
+      return
+    }
+
+    await generateButton.click()
+    await page.waitForTimeout(2000)
+
+    const successMessage = page.getByText(/successfully generated/i)
+    if (await successMessage.isVisible()) {
+      // Check for Topic Schedule Distribution section
+      const topicDistributionHeader = page.getByText('Topic Schedule Distribution')
+      await expect(topicDistributionHeader).toBeVisible({ timeout: 5000 })
+
+      // Check for total topics planned display
+      await expect(page.getByText('Total Topics Planned')).toBeVisible()
+
+      // Check for distribution table headers
+      await expect(page.getByText('Times Scheduled')).toBeVisible()
+      await expect(page.getByText('Number of Topics')).toBeVisible()
+    }
+  })
 })

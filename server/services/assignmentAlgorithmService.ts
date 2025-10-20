@@ -43,6 +43,7 @@ export interface AssignmentStatistics {
   roundStatistics: RoundStatistics[]
   preferredChoiceDistribution?: PreferredChoiceDistribution
   sortedChoiceDistribution?: SortedChoiceDistribution
+  topicOccurrenceDistribution?: TopicOccurrenceDistribution
 }
 
 /**
@@ -68,6 +69,18 @@ export interface SortedChoiceDistribution {
   distribution: Record<number, number>
   totalParticipantsWithRankings: number
   minTopicsToRank: number
+}
+
+/**
+ * Distribution of topics by how many times they are scheduled across rounds
+ */
+export interface TopicOccurrenceDistribution {
+  // Total number of unique topics scheduled
+  totalTopicsPlanned: number
+  // Number of topics scheduled X times
+  // Key is the occurrence count (1, 2, 3, ...)
+  // Value is the number of topics scheduled that many times
+  distribution: Record<number, number>
 }
 
 export interface RoundStatistics {
@@ -474,6 +487,11 @@ export class AssignmentAlgorithmService {
       event.settings?.minTopicsToRank
     )
 
+    // Calculate topic occurrence distribution
+    const topicOccurrenceDistribution = this.calculateTopicOccurrenceDistribution(
+      assignments
+    )
+
     return {
       totalParticipants: participants.length,
       totalAssignments,
@@ -484,7 +502,8 @@ export class AssignmentAlgorithmService {
       averageGroupSize,
       roundStatistics: roundStats,
       preferredChoiceDistribution,
-      sortedChoiceDistribution
+      sortedChoiceDistribution,
+      topicOccurrenceDistribution
     }
   }
 
@@ -601,6 +620,36 @@ export class AssignmentAlgorithmService {
       distribution,
       totalParticipantsWithRankings,
       minTopicsToRank: effectiveMinTopicsToRank
+    }
+  }
+
+  /**
+   * Calculate the distribution of topics by how many times they are scheduled across rounds
+   */
+  private calculateTopicOccurrenceDistribution(
+    assignments: Omit<ParticipantAssignment, 'id'>[]
+  ): TopicOccurrenceDistribution {
+    // Count how many times each topic appears
+    const topicCounts = new Map<string, number>()
+    
+    for (const assignment of assignments) {
+      const count = topicCounts.get(assignment.topicId) || 0
+      topicCounts.set(assignment.topicId, count + 1)
+    }
+
+    // Count unique topics (total topics planned)
+    const totalTopicsPlanned = topicCounts.size
+
+    // Build occurrence distribution (how many topics appear X times)
+    const occurrenceDistribution: Record<number, number> = {}
+    
+    for (const count of topicCounts.values()) {
+      occurrenceDistribution[count] = (occurrenceDistribution[count] || 0) + 1
+    }
+
+    return {
+      totalTopicsPlanned,
+      distribution: occurrenceDistribution
     }
   }
 }

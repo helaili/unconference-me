@@ -40,6 +40,10 @@ const statistics = ref<{
     totalParticipantsWithRankings: number
     minTopicsToRank: number
   }
+  topicOccurrenceDistribution?: {
+    totalTopicsPlanned: number
+    distribution: Record<number, number>
+  }
 } | null>(null)
 const warnings = ref<string[]>([])
 
@@ -385,6 +389,61 @@ const clearAssignments = async () => {
               <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mt-2 text-medium-emphasis">
                 Based on {{ statistics.sortedChoiceDistribution.totalParticipantsWithRankings }} participants with rankings
               </p>
+            </div>
+            
+            <!-- Topic Occurrence Distribution -->
+            <div v-if="statistics.topicOccurrenceDistribution && statistics.topicOccurrenceDistribution.totalTopicsPlanned > 0" class="mt-4">
+              <v-divider class="mb-3" />
+              <div :class="$vuetify.display.smAndDown ? 'text-body-2 font-weight-bold' : 'text-subtitle-1 font-weight-medium'" class="mb-2">
+                <v-icon icon="mdi-chart-bar" size="small" class="mr-2" />
+                Topic Schedule Distribution
+              </div>
+              <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mb-3 text-medium-emphasis">
+                Distribution of topics by how many times they are scheduled across rounds.
+              </p>
+              <v-row :dense="$vuetify.display.smAndDown" class="mb-3">
+                <v-col cols="12" sm="6">
+                  <v-card variant="tonal" color="primary">
+                    <v-card-text :class="$vuetify.display.smAndDown ? 'pa-2' : ''">
+                      <div :class="$vuetify.display.smAndDown ? 'text-h6' : 'text-h5'">
+                        {{ statistics.topicOccurrenceDistribution.totalTopicsPlanned }}
+                      </div>
+                      <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'">
+                        Total Topics Planned
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+              <v-table density="compact">
+                <thead>
+                  <tr>
+                    <th class="text-left">Times Scheduled</th>
+                    <th class="text-right">Number of Topics</th>
+                    <th class="text-right">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    v-for="occurrence in Object.keys(statistics.topicOccurrenceDistribution.distribution).map(Number).sort((a, b) => b - a)"
+                    :key="occurrence"
+                  >
+                    <td>
+                      <v-chip 
+                        size="small" 
+                        :color="occurrence > 1 ? 'success' : 'info'"
+                        variant="tonal"
+                      >
+                        {{ occurrence }} {{ occurrence === 1 ? 'time' : 'times' }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right">{{ statistics.topicOccurrenceDistribution.distribution[occurrence] }}</td>
+                    <td class="text-right">
+                      {{ ((statistics.topicOccurrenceDistribution.distribution[occurrence] / statistics.topicOccurrenceDistribution.totalTopicsPlanned) * 100).toFixed(1) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
             </div>
           </v-card-text>
         </v-card>
