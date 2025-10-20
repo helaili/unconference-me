@@ -1,6 +1,7 @@
 import { assignmentService } from '../../../services/assignmentService'
 import { participantService } from '../../../services/participantService'
 import { topicService } from '../../../services/topicService'
+import { eventService } from '../../../services/eventService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -19,6 +20,9 @@ export default defineEventHandler(async (event) => {
     
     // Get assignments for this event
     const assignments = await assignmentService.findByEventId(id)
+    
+    // Get event to retrieve statistics
+    const eventData = await eventService.findById(id)
     
     // Enrich with participant and topic details
     const enrichedAssignments = await Promise.all(
@@ -45,7 +49,8 @@ export default defineEventHandler(async (event) => {
     
     return {
       success: true,
-      assignments: enrichedAssignments
+      assignments: enrichedAssignments,
+      statistics: eventData?.settings?.lastAssignmentStatistics || null
     }
   } catch (error) {
     console.error('Error fetching assignments:', error)

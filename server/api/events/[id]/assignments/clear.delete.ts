@@ -1,4 +1,5 @@
 import { assignmentService } from '../../../../services/assignmentService'
+import { eventService } from '../../../../services/eventService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -37,6 +38,18 @@ export default defineEventHandler(async (event) => {
     }
 
     console.log(`Deleted ${deletedCount} assignments for event ${eventId}`)
+
+    // Clear statistics from event settings
+    const eventData = await eventService.findById(eventId)
+    if (eventData && eventData.settings) {
+      const updatedSettings = {
+        ...eventData.settings,
+        lastAssignmentStatistics: undefined
+      }
+      await eventService.update(eventId, {
+        settings: updatedSettings
+      })
+    }
 
     return {
       success: true,

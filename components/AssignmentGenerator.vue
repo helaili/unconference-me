@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Event } from '~/types/event'
 
 interface Props {
@@ -50,6 +50,20 @@ const warnings = ref<string[]>([])
 const canGenerate = computed(() => {
   return props.event.settings?.enableAutoAssignment === true
 })
+
+// Load existing statistics on mount
+const loadStatistics = async () => {
+  try {
+    const response = await $fetch(`/api/events/${props.event.id}/assignments`)
+    
+    if (response.success && response.statistics) {
+      statistics.value = response.statistics
+    }
+  } catch (err) {
+    console.error('Error loading statistics:', err)
+    // Don't show error to user - statistics are optional
+  }
+}
 
 const generateAssignments = async () => {
   if (!canGenerate.value) {
@@ -120,6 +134,11 @@ const clearAssignments = async () => {
     clearing.value = false
   }
 }
+
+// Load statistics when component mounts
+onMounted(() => {
+  loadStatistics()
+})
 </script>
 
 <template>
