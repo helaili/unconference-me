@@ -263,6 +263,15 @@ onMounted(() => {
         @update="handleEventUpdate"
       />
       
+      <!-- Registration Code Manager (for generic code mode) -->
+      <RegistrationCodeManager
+        v-if="event.settings?.registrationMode === 'generic-code'"
+        class="mb-4"
+        :event="event"
+        :event-id="eventId"
+        @refresh="fetchEventData"
+      />
+      
       <!-- Organizer Management -->
       <OrganizerManagement
         class="mb-4"

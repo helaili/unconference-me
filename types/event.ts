@@ -26,6 +26,11 @@ export interface Event {
 }
 
 /**
+ * Registration modes for event access control
+ */
+export type RegistrationMode = 'open' | 'personal-code' | 'generic-code'
+
+/**
  * Event settings for future extensibility
  */
 export interface EventSettings {
@@ -44,6 +49,15 @@ export interface EventSettings {
   // Registration settings
   requireApproval?: boolean
   maxParticipants?: number
+  
+  // Registration mode - controls how users can register for the event
+  // - 'open': Anyone can register without invitation
+  // - 'personal-code': Users need a personal invitation code (pre-existing users only)
+  // - 'generic-code': Users need event-generic code (pre-existing users only)
+  registrationMode?: RegistrationMode
+  
+  // Generic event invitation code (used when registrationMode is 'generic-code')
+  genericInvitationCode?: string
   
   // Additional custom settings can be added here
   customSettings?: Record<string, any>
