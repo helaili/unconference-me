@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { userService } from '../../services/userService'
+import { isAdminOrOrganizer } from '../../utils/access-control'
 import crypto from 'crypto'
 
 const bodySchema = z.object({
@@ -11,24 +12,23 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    // Check if user is admin
+    // Check if user is admin or organizer
     const session = await requireUserSession(event)
-    const userRole = (session.user as { role?: string })?.role
     
-    if (userRole !== 'Admin') {
+    if (!isAdminOrOrganizer(session)) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden',
         data: { 
           success: false, 
-          message: 'Only admins can add users'
+          message: 'Only admins and organizers can add users'
         }
       })
     }
     
     const body = await readValidatedBody(event, bodySchema.parse)
     
-    console.log(`Admin adding user: ${body.email}`)
+    console.log(`Admin/Organizer adding user: ${body.email}`)
     
     // Check if user already exists
     const existingUser = await userService.findByEmail(body.email)
@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
       updatedAt: new Date()
     })
     
-    console.log(`Admin created user: ${user.email}`)
+    console.log(`Admin/Organizer created user: ${user.email}`)
     
     return { 
       success: true,

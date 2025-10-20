@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { userService } from '../../services/userService'
+import { isAdminOrOrganizer } from '../../utils/access-control'
 import crypto from 'crypto'
 
 const bodySchema = z.object({
@@ -8,24 +9,23 @@ const bodySchema = z.object({
 
 export default defineEventHandler(async (event) => {
   try {
-    // Check if user is admin
+    // Check if user is admin or organizer
     const session = await requireUserSession(event)
-    const userRole = (session.user as { role?: string })?.role
     
-    if (userRole !== 'Admin') {
+    if (!isAdminOrOrganizer(session)) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden',
         data: { 
           success: false, 
-          message: 'Only admins can import users'
+          message: 'Only admins and organizers can import users'
         }
       })
     }
     
     const body = await readValidatedBody(event, bodySchema.parse)
     
-    console.log('Admin importing users from CSV')
+    console.log('Admin/Organizer importing users from CSV')
     
     // Parse CSV data
     const lines = body.csvData.trim().split('\n')
@@ -101,7 +101,7 @@ export default defineEventHandler(async (event) => {
       }
     }
     
-    console.log(`Admin imported ${imported} users from CSV`)
+    console.log(`Admin/Organizer imported ${imported} users from CSV`)
     
     return { 
       success: true,
