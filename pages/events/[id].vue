@@ -307,6 +307,7 @@ onMounted(() => {
 
       <!-- Invitation Management -->
       <InvitationManagement
+        class="mb-4"
         :event-id="eventId"
         :participants="participants"
         :event="event"
