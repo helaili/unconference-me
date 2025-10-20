@@ -39,7 +39,8 @@ export default defineEventHandler(async (event) => {
     // Validate invitation code based on registration mode
     if (registrationMode === 'personal-code') {
       // Personal code is required
-      if (!body.personalCode) {
+      const code = body.personalCode || body.code
+      if (!code) {
         throw createError({
           statusCode: 400,
           statusMessage: 'Personal invitation code is required for this event'
@@ -47,7 +48,7 @@ export default defineEventHandler(async (event) => {
       }
 
       const validation = await invitationService.validatePersonalCode(
-        body.personalCode,
+        code,
         eventId,
         body.userId
       )
@@ -68,14 +69,15 @@ export default defineEventHandler(async (event) => {
       }
     } else if (registrationMode === 'generic-code') {
       // Generic code is required
-      if (!body.genericCode) {
+      const code = body.genericCode || body.code
+      if (!code) {
         throw createError({
           statusCode: 400,
           statusMessage: 'Invitation code is required for this event'
         })
       }
 
-      const validation = await eventService.validateGenericCode(eventId, body.genericCode)
+      const validation = await eventService.validateGenericCode(eventId, code)
 
       if (!validation.valid) {
         throw createError({

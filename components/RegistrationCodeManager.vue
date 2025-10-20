@@ -22,7 +22,7 @@ const genericCode = computed(() => props.event.settings?.genericInvitationCode)
 const genericInvitationUrl = computed(() => {
   if (!genericCode.value) return ''
   const baseUrl = window.location.origin
-  return `${baseUrl}/events/${props.eventId}/register?code=${genericCode.value}`
+  return `${baseUrl}/register?eventId=${props.eventId}&code=${genericCode.value}`
 })
 
 const generateGenericCode = async () => {

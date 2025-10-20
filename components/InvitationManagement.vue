@@ -119,7 +119,7 @@ const sendInvitations = async () => {
 
 const copyPersonalCode = async (code: string) => {
   try {
-    const registrationUrl = `${window.location.origin}/events/${props.eventId}/register?personalCode=${code}`
+    const registrationUrl = `${window.location.origin}/register?eventId=${props.eventId}&code=${code}`
     await navigator.clipboard.writeText(registrationUrl)
     successMessage.value = 'Registration link copied to clipboard!'
     setTimeout(() => {
