@@ -1,4 +1,4 @@
-import { participantService, userService } from '../../../../services'
+import { participantService, userService, eventService, invitationService } from '../../../../services'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -24,6 +24,69 @@ export default defineEventHandler(async (event) => {
         statusMessage: 'User ID is required'
       })
     }
+
+    // Fetch event details to check registration mode
+    const eventDetails = await eventService.findById(eventId)
+    if (!eventDetails) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: 'Event not found'
+      })
+    }
+
+    const registrationMode = eventDetails.settings?.registrationMode || 'open'
+
+    // Validate invitation code based on registration mode
+    if (registrationMode === 'personal-code') {
+      // Personal code is required
+      const code = body.personalCode || body.code
+      if (!code) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: 'Personal invitation code is required for this event'
+        })
+      }
+
+      const validation = await invitationService.validatePersonalCode(
+        code,
+        eventId,
+        body.userId
+      )
+
+      if (!validation.valid) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: validation.reason || 'Invalid invitation code'
+        })
+      }
+
+      // Mark invitation as accepted
+      if (validation.invitation) {
+        await invitationService.update(validation.invitation.id, {
+          status: 'accepted',
+          respondedAt: new Date()
+        })
+      }
+    } else if (registrationMode === 'generic-code') {
+      // Generic code is required
+      const code = body.genericCode || body.code
+      if (!code) {
+        throw createError({
+          statusCode: 400,
+          statusMessage: 'Invitation code is required for this event'
+        })
+      }
+
+      const validation = await eventService.validateGenericCode(eventId, code)
+
+      if (!validation.valid) {
+        throw createError({
+          statusCode: 403,
+          statusMessage: validation.reason || 'Invalid invitation code'
+        })
+      }
+    }
+    // For 'open' mode, no code validation is needed
 
     // Fetch user details
     const user = await userService.findById(body.userId)

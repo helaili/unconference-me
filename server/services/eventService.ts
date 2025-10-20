@@ -134,6 +134,67 @@ export class EventService extends BaseService<Event> {
     }
   }
 
+  /**
+   * Generate a unique generic invitation code for an event
+   */
+  generateGenericCode(): string {
+    // Generate a random 12-character code (alphanumeric, mixed case)
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    let code = ''
+    for (let i = 0; i < 12; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return code
+  }
+
+  /**
+   * Update event with new generic invitation code
+   */
+  async updateGenericInvitationCode(eventId: string): Promise<Event> {
+    const genericCode = this.generateGenericCode()
+    return await this.update(eventId, {
+      settings: {
+        genericInvitationCode: genericCode
+      }
+    })
+  }
+
+  /**
+   * Validate generic invitation code for an event
+   */
+  async validateGenericCode(eventId: string, code: string): Promise<{
+    valid: boolean
+    event?: Event
+    reason?: string
+  }> {
+    try {
+      const event = await this.findById(eventId)
+      
+      if (!event) {
+        return { valid: false, reason: 'Event not found' }
+      }
+
+      if (!event.settings?.registrationMode || event.settings.registrationMode === 'open') {
+        return { valid: true, event } // Open registration, no code needed
+      }
+
+      if (event.settings.registrationMode === 'generic-code') {
+        if (!event.settings.genericInvitationCode) {
+          return { valid: false, reason: 'Event does not have a generic invitation code configured' }
+        }
+
+        if (event.settings.genericInvitationCode !== code) {
+          return { valid: false, reason: 'Invalid invitation code' }
+        }
+      }
+
+      return { valid: true, event }
+    } catch (error) {
+      console.error('Error validating generic code', { eventId, error })
+      return { valid: false, reason: 'Failed to validate invitation code' }
+    }
+  }
+
   private generateId(): string {
     return `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }

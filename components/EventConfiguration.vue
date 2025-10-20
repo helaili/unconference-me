@@ -23,6 +23,10 @@ watch(() => props.event, (newEvent) => {
     console.log('[EventConfiguration] New props.event:', JSON.stringify(newEvent, null, 2))
     // Deep clone to ensure we get all nested properties
     localEvent.value = JSON.parse(JSON.stringify(newEvent))
+    // Ensure settings object exists
+    if (!localEvent.value.settings) {
+      localEvent.value.settings = {}
+    }
     console.log('[EventConfiguration] Updated localEvent:', JSON.stringify(localEvent.value, null, 2))
   }
 }, { deep: true, immediate: true })
@@ -41,6 +45,10 @@ const toggleEditMode = () => {
   if (editMode.value) {
     // Cancel - reset to original values
     localEvent.value = { ...props.event }
+    // Ensure settings object exists
+    if (!localEvent.value.settings) {
+      localEvent.value.settings = {}
+    }
   }
   editMode.value = !editMode.value
 }
@@ -149,6 +157,51 @@ const saveChanges = async () => {
         <h3 class="text-h6 mb-3">Event Settings</h3>
         
         <v-row v-if="localEvent.settings">
+          <v-col cols="12">
+            <h4 class="text-subtitle-1 mb-2">Registration Mode</h4>
+            <v-radio-group
+              v-model="localEvent.settings.registrationMode"
+              :readonly="!editMode"
+              :disabled="!editMode"
+            >
+              <v-radio
+                value="open"
+                label="Open Registration"
+              >
+                <template #label>
+                  <div>
+                    <div class="font-weight-medium">Open Registration</div>
+                    <div class="text-caption text-grey">Anyone can register without an invitation code</div>
+                  </div>
+                </template>
+              </v-radio>
+              <v-radio
+                value="personal-code"
+                label="Personal Invitation Code"
+                class="mt-2"
+              >
+                <template #label>
+                  <div>
+                    <div class="font-weight-medium">Personal Invitation Code</div>
+                    <div class="text-caption text-grey">Users need a personal invitation code. User must already exist in the database.</div>
+                  </div>
+                </template>
+              </v-radio>
+              <v-radio
+                value="generic-code"
+                label="Event Generic Code"
+                class="mt-2"
+              >
+                <template #label>
+                  <div>
+                    <div class="font-weight-medium">Event Generic Code</div>
+                    <div class="text-caption text-grey">Users need an event-generic invitation code. User must already exist in the database.</div>
+                  </div>
+                </template>
+              </v-radio>
+            </v-radio-group>
+          </v-col>
+          
           <v-col cols="12" md="6">
             <v-switch
               v-model="localEvent.settings.enableTopicRanking"

@@ -13,6 +13,10 @@ export interface Invitation {
   respondedAt?: Date
   responseComment?: string // User's comment when accepting/declining
   
+  // Personal invitation code for user-specific invitations
+  personalCode?: string
+  personalCodeExpiry?: Date
+  
   // Metadata
   createdAt: Date
   updatedAt: Date

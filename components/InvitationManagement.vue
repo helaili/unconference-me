@@ -2,15 +2,19 @@
 import { ref, computed, onMounted } from 'vue'
 import type { User } from '~/types/user'
 import type { Participant } from '~/types/participant'
+import type { Event } from '~/types/event'
+import type { Invitation } from '~/types/invitation'
 
 interface Props {
   eventId: string
   participants: Participant[]
+  event: Event
 }
 
 const props = defineProps<Props>()
 const emit = defineEmits<{
   invite: [userIds: string[]]
+  refresh: []
 }>()
 
 const showInviteDialog = ref(false)
@@ -19,7 +23,12 @@ const sending = ref(false)
 const successMessage = ref<string | null>(null)
 const errorMessage = ref<string | null>(null)
 const loadingUsers = ref(false)
+const loadingInvitations = ref(false)
 const availableUsers = ref<User[]>([])
+const personalInvitations = ref<Invitation[]>([])
+
+const registrationMode = computed(() => props.event.settings?.registrationMode || 'open')
+const requiresPersonalCodes = computed(() => registrationMode.value === 'personal-code')
 
 // Filter users who are not already participants
 const uninvitedUsers = computed(() => {
@@ -41,8 +50,27 @@ const fetchAvailableUsers = async () => {
   }
 }
 
+const fetchPersonalInvitations = async () => {
+  if (!requiresPersonalCodes.value) return
+  
+  loadingInvitations.value = true
+  try {
+    const response = await $fetch(`/api/events/${props.eventId}/invitations`)
+    if (response.success && response.invitations) {
+      personalInvitations.value = (response.invitations as Invitation[])
+    }
+  } catch (error) {
+    console.error('Failed to fetch invitations:', error)
+  } finally {
+    loadingInvitations.value = false
+  }
+}
+
 const openInviteDialog = async () => {
   await fetchAvailableUsers()
+  if (requiresPersonalCodes.value) {
+    await fetchPersonalInvitations()
+  }
   selectedUserIds.value = []
   successMessage.value = null
   errorMessage.value = null
@@ -60,8 +88,22 @@ const sendInvitations = async () => {
   successMessage.value = null
 
   try {
-    emit('invite', selectedUserIds.value)
-    successMessage.value = `Invitations sent to ${selectedUserIds.value.length} user(s)`
+    if (requiresPersonalCodes.value) {
+      // Generate personal invitation codes
+      const response = await $fetch(`/api/events/${props.eventId}/invitations/generate-personal`, {
+        method: 'POST',
+        body: { userIds: selectedUserIds.value }
+      })
+      
+      if (response.success) {
+        successMessage.value = `Personal invitation codes generated for ${selectedUserIds.value.length} user(s)`
+        emit('refresh')
+      }
+    } else {
+      // Send regular invitations
+      emit('invite', selectedUserIds.value)
+      successMessage.value = `Invitations sent to ${selectedUserIds.value.length} user(s)`
+    }
     
     // Close dialog after 2 seconds
     setTimeout(() => {
@@ -75,8 +117,24 @@ const sendInvitations = async () => {
   }
 }
 
+const copyPersonalCode = async (code: string) => {
+  try {
+    const registrationUrl = `${window.location.origin}/register?eventId=${props.eventId}&code=${code}`
+    await navigator.clipboard.writeText(registrationUrl)
+    successMessage.value = 'Registration link copied to clipboard!'
+    setTimeout(() => {
+      successMessage.value = null
+    }, 3000)
+  } catch (error) {
+    console.error('Failed to copy code:', error)
+  }
+}
+
 onMounted(() => {
   fetchAvailableUsers()
+  if (requiresPersonalCodes.value) {
+    fetchPersonalInvitations()
+  }
 })
 </script>
 
@@ -90,25 +148,79 @@ onMounted(() => {
         :block="$vuetify.display.smAndDown"
         @click="openInviteDialog"
       >
-        Send Invitations
+        {{ requiresPersonalCodes ? 'Generate Personal Codes' : 'Send Invitations' }}
       </v-btn>
     </v-card-title>
 
     <v-card-text :class="$vuetify.display.smAndDown ? 'pa-2' : 'pa-4'">
+      <v-alert
+        v-if="successMessage"
+        type="success"
+        variant="tonal"
+        closable
+        class="mb-4"
+        @click:close="successMessage = null"
+      >
+        {{ successMessage }}
+      </v-alert>
+
       <p class="text-body-2 text-grey">
-        Send event invitations to existing users. Invited users will see pending invitations when they log in.
+        <template v-if="requiresPersonalCodes">
+          Generate personal invitation codes for users. Each user will receive a unique code that only they can use to register.
+        </template>
+        <template v-else>
+          Send event invitations to existing users. Invited users will see pending invitations when they log in.
+        </template>
       </p>
 
       <v-divider class="my-4" />
 
-      <div class="d-flex align-center">
+      <div class="d-flex align-center mb-4">
         <v-icon size="large" color="primary" class="mr-3">mdi-information</v-icon>
         <div>
           <div class="text-body-2 font-weight-medium">About Invitations</div>
           <div class="text-caption text-grey">
-            Only existing users can be invited. Users must accept invitations to become participants.
+            Only existing users can be invited. 
+            <template v-if="requiresPersonalCodes">
+              Personal codes are unique and expire after 30 days.
+            </template>
+            <template v-else>
+              Users must accept invitations to become participants.
+            </template>
           </div>
         </div>
+      </div>
+
+      <!-- Show personal invitations list when in personal-code mode -->
+      <div v-if="requiresPersonalCodes && personalInvitations.length > 0">
+        <h4 class="text-subtitle-1 mb-3">Personal Invitation Codes</h4>
+        <v-progress-circular v-if="loadingInvitations" indeterminate class="ma-4" />
+        <v-list v-else>
+          <v-list-item
+            v-for="invitation in personalInvitations"
+            :key="invitation.id"
+            class="mb-2"
+          >
+            <template #prepend>
+              <v-icon>mdi-account-key</v-icon>
+            </template>
+            <v-list-item-title>
+              {{ invitation.userId }}
+            </v-list-item-title>
+            <v-list-item-subtitle>
+              Code: {{ invitation.personalCode }} | Status: {{ invitation.status }}
+            </v-list-item-subtitle>
+            <template #append>
+              <v-btn
+                v-if="invitation.personalCode"
+                icon="mdi-content-copy"
+                variant="text"
+                size="small"
+                @click="copyPersonalCode(invitation.personalCode!)"
+              />
+            </template>
+          </v-list-item>
+        </v-list>
       </div>
     </v-card-text>
 

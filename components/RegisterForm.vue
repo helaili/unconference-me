@@ -12,6 +12,10 @@
         token: route.query.token as string || ''
     })
     
+    // Capture event registration parameters
+    const eventId = computed(() => route.query.eventId as string || '')
+    const invitationCode = computed(() => route.query.code as string || '')
+    
     const registerError = ref(false)
     const registerErrorMessage = ref('')
     const formValid = ref(false)
@@ -67,6 +71,12 @@
                 if (registrationData.email) {
                     params.append('email', registrationData.email)
                 }
+                if (eventId.value) {
+                    params.append('eventId', eventId.value)
+                }
+                if (invitationCode.value) {
+                    params.append('code', invitationCode.value)
+                }
                 
                 const redirectUrl = `/auth/github?${params.toString()}`
                 await navigateTo(redirectUrl, { external: true })
@@ -76,6 +86,7 @@
                     success?: boolean
                     error?: boolean
                     message: string
+                    user?: { id: string; email: string }
                 }>('/api/auth/register', {
                     method: 'POST',
                     body: {
@@ -88,8 +99,38 @@
                 })
 
                 if (res?.success) {
-                    // Redirect to login page on successful registration
-                    await navigateTo('/login')
+                    // If eventId and code are present, register as participant
+                    if (eventId.value && invitationCode.value && res.user && res.user.id) {
+                        try {
+                            // First, login the user to get a session
+                            await $fetch('/api/auth/login', {
+                                method: 'POST',
+                                body: {
+                                    email: registrationData.email,
+                                    password: registrationData.password
+                                }
+                            })
+                            
+                            // Then register as participant to the event
+                            await $fetch(`/api/events/${eventId.value}/participants/register`, {
+                                method: 'POST',
+                                body: {
+                                    userId: res.user.id,
+                                    code: invitationCode.value
+                                }
+                            })
+                            
+                            // Redirect to the event page
+                            await navigateTo(`/events/${eventId.value}`)
+                        } catch (participantError: any) {
+                            console.error('Failed to register as participant:', participantError)
+                            // Still redirect to login even if participant registration fails
+                            await navigateTo('/login')
+                        }
+                    } else {
+                        // Redirect to login page on successful registration
+                        await navigateTo('/login')
+                    }
                 } else {
                     registerError.value = true
                     registerErrorMessage.value = res?.message || 'Registration failed. Please try again.'

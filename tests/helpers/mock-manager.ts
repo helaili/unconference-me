@@ -177,7 +177,8 @@ export class MockDataManager {
           enableAutoAssignment: false,
           maxTopicsPerParticipant: 3,
           requireApproval: false,
-          maxParticipants: 100
+          maxParticipants: 100,
+          registrationMode: 'open'
         }
       },
       {
@@ -201,7 +202,8 @@ export class MockDataManager {
           enableAutoAssignment: true,
           maxTopicsPerParticipant: 2,
           requireApproval: true,
-          maxParticipants: 50
+          maxParticipants: 50,
+          registrationMode: 'open'
         }
       }
     ]
