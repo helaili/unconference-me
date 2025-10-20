@@ -2,8 +2,20 @@ import { test, expect } from '@playwright/test'
 import { mockData } from './helpers/mock-manager'
 import { AuthHelper } from './helpers/auth'
 
+interface PageLike {
+  request: {
+    post: (url: string, options?: unknown) => Promise<unknown>;
+    get: (url: string) => Promise<unknown>;
+    put: (url: string, options?: unknown) => Promise<unknown>;
+    delete: (url: string) => Promise<unknown>;
+  };
+  goto: (url: string, options?: unknown) => Promise<unknown>;
+  waitForFunction: (fn: () => boolean) => Promise<unknown>;
+  waitForLoadState: (state: string) => Promise<unknown>;
+}
+
 // Helper function for login using the working AuthHelper pattern
-async function loginWithAuthHelper(page: any, email: string, password: string) {
+async function loginWithAuthHelper(page: PageLike, email: string, password: string) {
   const authHelper = new AuthHelper(page)
   await authHelper.loginAs(email, password)
   // Wait for successful redirect - but don't be strict about the URL in case of role-specific redirects
@@ -302,8 +314,8 @@ test.describe('Admin and Organizer Access Control', () => {
       // Verify this user is NOT in the participants list
       const participantsResponse = await page.request.get('/api/events/1/participants')
       expect(participantsResponse.ok()).toBeTruthy()
-      const participantsData = await participantsResponse.json()
-      const hasUser = participantsData.participants?.some((p: any) => p.email === 'unregistered@example.com')
+      const participantsData = await participantsResponse.json() as { participants?: Array<{ email: string }> }
+      const hasUser = participantsData.participants?.some((p) => p.email === 'unregistered@example.com')
       expect(hasUser).toBe(false) // Should not be a participant
       
       // Try to create a topic - should fail with 403

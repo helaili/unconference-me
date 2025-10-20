@@ -96,7 +96,7 @@ export default defineEventHandler(async (event) => {
         })
         
         imported++
-      } catch (error) {
+      } catch {
         errors.push(`Line ${i + 1}: Failed to create user: ${email}`)
       }
     }
