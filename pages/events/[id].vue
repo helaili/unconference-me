@@ -2,7 +2,8 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import type { Event } from '~/types/event'
-import type { Participant } from '~/types/participant'
+import type { Participant, ParticipantAssignment } from '~/types/participant'
+import type { Topic } from '~/types/topic'
 
 definePageMeta({
   requiresAdmin: true
@@ -23,6 +24,8 @@ interface ParticipantStats {
 const event = ref<Event | null>(null)
 const participants = ref<Participant[]>([])
 const participantStats = ref<ParticipantStats | null>(null)
+const assignments = ref<ParticipantAssignment[]>([])
+const topics = ref<Topic[]>([])
 const loading = ref(false)
 const error = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
@@ -48,6 +51,18 @@ const fetchEventData = async () => {
     if (participantsResponse.success) {
       participants.value = participantsResponse.participants || []
       participantStats.value = participantsResponse.stats
+    }
+    
+    // Fetch assignments
+    const assignmentsResponse = await $fetch(`/api/events/${eventId.value}/assignments`)
+    if (assignmentsResponse.success) {
+      assignments.value = assignmentsResponse.assignments as any
+    }
+    
+    // Fetch topics
+    const topicsResponse = await $fetch(`/api/events/${eventId.value}/topics`)
+    if (topicsResponse.success) {
+      topics.value = topicsResponse.topics as any
     }
   } catch (err) {
     console.error('Error fetching event data:', err)
@@ -297,6 +312,28 @@ onMounted(() => {
         :event="event"
         @invite="handleSendInvitations"
         @refresh="fetchEventData"
+      />
+      
+      <!-- Assignment Generator -->
+      <AssignmentGenerator
+        :event="event"
+        class="mb-4"
+        @refresh="fetchEventData"
+      />
+      
+      <!-- Assignment List -->
+      <AssignmentList 
+        :assignments="assignments"
+        class="mb-4"
+      />
+      
+      <!-- Admin Assignments By Topic -->
+      <AdminAssignmentsByTopic
+        :assignments="assignments"
+        :topics="topics"
+        :participants="participants"
+        :number-of-rounds="event.numberOfRounds"
+        :loading="loading"
       />
     </div>
 

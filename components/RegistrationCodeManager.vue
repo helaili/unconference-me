@@ -135,9 +135,7 @@ const copyGenericUrl = async () => {
           type="warning"
           variant="tonal"
           class="mt-4"
-        >
-          <v-icon class="mr-2">mdi-information</v-icon>
-          Share this link with users who should be able to register for this event. 
+        >Share this link with users who should be able to register for this event. 
           Users must already exist in the database to register using this code.
         </v-alert>
       </div>
