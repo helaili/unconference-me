@@ -26,6 +26,7 @@ const draggedItem = ref<Topic | null>(null)
 const draggedIndex = ref<number>(-1)
 const focusedIndex = ref<number>(-1)
 const saving = ref(false)
+const showInstructions = ref(true)
 
 // Computed
 const minRankingMet = computed(() => {
@@ -67,6 +68,12 @@ const newOrUpdatedTopics = computed((): Set<string> => {
 const isTopicHighlighted = (topicId: string): boolean => {
   return newOrUpdatedTopics.value.has(topicId)
 }
+
+// Track if user has interacted with rankings
+const hasInteracted = computed(() => {
+  // If user has an existing ranking or has reordered topics
+  return props.ranking !== null || rankedTopics.value.length > 0
+})
 
 // Initialize ranked topics from existing ranking
 onMounted(() => {
@@ -184,6 +191,8 @@ const saveRanking = async () => {
         variant="tonal" 
         class="mb-4"
         icon="mdi-information"
+        :closable="hasInteracted"
+        v-model="showInstructions"
       >
         <div class="text-body-2">
           <p class="mb-2">
@@ -317,14 +326,14 @@ const saveRanking = async () => {
       </div>
     </v-card-text>
     
-    <v-card-actions>
-      <v-spacer />
+    <v-card-actions :class="$vuetify.display.smAndDown ? 'flex-column align-stretch pa-4' : ''">
+      <v-spacer v-if="$vuetify.display.mdAndUp" />
       <v-alert 
         v-if="!minRankingMet"
         type="warning"
         variant="text"
         density="compact"
-        class="mr-2"
+        :class="$vuetify.display.smAndDown ? 'mb-2' : 'mr-2'"
       >
         Rank at least {{ minRanking }} topics
       </v-alert>
@@ -332,6 +341,7 @@ const saveRanking = async () => {
         color="primary"
         :disabled="!minRankingMet || saving"
         :loading="saving"
+        :block="$vuetify.display.smAndDown"
         @click="saveRanking"
       >
         Save Ranking

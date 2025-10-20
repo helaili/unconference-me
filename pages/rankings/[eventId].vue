@@ -157,8 +157,32 @@ onMounted(async () => {
 </script>
 
 <template>
-  <v-container>
-    <div class="d-flex align-center mb-6">
+  <v-container :class="$vuetify.display.smAndDown ? 'pa-2' : ''">
+    <!-- Mobile: Stack title and buttons vertically -->
+    <div v-if="$vuetify.display.smAndDown" class="mb-4">
+      <h1 class="text-h4 mb-3">Rank Discussion Topics</h1>
+      <v-btn
+        variant="outlined"
+        prepend-icon="mdi-view-list"
+        color="primary"
+        :block="true"
+        class="mb-2"
+        @click="router.push('/topics')"
+      >
+        View All Topics
+      </v-btn>
+      <v-btn
+        variant="text"
+        prepend-icon="mdi-arrow-left"
+        :block="true"
+        @click="router.push('/dashboard')"
+      >
+        Back to Dashboard
+      </v-btn>
+    </div>
+    
+    <!-- Desktop: Horizontal layout -->
+    <div v-else class="d-flex align-center mb-6">
       <h1>Rank Discussion Topics</h1>
       <v-spacer />
       <v-btn
