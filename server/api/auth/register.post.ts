@@ -91,6 +91,7 @@ export default defineEventHandler(async (event) => {
       success: true, 
       message: 'Registration successful',
       user: {
+        id: user.id,
         email: user.email,
         firstname: user.firstname,
         lastname: user.lastname
