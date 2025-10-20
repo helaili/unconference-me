@@ -23,6 +23,10 @@ watch(() => props.event, (newEvent) => {
     console.log('[EventConfiguration] New props.event:', JSON.stringify(newEvent, null, 2))
     // Deep clone to ensure we get all nested properties
     localEvent.value = JSON.parse(JSON.stringify(newEvent))
+    // Ensure settings object exists
+    if (!localEvent.value.settings) {
+      localEvent.value.settings = {}
+    }
     console.log('[EventConfiguration] Updated localEvent:', JSON.stringify(localEvent.value, null, 2))
   }
 }, { deep: true, immediate: true })
@@ -41,6 +45,10 @@ const toggleEditMode = () => {
   if (editMode.value) {
     // Cancel - reset to original values
     localEvent.value = { ...props.event }
+    // Ensure settings object exists
+    if (!localEvent.value.settings) {
+      localEvent.value.settings = {}
+    }
   }
   editMode.value = !editMode.value
 }

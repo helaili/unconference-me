@@ -100,7 +100,7 @@
 
                 if (res?.success) {
                     // If eventId and code are present, register as participant
-                    if (eventId.value && invitationCode.value && res.user) {
+                    if (eventId.value && invitationCode.value && res.user && res.user.id) {
                         try {
                             // First, login the user to get a session
                             await $fetch('/api/auth/login', {
