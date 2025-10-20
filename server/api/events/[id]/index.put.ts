@@ -21,6 +21,8 @@ const updateEventSchema = z.object({
     maxTopicsPerParticipant: z.number().int().positive().optional(),
     requireApproval: z.boolean().optional(),
     maxParticipants: z.number().int().positive().optional(),
+    registrationMode: z.enum(['open', 'personal-code', 'generic-code']).optional(),
+    genericInvitationCode: z.string().optional(),
     customSettings: z.record(z.string(), z.any()).optional()
   }).optional()
 })
