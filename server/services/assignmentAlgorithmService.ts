@@ -41,6 +41,33 @@ export interface AssignmentStatistics {
   topicsUsed: number
   averageGroupSize: number
   roundStatistics: RoundStatistics[]
+  preferredChoiceDistribution?: PreferredChoiceDistribution
+  sortedChoiceDistribution?: SortedChoiceDistribution
+}
+
+/**
+ * Distribution of how many participants got assigned to their top N preferred choices
+ * where N is the number of rounds
+ */
+export interface PreferredChoiceDistribution {
+  // Number of participants who got X of their top N preferred topics
+  // Key is the count (0, 1, 2, ..., numberOfRounds)
+  // Value is the number of participants
+  distribution: Record<number, number>
+  totalParticipantsWithRankings: number
+}
+
+/**
+ * Distribution of how many participants got assigned to their sorted choices
+ * based on all topics they ranked (minTopicsToRank)
+ */
+export interface SortedChoiceDistribution {
+  // Number of participants who got X of their sorted topics assigned
+  // Key is the count (0, 1, 2, ..., numberOfRounds)
+  // Value is the number of participants
+  distribution: Record<number, number>
+  totalParticipantsWithRankings: number
+  minTopicsToRank: number
 }
 
 export interface RoundStatistics {
@@ -124,7 +151,9 @@ export class AssignmentAlgorithmService {
       activeParticipants,
       assignments,
       roundStats,
-      event
+      event,
+      preferenceMap,
+      rankings
     )
 
     return {
@@ -395,7 +424,9 @@ export class AssignmentAlgorithmService {
     participants: Participant[],
     assignments: Omit<ParticipantAssignment, 'id'>[],
     roundStats: RoundStatistics[],
-    event: Event
+    event: Event,
+    preferenceMap: Map<string, Map<string, number>>,
+    rankings: TopicRanking[]
   ): AssignmentStatistics {
     const participantAssignmentCount = new Map<string, number>()
 
@@ -426,6 +457,23 @@ export class AssignmentAlgorithmService {
       ? totalAssignments / (event.numberOfRounds * event.discussionsPerRound)
       : 0
 
+    // Calculate preferred choice distribution
+    const preferredChoiceDistribution = this.calculatePreferredChoiceDistribution(
+      participants,
+      assignments,
+      preferenceMap,
+      event.numberOfRounds
+    )
+
+    // Calculate sorted choice distribution
+    const sortedChoiceDistribution = this.calculateSortedChoiceDistribution(
+      participants,
+      assignments,
+      rankings,
+      event.numberOfRounds,
+      event.settings?.minTopicsToRank
+    )
+
     return {
       totalParticipants: participants.length,
       totalAssignments,
@@ -434,7 +482,125 @@ export class AssignmentAlgorithmService {
       participantsNotAssigned: notAssigned,
       topicsUsed,
       averageGroupSize,
-      roundStatistics: roundStats
+      roundStatistics: roundStats,
+      preferredChoiceDistribution,
+      sortedChoiceDistribution
+    }
+  }
+
+  /**
+   * Calculate the distribution of participants based on how many of their top N preferred choices they got
+   * where N = numberOfRounds
+   */
+  private calculatePreferredChoiceDistribution(
+    participants: Participant[],
+    assignments: Omit<ParticipantAssignment, 'id'>[],
+    preferenceMap: Map<string, Map<string, number>>,
+    numberOfRounds: number
+  ): PreferredChoiceDistribution {
+    const distribution: Record<number, number> = {}
+    
+    // Initialize distribution with zeros
+    for (let i = 0; i <= numberOfRounds; i++) {
+      distribution[i] = 0
+    }
+
+    let totalParticipantsWithRankings = 0
+
+    // For each participant, count how many of their top N preferences they got assigned to
+    for (const participant of participants) {
+      const preferences = preferenceMap.get(participant.id)
+      
+      if (!preferences || preferences.size === 0) {
+        // Skip participants without rankings
+        continue
+      }
+
+      totalParticipantsWithRankings++
+
+      // Get participant's assignments
+      const participantAssignments = assignments
+        .filter(a => a.participantId === participant.id)
+        .map(a => a.topicId)
+
+      // Get top N preferences (where N = numberOfRounds)
+      const topNPreferences = Array.from(preferences.entries())
+        .sort((a, b) => a[1] - b[1]) // Sort by rank (lower is better)
+        .slice(0, numberOfRounds)
+        .map(([topicId]) => topicId)
+
+      // Count how many of the top N preferences were assigned
+      const matchCount = participantAssignments.filter(topicId => 
+        topNPreferences.includes(topicId)
+      ).length
+
+      distribution[matchCount]++
+    }
+
+    return {
+      distribution,
+      totalParticipantsWithRankings
+    }
+  }
+
+  /**
+   * Calculate the distribution of participants based on how many of their sorted choices they got
+   * considering all topics they ranked (up to minTopicsToRank)
+   */
+  private calculateSortedChoiceDistribution(
+    participants: Participant[],
+    assignments: Omit<ParticipantAssignment, 'id'>[],
+    rankings: TopicRanking[],
+    numberOfRounds: number,
+    minTopicsToRank?: number
+  ): SortedChoiceDistribution {
+    const distribution: Record<number, number> = {}
+    
+    // Initialize distribution with zeros
+    for (let i = 0; i <= numberOfRounds; i++) {
+      distribution[i] = 0
+    }
+
+    let totalParticipantsWithRankings = 0
+    const effectiveMinTopicsToRank = minTopicsToRank || 6 // Default to 6 if not set
+
+    // Create a map of participant rankings
+    const rankingsMap = new Map<string, TopicRanking>()
+    for (const ranking of rankings) {
+      rankingsMap.set(ranking.participantId, ranking)
+    }
+
+    // For each participant, count how many of their sorted choices they got assigned to
+    for (const participant of participants) {
+      const ranking = rankingsMap.get(participant.id)
+      
+      if (!ranking || ranking.rankedTopicIds.length === 0) {
+        // Skip participants without rankings
+        continue
+      }
+
+      totalParticipantsWithRankings++
+
+      // Get participant's assignments
+      const participantAssignments = assignments
+        .filter(a => a.participantId === participant.id)
+        .map(a => a.topicId)
+
+      // Get all ranked topics (up to minTopicsToRank)
+      const rankedTopics = ranking.rankedTopicIds.slice(0, effectiveMinTopicsToRank)
+
+      // Count how many of the ranked topics were assigned
+      const matchCount = participantAssignments.filter(topicId => 
+        rankedTopics.includes(topicId)
+      ).length
+
+      distribution[matchCount]++
+    }
+
+    return {
+      distribution,
+      totalParticipantsWithRankings,
+      minTopicsToRank: effectiveMinTopicsToRank
     }
   }
 }
