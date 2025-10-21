@@ -59,6 +59,51 @@ export interface EventSettings {
   // Generic event invitation code (used when registrationMode is 'generic-code')
   genericInvitationCode?: string
   
+  // Last generated assignment statistics (persisted for display)
+  lastAssignmentStatistics?: AssignmentStatistics
+  
   // Additional custom settings can be added here
   customSettings?: Record<string, any>
+}
+
+/**
+ * Assignment statistics stored with event
+ */
+export interface AssignmentStatistics {
+  totalParticipants: number
+  totalAssignments: number
+  participantsFullyAssigned: number
+  participantsPartiallyAssigned: number
+  participantsNotAssigned: number
+  topicsUsed: number
+  averageGroupSize: number
+  roundStatistics: RoundStatistics[]
+  preferredChoiceDistribution?: PreferredChoiceDistribution
+  sortedChoiceDistribution?: SortedChoiceDistribution
+  topicOccurrenceDistribution?: TopicOccurrenceDistribution
+  generatedAt: Date
+}
+
+export interface RoundStatistics {
+  roundNumber: number
+  topicsScheduled: number
+  participantsAssigned: number
+  groupSizes: number[]
+  averageGroupSize: number
+}
+
+export interface PreferredChoiceDistribution {
+  distribution: Record<number, number>
+  totalParticipantsWithRankings: number
+}
+
+export interface SortedChoiceDistribution {
+  distribution: Record<number, number>
+  totalParticipantsWithRankings: number
+  minTopicsToRank: number
+}
+
+export interface TopicOccurrenceDistribution {
+  totalTopicsPlanned: number
+  distribution: Record<number, number>
 }

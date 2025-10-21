@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import type { Event } from '~/types/event'
 
 interface Props {
@@ -31,12 +31,39 @@ const statistics = ref<{
     groupSizes: number[]
     averageGroupSize: number
   }>
+  preferredChoiceDistribution?: {
+    distribution: Record<number, number>
+    totalParticipantsWithRankings: number
+  }
+  sortedChoiceDistribution?: {
+    distribution: Record<number, number>
+    totalParticipantsWithRankings: number
+    minTopicsToRank: number
+  }
+  topicOccurrenceDistribution?: {
+    totalTopicsPlanned: number
+    distribution: Record<number, number>
+  }
 } | null>(null)
 const warnings = ref<string[]>([])
 
 const canGenerate = computed(() => {
   return props.event.settings?.enableAutoAssignment === true
 })
+
+// Load existing statistics on mount
+const loadStatistics = async () => {
+  try {
+    const response = await $fetch(`/api/events/${props.event.id}/assignments`)
+    
+    if (response.success && response.statistics) {
+      statistics.value = response.statistics
+    }
+  } catch (err) {
+    console.error('Error loading statistics:', err)
+    // Don't show error to user - statistics are optional
+  }
+}
 
 const generateAssignments = async () => {
   if (!canGenerate.value) {
@@ -107,6 +134,11 @@ const clearAssignments = async () => {
     clearing.value = false
   }
 }
+
+// Load statistics when component mounts
+onMounted(() => {
+  loadStatistics()
+})
 </script>
 
 <template>
@@ -288,6 +320,149 @@ const clearAssignments = async () => {
                   </v-expansion-panel-text>
                 </v-expansion-panel>
               </v-expansion-panels>
+            </div>
+            
+            <!-- Preferred Choice Distribution -->
+            <div v-if="statistics.preferredChoiceDistribution && statistics.preferredChoiceDistribution.totalParticipantsWithRankings > 0" class="mt-4">
+              <v-divider class="mb-3" />
+              <div :class="$vuetify.display.smAndDown ? 'text-body-2 font-weight-bold' : 'text-subtitle-1 font-weight-medium'" class="mb-2">
+                <v-icon icon="mdi-trophy" size="small" class="mr-2" />
+                Preferred Choice Success
+              </div>
+              <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mb-3 text-medium-emphasis">
+                Distribution of participants by how many of their top {{ event.numberOfRounds }} preferred topics they were assigned to.
+              </p>
+              <v-table density="compact">
+                <thead>
+                  <tr>
+                    <th class="text-left">Top Preferences Assigned</th>
+                    <th class="text-right">Participants</th>
+                    <th class="text-right">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    v-for="count in Object.keys(statistics.preferredChoiceDistribution.distribution).map(Number).sort((a, b) => b - a)"
+                    :key="count"
+                  >
+                    <td>
+                      <v-chip 
+                        size="small" 
+                        :color="count === event.numberOfRounds ? 'success' : count >= event.numberOfRounds / 2 ? 'info' : 'warning'"
+                        variant="tonal"
+                      >
+                        {{ count }} of {{ event.numberOfRounds }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right">{{ statistics.preferredChoiceDistribution.distribution[count] }}</td>
+                    <td class="text-right">
+                      {{ ((statistics.preferredChoiceDistribution.distribution[count] / statistics.preferredChoiceDistribution.totalParticipantsWithRankings) * 100).toFixed(1) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+              <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mt-2 text-medium-emphasis">
+                Based on {{ statistics.preferredChoiceDistribution.totalParticipantsWithRankings }} participants with rankings
+              </p>
+            </div>
+            
+            <!-- Sorted Choice Distribution -->
+            <div v-if="statistics.sortedChoiceDistribution && statistics.sortedChoiceDistribution.totalParticipantsWithRankings > 0" class="mt-4">
+              <v-divider class="mb-3" />
+              <div :class="$vuetify.display.smAndDown ? 'text-body-2 font-weight-bold' : 'text-subtitle-1 font-weight-medium'" class="mb-2">
+                <v-icon icon="mdi-sort-ascending" size="small" class="mr-2" />
+                Sorted Choice Success
+              </div>
+              <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mb-3 text-medium-emphasis">
+                Distribution of participants by how many of their {{ statistics.sortedChoiceDistribution.minTopicsToRank }} sorted topics they were assigned to (out of {{ event.numberOfRounds }} rounds).
+              </p>
+              <v-table density="compact">
+                <thead>
+                  <tr>
+                    <th class="text-left">Sorted Topics Assigned</th>
+                    <th class="text-right">Participants</th>
+                    <th class="text-right">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    v-for="count in Object.keys(statistics.sortedChoiceDistribution.distribution).map(Number).sort((a, b) => b - a)"
+                    :key="count"
+                  >
+                    <td>
+                      <v-chip 
+                        size="small" 
+                        :color="count === event.numberOfRounds ? 'success' : count >= event.numberOfRounds / 2 ? 'info' : 'warning'"
+                        variant="tonal"
+                      >
+                        {{ count }} of {{ event.numberOfRounds }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right">{{ statistics.sortedChoiceDistribution.distribution[count] }}</td>
+                    <td class="text-right">
+                      {{ ((statistics.sortedChoiceDistribution.distribution[count] / statistics.sortedChoiceDistribution.totalParticipantsWithRankings) * 100).toFixed(1) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
+              <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mt-2 text-medium-emphasis">
+                Based on {{ statistics.sortedChoiceDistribution.totalParticipantsWithRankings }} participants with rankings
+              </p>
+            </div>
+            
+            <!-- Topic Occurrence Distribution -->
+            <div v-if="statistics.topicOccurrenceDistribution && statistics.topicOccurrenceDistribution.totalTopicsPlanned > 0" class="mt-4">
+              <v-divider class="mb-3" />
+              <div :class="$vuetify.display.smAndDown ? 'text-body-2 font-weight-bold' : 'text-subtitle-1 font-weight-medium'" class="mb-2">
+                <v-icon icon="mdi-chart-bar" size="small" class="mr-2" />
+                Topic Schedule Distribution
+              </div>
+              <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mb-3 text-medium-emphasis">
+                Distribution of topics by how many times they are scheduled across rounds.
+              </p>
+              <v-row :dense="$vuetify.display.smAndDown" class="mb-3">
+                <v-col cols="12" sm="6">
+                  <v-card variant="tonal" color="primary">
+                    <v-card-text :class="$vuetify.display.smAndDown ? 'pa-2' : ''">
+                      <div :class="$vuetify.display.smAndDown ? 'text-h6' : 'text-h5'">
+                        {{ statistics.topicOccurrenceDistribution.totalTopicsPlanned }}
+                      </div>
+                      <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'">
+                        Total Topics Planned
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+              <v-table density="compact">
+                <thead>
+                  <tr>
+                    <th class="text-left">Times Scheduled</th>
+                    <th class="text-right">Number of Topics</th>
+                    <th class="text-right">Percentage</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr 
+                    v-for="occurrence in Object.keys(statistics.topicOccurrenceDistribution.distribution).map(Number).sort((a, b) => b - a)"
+                    :key="occurrence"
+                  >
+                    <td>
+                      <v-chip 
+                        size="small" 
+                        :color="occurrence > 1 ? 'success' : 'info'"
+                        variant="tonal"
+                      >
+                        {{ occurrence }} {{ occurrence === 1 ? 'time' : 'times' }}
+                      </v-chip>
+                    </td>
+                    <td class="text-right">{{ statistics.topicOccurrenceDistribution.distribution[occurrence] }}</td>
+                    <td class="text-right">
+                      {{ ((statistics.topicOccurrenceDistribution.distribution[occurrence] / statistics.topicOccurrenceDistribution.totalTopicsPlanned) * 100).toFixed(1) }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </v-table>
             </div>
           </v-card-text>
         </v-card>

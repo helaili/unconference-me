@@ -80,6 +80,19 @@ export default defineEventHandler(async (event) => {
       console.warn('Assignment warnings:', result.warnings)
     }
 
+    // Save statistics to event settings for persistence
+    const updatedSettings = {
+      ...eventData.settings,
+      lastAssignmentStatistics: {
+        ...result.statistics,
+        generatedAt: new Date()
+      }
+    }
+    
+    await eventService.update(eventId, {
+      settings: updatedSettings
+    })
+
     return {
       success: true,
       assignments: savedAssignments,
