@@ -2,6 +2,7 @@ import { z } from 'zod'
 import type { Topic } from '../../../../../types/topic'
 import { topicService, participantService } from '../../../../services'
 import { canEditTopic, canChangeTopicStatus } from '../../../../utils/access-control'
+import { removeTopicFromRankings } from '../../../../utils/ranking-cleanup'
 
 // Validation schema for updating a topic
 const updateTopicSchema = z.object({
@@ -80,12 +81,20 @@ export default defineEventHandler(async (event) => {
     
     const updatedTopic = await topicService.update(topicId, updates)
     
+    // If topic was rejected, remove it from all user rankings
+    let updatedRankingsCount = 0
+    if (validatedData.status === 'rejected' && topic.status !== 'rejected') {
+      updatedRankingsCount = await removeTopicFromRankings(topicId, eventId)
+      console.log(`Topic rejected: removed from ${updatedRankingsCount} ranking(s)`)
+    }
+    
     console.log(`Topic updated successfully: ${topicId}`)
     
     return {
       success: true,
       topic: updatedTopic,
-      message: 'Topic updated successfully'
+      message: 'Topic updated successfully',
+      ...(updatedRankingsCount > 0 && { updatedRankings: updatedRankingsCount })
     }
   } catch (error) {
     console.error('Error updating topic:', error)
