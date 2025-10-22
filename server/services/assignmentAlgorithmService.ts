@@ -24,6 +24,8 @@ export interface AssignmentInput {
   participants: Participant[]
   topics: Topic[]
   rankings: TopicRanking[]
+  users?: Map<string, { role?: 'Admin' | 'Organizer' | 'Participant' }> // Optional user role information
+  organizerIds?: Set<string> // Optional set of participant IDs who are organizers
 }
 
 export interface AssignmentResult {
@@ -98,7 +100,7 @@ export class AssignmentAlgorithmService {
    * Generate assignments for an event based on participant rankings
    */
   generateAssignments(input: AssignmentInput): AssignmentResult {
-    const { event, participants, topics, rankings } = input
+    const { event, participants, topics, rankings, users, organizerIds } = input
     const warnings: string[] = []
 
     // Validate input
@@ -110,13 +112,30 @@ export class AssignmentAlgorithmService {
       throw new Error('Cannot generate assignments: no approved topics')
     }
 
-    // Filter only active participants
-    const activeParticipants = participants.filter(p => 
-      p.status === 'registered' || p.status === 'confirmed' || p.status === 'checked-in'
-    )
+    // Filter only active participants, excluding admins and organizers
+    const activeParticipants = participants.filter(p => {
+      // Check if participant is active
+      const isActive = p.status === 'registered' || p.status === 'confirmed' || p.status === 'checked-in'
+      if (!isActive) return false
+
+      // Exclude participants who are organizers for this event
+      if (organizerIds && organizerIds.has(p.id)) {
+        return false
+      }
+
+      // Exclude participants whose user account has Admin or Organizer role
+      if (p.userId && users) {
+        const user = users.get(p.userId)
+        if (user?.role === 'Admin' || user?.role === 'Organizer') {
+          return false
+        }
+      }
+
+      return true
+    })
 
     if (activeParticipants.length === 0) {
-      throw new Error('Cannot generate assignments: no active participants')
+      throw new Error('Cannot generate assignments: no active participants (after filtering admins and organizers)')
     }
 
     // Filter only approved topics
@@ -214,18 +233,9 @@ export class AssignmentAlgorithmService {
     const groups: Map<string, string[]> = new Map() // topicId -> participant IDs
     selectedTopics.forEach(topic => groups.set(topic.id, []))
 
-    // Get participants who haven't been assigned to these topics yet
-    const availableParticipants = participants.filter(p => {
-      const assigned = participantAssignments.get(p.id) || new Set()
-      return !selectedTopics.some(t => assigned.has(t.id))
-    })
-
-    // If not enough participants, allow repeats
-    let participantsToAssign = [...availableParticipants]
-    if (participantsToAssign.length < participants.length * 0.8) {
-      participantsToAssign = [...participants]
-      warnings.push(`Round ${roundNumber}: Allowing topic repeats due to limited availability`)
-    }
+    // All participants should be assigned in each round, but to different topics
+    // We should never assign a participant to the same topic twice across all rounds
+    const participantsToAssign = [...participants]
 
     // Assign participants to topics based on preferences
     const unassignedParticipants = [...participantsToAssign]
@@ -268,7 +278,12 @@ export class AssignmentAlgorithmService {
         group.push(participant.id)
       } else {
         // All groups are full or participant already assigned to all topics
-        warnings.push(`Round ${roundNumber}: Unable to assign participant ${participant.id}`)
+        const assignedTopics = participantAssignments.get(participant.id)
+        if (assignedTopics && assignedTopics.size === selectedTopics.length) {
+          warnings.push(`Round ${roundNumber}: Participant ${participant.id} already assigned to all ${selectedTopics.length} available topics`)
+        } else {
+          warnings.push(`Round ${roundNumber}: Unable to assign participant ${participant.id} - all groups are full`)
+        }
       }
     }
 

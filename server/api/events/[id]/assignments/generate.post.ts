@@ -4,6 +4,8 @@ import { topicService } from '../../../../services/topicService'
 import { topicRankingService } from '../../../../services/topicRankingService'
 import { assignmentService } from '../../../../services/assignmentService'
 import { assignmentAlgorithmService } from '../../../../services/assignmentAlgorithmService'
+import { userService } from '../../../../services/userService'
+import { organizerService } from '../../../../services/organizerService'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -11,7 +13,7 @@ export default defineEventHandler(async (event) => {
     const session = await requireUserSession(event)
     const eventId = getRouterParam(event, 'id')
 
-    console.log(`Generating assignments for event ${eventId} by user: ${session.user.email}`)
+    console.log(`Generating assignments for event ${eventId}`)
 
     if (!eventId) {
       throw createError({
@@ -56,6 +58,22 @@ export default defineEventHandler(async (event) => {
     // Get rankings
     const rankings = await topicRankingService.findByEventId(eventId)
 
+    // Get organizers for this event
+    const organizers = await organizerService.findByEventId(eventId)
+    const organizerIds = new Set(organizers.map(o => o.id))
+
+    // Get user information for participants (to check roles)
+    const userIds = new Set(participants.map(p => p.userId).filter((id): id is string => !!id))
+    const users = new Map<string, { role?: 'Admin' | 'Organizer' | 'Participant' }>()
+    
+    // Fetch user data for all participants with user accounts
+    for (const userId of userIds) {
+      const user = await userService.findById(userId)
+      if (user) {
+        users.set(userId, { role: user.role })
+      }
+    }
+
     // Clear existing assignments for this event
     const existingAssignments = await assignmentService.findByEventId(eventId)
     for (const assignment of existingAssignments) {
@@ -67,7 +85,9 @@ export default defineEventHandler(async (event) => {
       event: eventData,
       participants,
       topics,
-      rankings
+      rankings,
+      users,
+      organizerIds
     })
 
     // Save assignments

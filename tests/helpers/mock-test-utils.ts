@@ -3,6 +3,7 @@ import { mockData, resetMockData, clearMockData } from './mock-manager'
 import type { User } from '../../types/user'
 import type { Event } from '../../types/event'
 import type { Participant, ParticipantAssignment } from '../../types/participant'
+import type { TopicRanking } from '../../types/topicRanking'
 
 /**
  * Extended test context that includes mock data management utilities
@@ -32,6 +33,10 @@ export interface MockTestContext {
     // Assignment management
     addTestAssignment: (assignment: Partial<ParticipantAssignment> & { id: string; participantId: string; eventId: string }) => ParticipantAssignment
     getTestAssignments: (eventId?: string) => ParticipantAssignment[]
+    
+    // Topic Ranking management
+    addTestTopicRanking: (ranking: Partial<TopicRanking> & { id: string; participantId: string; eventId: string; rankedTopicIds: string[] }) => TopicRanking
+    getTestTopicRankings: (eventId?: string) => TopicRanking[]
     
     // Snapshot management for test isolation
     createTestSnapshot: () => ReturnType<typeof mockData.createSnapshot>
@@ -130,6 +135,21 @@ export const test = base.extend<MockTestContext>({
       
       getTestAssignments: (eventId?: string) => {
         return eventId ? mockData.getAssignmentsByEventId(eventId) : mockData.getAssignments()
+      },
+      
+      addTestTopicRanking: (ranking: Partial<TopicRanking> & { id: string; participantId: string; eventId: string; rankedTopicIds: string[] }): TopicRanking => {
+        const fullRanking: TopicRanking = {
+          lastViewedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          ...ranking
+        }
+        mockData.addTopicRanking(fullRanking)
+        return fullRanking
+      },
+      
+      getTestTopicRankings: (eventId?: string) => {
+        return eventId ? mockData.getTopicRankingsByEventId(eventId) : mockData.getTopicRankings()
       },
       
       createTestSnapshot: () => mockData.createSnapshot(),

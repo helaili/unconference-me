@@ -1,5 +1,6 @@
 import { topicService, participantService } from '../../../../services'
 import { canDeleteTopic } from '../../../../utils/access-control'
+import { removeTopicFromRankings } from '../../../../utils/ranking-cleanup'
 
 export default defineEventHandler(async (event) => {
   try {
@@ -50,11 +51,15 @@ export default defineEventHandler(async (event) => {
     // Perform soft delete by updating status to rejected
     await topicService.update(topicId, { status: 'rejected' })
     
-    console.log(`Topic soft deleted successfully: ${topicId}`)
+    // Remove the topic from all user rankings
+    const updatedRankingsCount = await removeTopicFromRankings(topicId, eventId)
+    
+    console.log(`Topic soft deleted successfully: ${topicId}, updated ${updatedRankingsCount} ranking(s)`)
     
     return {
       success: true,
-      message: 'Topic deleted successfully'
+      message: 'Topic deleted successfully',
+      updatedRankings: updatedRankingsCount
     }
   } catch (error) {
     console.error('Error deleting topic:', error)
