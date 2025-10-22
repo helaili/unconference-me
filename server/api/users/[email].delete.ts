@@ -1,25 +1,25 @@
 import { userService } from '../../services/userService'
+import { isAdminOrOrganizer } from '../../utils/access-control'
 
 export default defineEventHandler(async (event) => {
   try {
-    // Check if user is admin
+    // Check if user is admin or organizer
     const session = await requireUserSession(event)
-    const userRole = (session.user as { role?: string })?.role
     
-    if (userRole !== 'Admin') {
+    if (!isAdminOrOrganizer(session)) {
       throw createError({
         statusCode: 403,
         statusMessage: 'Forbidden',
         data: { 
           success: false, 
-          message: 'Only admins can delete users'
+          message: 'Only admins and organizers can delete users'
         }
       })
     }
     
     const email = decodeURIComponent(getRouterParam(event, 'email') || '')
     
-    console.log(`Admin deleting user: ${email}`)
+    console.log(`Admin/Organizer deleting user: ${email}`)
     
     const success = await userService.delete(email)
     
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     
-    console.log(`Admin deleted user: ${email}`)
+    console.log(`Admin/Organizer deleted user: ${email}`)
     
     return { 
       success: true,

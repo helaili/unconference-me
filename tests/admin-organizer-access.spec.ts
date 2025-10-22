@@ -1,9 +1,9 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { mockData } from './helpers/mock-manager'
 import { AuthHelper } from './helpers/auth'
 
 // Helper function for login using the working AuthHelper pattern
-async function loginWithAuthHelper(page: any, email: string, password: string) {
+async function loginWithAuthHelper(page: Page, email: string, password: string) {
   const authHelper = new AuthHelper(page)
   await authHelper.loginAs(email, password)
   // Wait for successful redirect - but don't be strict about the URL in case of role-specific redirects
@@ -302,8 +302,8 @@ test.describe('Admin and Organizer Access Control', () => {
       // Verify this user is NOT in the participants list
       const participantsResponse = await page.request.get('/api/events/1/participants')
       expect(participantsResponse.ok()).toBeTruthy()
-      const participantsData = await participantsResponse.json()
-      const hasUser = participantsData.participants?.some((p: any) => p.email === 'unregistered@example.com')
+      const participantsData = await participantsResponse.json() as { participants?: Array<{ email: string }> }
+      const hasUser = participantsData.participants?.some((p) => p.email === 'unregistered@example.com')
       expect(hasUser).toBe(false) // Should not be a participant
       
       // Try to create a topic - should fail with 403
@@ -356,6 +356,277 @@ test.describe('Admin and Organizer Access Control', () => {
       })
       
       expect(response.status()).toBe(403)
+    })
+
+    test('regular user cannot access user management', async ({ page }) => {
+      // Login as regular user (Darth)
+      await loginWithAuthHelper(page, 'darth@empire.com', 'changeme')
+      
+      // Try to access user management API
+      const response = await page.request.get('/api/users')
+      
+      expect(response.status()).toBe(403)
+    })
+  })
+
+  test.describe('Organizer User Management Access', () => {
+    test('organizer can view user list', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Access user management API
+      const response = await page.request.get('/api/users')
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.users).toBeDefined()
+      expect(result.users.length).toBeGreaterThan(0)
+    })
+
+    test('organizer can access user management page', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Navigate to user management page
+      await page.goto('/users')
+      
+      // Should stay on users page (not redirected)
+      await expect(page).toHaveURL('/users')
+      await expect(page.locator('text=User Management').first()).toBeVisible()
+    })
+
+    test('organizer can add a new user', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Add a new user via API
+      const response = await page.request.post('/api/users', {
+        data: {
+          firstname: 'New',
+          lastname: 'User',
+          email: 'newuser@example.com',
+          role: 'Participant'
+        }
+      })
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.user.email).toBe('newuser@example.com')
+    })
+
+    test('organizer can update a user', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Update a user via API
+      const response = await page.request.put('/api/users/darth@empire.com', {
+        data: {
+          firstname: 'Updated',
+          lastname: 'Name',
+          role: 'Participant'
+        }
+      })
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.user.firstname).toBe('Updated')
+    })
+
+    test('organizer can delete a user', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Add a test user to delete
+      mockData.addUser({
+        id: 'deleteme@example.com',
+        email: 'deleteme@example.com',
+        firstname: 'Delete',
+        lastname: 'Me',
+        role: 'Participant',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Delete the user via API
+      const response = await page.request.delete('/api/users/deleteme@example.com')
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+    })
+
+    test('organizer can import users from CSV', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Import users via CSV API
+      const csvData = `firstname,lastname,email
+Jane,Smith,jane.csv@example.com
+Bob,Johnson,bob.csv@example.com`
+      
+      const response = await page.request.post('/api/users/import-csv', {
+        data: {
+          csvData
+        }
+      })
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.imported).toBe(2)
+    })
+
+    test('organizer can generate registration link', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Generate registration link via API
+      const response = await page.request.post('/api/users/generate-link', {
+        data: {
+          email: 'darth@empire.com'
+        }
+      })
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.link).toContain('/register?token=')
+    })
+
+    test('organizer can view events list', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Access events page
+      await page.goto('/events')
+      
+      // Should stay on events page
+      await expect(page).toHaveURL('/events')
+      await expect(page.locator('text=Events').first()).toBeVisible()
+    })
+
+    test('organizer can view event details', async ({ page }) => {
+      // Add an organizer user
+      mockData.addUser({
+        id: 'organizer@example.com',
+        email: 'organizer@example.com',
+        firstname: 'Event',
+        lastname: 'Organizer',
+        password: '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LebleWI/qLW4Sf3u2', // "changeme"
+        role: 'Organizer',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      })
+      
+      // Login as organizer
+      await loginWithAuthHelper(page, 'organizer@example.com', 'changeme')
+      
+      // Access event details API
+      const response = await page.request.get('/api/events/1')
+      
+      expect(response.ok()).toBeTruthy()
+      const result = await response.json()
+      expect(result.success).toBe(true)
+      expect(result.event).toBeDefined()
     })
   })
 })
