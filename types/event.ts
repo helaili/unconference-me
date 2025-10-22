@@ -105,5 +105,9 @@ export interface SortedChoiceDistribution {
 
 export interface TopicOccurrenceDistribution {
   totalTopicsPlanned: number
-  distribution: Record<number, number>
+  topicDetails: Array<{
+    topicId: string
+    topicTitle: string
+    occurrences: number
+  }>
 }

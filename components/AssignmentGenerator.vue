@@ -42,7 +42,11 @@ const statistics = ref<{
   }
   topicOccurrenceDistribution?: {
     totalTopicsPlanned: number
-    distribution: Record<number, number>
+    topicDetails: Array<{
+      topicId: string
+      topicTitle: string
+      occurrences: number
+    }>
   }
 } | null>(null)
 const warnings = ref<string[]>([])
@@ -418,7 +422,7 @@ onMounted(() => {
                 Topic Schedule Distribution
               </div>
               <p :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'" class="mb-3 text-medium-emphasis">
-                Distribution of topics by how many times they are scheduled across rounds.
+                Shows how many group sessions are scheduled for each topic across all rounds (a topic scheduled for 2 groups in 3 rounds = 6 sessions).
               </p>
               <v-row :dense="$vuetify.display.smAndDown" class="mb-3">
                 <v-col cols="12" sm="6">
@@ -428,7 +432,7 @@ onMounted(() => {
                         {{ statistics.topicOccurrenceDistribution.totalTopicsPlanned }}
                       </div>
                       <div :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'">
-                        Total Topics Planned
+                        Total Distinct Topics Scheduled
                       </div>
                     </v-card-text>
                   </v-card>
@@ -437,28 +441,28 @@ onMounted(() => {
               <v-table density="compact">
                 <thead>
                   <tr>
-                    <th class="text-left">Times Scheduled</th>
-                    <th class="text-right">Number of Topics</th>
-                    <th class="text-right">Percentage</th>
+                    <th class="text-left">Topic Title</th>
+                    <th class="text-right">Times Scheduled</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr 
-                    v-for="occurrence in Object.keys(statistics.topicOccurrenceDistribution.distribution).map(Number).sort((a, b) => b - a)"
-                    :key="occurrence"
+                    v-for="topic in statistics.topicOccurrenceDistribution.topicDetails"
+                    :key="topic.topicId"
                   >
                     <td>
+                      <div :class="$vuetify.display.smAndDown ? 'text-body-2' : 'text-body-1'">
+                        {{ topic.topicTitle }}
+                      </div>
+                    </td>
+                    <td class="text-right">
                       <v-chip 
                         size="small" 
-                        :color="occurrence > 1 ? 'success' : 'info'"
+                        :color="topic.occurrences > 1 ? 'success' : 'info'"
                         variant="tonal"
                       >
-                        {{ occurrence }} {{ occurrence === 1 ? 'time' : 'times' }}
+                        {{ topic.occurrences }} {{ topic.occurrences === 1 ? 'time' : 'times' }}
                       </v-chip>
-                    </td>
-                    <td class="text-right">{{ statistics.topicOccurrenceDistribution.distribution[occurrence] }}</td>
-                    <td class="text-right">
-                      {{ ((statistics.topicOccurrenceDistribution.distribution[occurrence] / statistics.topicOccurrenceDistribution.totalTopicsPlanned) * 100).toFixed(1) }}%
                     </td>
                   </tr>
                 </tbody>
