@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { User } from '../../types/user'
 import { PasswordUtils } from '../utils/password'
 
@@ -13,7 +13,7 @@ export class UserService extends BaseService<User> {
         // Exclude soft-deleted users
         return await this.executeCosmosQuery<User>('SELECT * FROM c WHERE NOT IS_DEFINED(c.deletedAt)')
       } else {
-        return mockData.getUsers().filter(u => !u.deletedAt)
+        return getMockDataStoreFromContext().getUsers().filter(u => !u.deletedAt)
       }
     } catch (error) {
       console.error('Failed to fetch all users', { error })
@@ -26,7 +26,7 @@ export class UserService extends BaseService<User> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<User>('SELECT * FROM c')
       } else {
-        return mockData.getUsers()
+        return getMockDataStoreFromContext().getUsers()
       }
     } catch (error) {
       console.error('Failed to fetch all users including deleted', { error })
@@ -40,7 +40,7 @@ export class UserService extends BaseService<User> {
         // For users, we use email as both id and partition key
         return await this.cosmosReadById(id, id)
       } else {
-        return mockData.getUserByEmail(id) || null
+        return getMockDataStoreFromContext().getUserByEmail(id) || null
       }
     } catch (error) {
       console.error('Failed to fetch user by id', { id, error })
@@ -57,7 +57,7 @@ export class UserService extends BaseService<User> {
         )
         return users.length > 0 ? users[0]! : null
       } else {
-        return mockData.getUserByEmail(email) || null
+        return getMockDataStoreFromContext().getUserByEmail(email) || null
       }
     } catch (error) {
       console.error('Failed to fetch user by email', { email, error })
@@ -97,7 +97,7 @@ export class UserService extends BaseService<User> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(user)
       } else {
-        mockData.addUser(user)
+        getMockDataStoreFromContext().addUser(user)
         return user
       }
     } catch (error) {
@@ -116,7 +116,7 @@ export class UserService extends BaseService<User> {
         return users.length > 0 ? users[0]! : null
       } else {
         // Use case-insensitive email lookup for mock data
-        return mockData.getUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) || null
+        return getMockDataStoreFromContext().getUsers().find(u => u.email.toLowerCase() === email.toLowerCase()) || null
       }
     } catch (error) {
       console.error('Failed to fetch user by email including deleted', { email, error })
@@ -147,12 +147,12 @@ export class UserService extends BaseService<User> {
 
         return await this.cosmosUpsert(updatedUser)
       } else {
-        const success = mockData.updateUser(id, { ...processedUpdates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateUser(id, { ...processedUpdates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`User with id ${id} not found`)
         }
         
-        const updatedUser = mockData.getUserByEmail(id)
+        const updatedUser = getMockDataStoreFromContext().getUserByEmail(id)
         if (!updatedUser) {
           throw new Error('Failed to retrieve updated user')
         }
@@ -189,7 +189,7 @@ export class UserService extends BaseService<User> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosDelete(email, email)
       } else {
-        return mockData.removeUser(email)
+        return getMockDataStoreFromContext().removeUser(email)
       }
     } catch (error) {
       console.error('Failed to hard delete user', { email, error })

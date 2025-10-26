@@ -101,8 +101,8 @@ test.describe('Ranking Page Mobile Optimization', () => {
     await page.goto('/rankings/1');
     await page.waitForLoadState('networkidle');
     
-    // Check if warning alert is visible
-    const warningAlert = page.locator('text=Rank at least');
+    // Check if warning alert is visible - use v-alert class to be more specific
+    const warningAlert = page.locator('.v-alert:has-text("Rank at least")').first();
     await expect(warningAlert).toBeVisible();
     
     // Check if save button is visible
@@ -121,8 +121,8 @@ test.describe('Ranking Page Mobile Optimization', () => {
     await page.goto('/rankings/1');
     await page.waitForLoadState('networkidle');
     
-    // Check if warning alert is visible
-    const warningAlert = page.locator('text=Rank at least');
+    // Check if warning alert is visible - use v-alert class to be more specific
+    const warningAlert = page.locator('.v-alert:has-text("Rank at least")').first();
     await expect(warningAlert).toBeVisible();
     
     // Check if save button is visible

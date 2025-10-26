@@ -22,12 +22,12 @@ export abstract class BaseService<T extends { id: string }> {
   private async initializeCosmosClient(): Promise<void> {
     if (this.client) return // Already initialized
 
-    const config = useRuntimeConfig()
-    const appEnv = config.appEnv
+    // Use process.env directly for test compatibility (useRuntimeConfig not available in test context)
+    const appEnv = process.env.APP_ENV || 'development'
     
     // Only initialize CosmosDB client for staging and production environments
     if (appEnv === 'staging' || appEnv === 'production') {
-      const connectionString = config.cosmosdb.connectionString
+      const connectionString = process.env.COSMODB_PRIMARY_CONNECTION_STRING
       
       if (!connectionString) {
         console.error('COSMODB_PRIMARY_CONNECTION_STRING environment variable is required for staging/production')
@@ -45,8 +45,15 @@ export abstract class BaseService<T extends { id: string }> {
     if (this.isInitialized || !this.client) return
 
     try {
-      const config = useRuntimeConfig()
-      const databaseName = config.cosmosdb.database
+      // Use process.env directly for test compatibility
+      const appEnv = process.env.APP_ENV || 'development'
+      const databaseName = appEnv === 'production' 
+        ? process.env.COSMOS_DB_DATABASE_NAME_PRODUCTION 
+        : process.env.COSMOS_DB_DATABASE_NAME_STAGING
+      
+      if (!databaseName) {
+        throw new Error(`Missing database name for environment: ${appEnv}`)
+      }
       
       // Get or create database
       const { database } = await this.client.databases.createIfNotExists({
@@ -70,8 +77,8 @@ export abstract class BaseService<T extends { id: string }> {
   }
 
   protected async isUsingCosmosDB(): Promise<boolean> {
-    const config = useRuntimeConfig()
-    const appEnv = config.appEnv
+    // Use process.env directly for test compatibility (useRuntimeConfig not available in test context)
+    const appEnv = process.env.APP_ENV || 'development'
     return appEnv === 'staging' || appEnv === 'production'
   }
 
