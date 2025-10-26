@@ -423,81 +423,86 @@ export class AssignmentAlgorithmService {
     discussionsPerRound: number
   ): Map<number, Topic[]> {
     const schedule = new Map<number, Topic[]>()
-    const totalSlots = numberOfRounds * discussionsPerRound
 
-    // Sort topics by popularity (descending)
+    // Sort topics by demand and popularity
     const sortedTopics = [...topics].sort((a, b) => {
+      const demandA = topicDemand.get(a.id)?.demand || 0
+      const demandB = topicDemand.get(b.id)?.demand || 0
+      
+      // First sort by demand
+      if (demandA !== demandB) {
+        return demandB - demandA
+      }
+      
+      // Then by popularity as tiebreaker
       const popA = topicPopularity.get(a.id) || 0
       const popB = topicPopularity.get(b.id) || 0
       return popB - popA
     })
 
-    // Create a list of topic occurrences (topics can appear multiple times)
-    const topicOccurrences: Topic[] = []
-    
-    for (const topic of sortedTopics) {
-      const demand = topicDemand.get(topic.id)
-      if (!demand || demand.sessionsNeeded === 0) {
-        // Topic has no demand, schedule it once if space allows
-        topicOccurrences.push(topic)
-      } else {
-        // Schedule topic multiple times based on sessions needed
-        const sessionsToSchedule = Math.min(demand.sessionsNeeded, numberOfRounds)
-        for (let i = 0; i < sessionsToSchedule; i++) {
-          topicOccurrences.push(topic)
-        }
-      }
-    }
-
-    // Distribute topic occurrences across rounds
-    // Strategy: Fill rounds in a round-robin fashion to spread topics evenly
-    let currentRound = 1
-    let topicsScheduledInRound = 0
-    
-    for (const topic of topicOccurrences.slice(0, totalSlots)) {
-      if (!schedule.has(currentRound)) {
-        schedule.set(currentRound, [])
-      }
-
-      const roundTopics = schedule.get(currentRound)!
-      
-      // Check if this topic is already scheduled in this round
-      if (!roundTopics.some(t => t.id === topic.id)) {
-        roundTopics.push(topic)
-        topicsScheduledInRound++
-      }
-
-      // Move to next round when we've filled the current round
-      if (topicsScheduledInRound >= discussionsPerRound) {
-        currentRound++
-        topicsScheduledInRound = 0
-        
-        // Wrap around if we've exceeded the number of rounds
-        if (currentRound > numberOfRounds) {
-          break
-        }
-      }
-    }
-
-    // Fill remaining slots with less popular topics if needed
+    // Initialize all rounds with empty arrays
     for (let round = 1; round <= numberOfRounds; round++) {
-      const roundTopics = schedule.get(round) || []
-      
-      while (roundTopics.length < discussionsPerRound) {
-        // Find a topic that hasn't been scheduled in this round yet
-        const availableTopic = sortedTopics.find(topic => 
-          !roundTopics.some(t => t.id === topic.id)
-        )
+      schedule.set(round, [])
+    }
+
+    // Track how many times each topic has been scheduled
+    const topicScheduleCount = new Map<string, number>()
+    topics.forEach(topic => topicScheduleCount.set(topic.id, 0))
+
+    // Schedule topics round by round, prioritizing high-demand topics
+    for (let round = 1; round <= numberOfRounds; round++) {
+      const roundTopics = schedule.get(round)!
+
+      // For each slot in this round
+      for (let slot = 0; slot < discussionsPerRound; slot++) {
+        // Find the best topic to schedule:
+        // 1. Has demand for more sessions
+        // 2. Not already scheduled in this round
+        // 3. Highest priority (by demand/popularity)
         
-        if (availableTopic) {
-          roundTopics.push(availableTopic)
+        let bestTopic: Topic | null = null
+        
+        for (const topic of sortedTopics) {
+          const demand = topicDemand.get(topic.id)
+          const sessionsNeeded = demand?.sessionsNeeded || 1
+          const alreadyScheduled = topicScheduleCount.get(topic.id) || 0
+          const alreadyInThisRound = roundTopics.some(t => t.id === topic.id)
+
+          // Skip if already scheduled in this round (can't have same topic twice in one round)
+          if (alreadyInThisRound) {
+            continue
+          }
+
+          // Skip if already scheduled enough times
+          if (alreadyScheduled >= sessionsNeeded) {
+            continue
+          }
+
+          // This is our best candidate
+          bestTopic = topic
+          break
+        }
+
+        // Schedule the best topic or fall back to any unscheduled topic
+        if (bestTopic) {
+          roundTopics.push(bestTopic)
+          topicScheduleCount.set(bestTopic.id, (topicScheduleCount.get(bestTopic.id) || 0) + 1)
         } else {
-          // No more unique topics available, break
+          // All high-demand topics are scheduled, find any topic not in this round
+          const fallbackTopic = sortedTopics.find(t => 
+            !roundTopics.some(rt => rt.id === t.id)
+          )
+          if (fallbackTopic) {
+            roundTopics.push(fallbackTopic)
+            topicScheduleCount.set(fallbackTopic.id, (topicScheduleCount.get(fallbackTopic.id) || 0) + 1)
+          }
+        }
+
+        // If we've filled all slots, stop
+        if (roundTopics.length >= discussionsPerRound) {
           break
         }
       }
-      
-      schedule.set(round, roundTopics)
     }
 
     return schedule
