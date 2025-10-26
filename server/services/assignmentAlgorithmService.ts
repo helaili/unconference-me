@@ -156,16 +156,41 @@ export class AssignmentAlgorithmService {
     // Calculate popularity scores for topics
     const topicPopularity = this.calculateTopicPopularity(rankings, approvedTopics)
 
+    // Calculate topic demand and create global schedule
+    const topicDemand = this.calculateTopicDemand(
+      approvedTopics,
+      preferenceMap,
+      activeParticipants,
+      event.numberOfRounds,
+      event.maxGroupSize
+    )
+
+    // Create global schedule: which topics are offered in which rounds
+    const globalSchedule = this.createGlobalSchedule(
+      approvedTopics,
+      topicDemand,
+      topicPopularity,
+      event.numberOfRounds,
+      event.discussionsPerRound
+    )
+
     // Generate assignments for each round
     const assignments: Omit<ParticipantAssignment, 'id'>[] = []
     const participantRoundAssignments = new Map<string, Set<string>>() // participant -> set of topic IDs they're assigned to
     const roundStats: RoundStatistics[] = []
 
     for (let round = 1; round <= event.numberOfRounds; round++) {
+      const roundTopics = globalSchedule.get(round) || []
+      
+      if (roundTopics.length === 0) {
+        warnings.push(`Round ${round}: No topics scheduled`)
+        continue
+      }
+
       const roundAssignments = this.assignRound(
         event,
         activeParticipants,
-        approvedTopics,
+        roundTopics,
         preferenceMap,
         topicPopularity,
         participantRoundAssignments,
@@ -335,6 +360,147 @@ export class AssignmentAlgorithmService {
     }
 
     return { assignments, statistics, warnings }
+  }
+
+  /**
+   * Calculate demand for each topic based on participant preferences
+   * Returns a map of topic ID to number of participants who want it in their top N choices
+   */
+  private calculateTopicDemand(
+    topics: Topic[],
+    preferenceMap: Map<string, Map<string, number>>,
+    participants: Participant[],
+    numberOfRounds: number,
+    maxGroupSize: number
+  ): Map<string, { demand: number; sessionsNeeded: number }> {
+    const topicDemand = new Map<string, { demand: number; sessionsNeeded: number }>()
+
+    // Initialize all topics with 0 demand
+    topics.forEach(topic => {
+      topicDemand.set(topic.id, { demand: 0, sessionsNeeded: 0 })
+    })
+
+    // Count how many participants want each topic in their top N preferences
+    for (const participant of participants) {
+      const preferences = preferenceMap.get(participant.id)
+      if (!preferences) continue
+
+      // Get participant's top N preferences (where N = numberOfRounds)
+      const topNPreferences = Array.from(preferences.entries())
+        .sort((a, b) => a[1] - b[1]) // Sort by rank (lower is better)
+        .slice(0, numberOfRounds)
+        .map(([topicId]) => topicId)
+
+      // Increment demand for each topic in top N
+      for (const topicId of topNPreferences) {
+        const current = topicDemand.get(topicId)
+        if (current) {
+          current.demand++
+        }
+      }
+    }
+
+    // Calculate sessions needed for each topic
+    for (const [_topicId, demandInfo] of topicDemand.entries()) {
+      if (demandInfo.demand > 0) {
+        // Sessions needed = ceil(demand / maxGroupSize)
+        demandInfo.sessionsNeeded = Math.ceil(demandInfo.demand / maxGroupSize)
+      }
+    }
+
+    return topicDemand
+  }
+
+  /**
+   * Create a global schedule of which topics are offered in which rounds
+   * This ensures popular topics are repeated appropriately across rounds
+   */
+  private createGlobalSchedule(
+    topics: Topic[],
+    topicDemand: Map<string, { demand: number; sessionsNeeded: number }>,
+    topicPopularity: Map<string, number>,
+    numberOfRounds: number,
+    discussionsPerRound: number
+  ): Map<number, Topic[]> {
+    const schedule = new Map<number, Topic[]>()
+    const totalSlots = numberOfRounds * discussionsPerRound
+
+    // Sort topics by popularity (descending)
+    const sortedTopics = [...topics].sort((a, b) => {
+      const popA = topicPopularity.get(a.id) || 0
+      const popB = topicPopularity.get(b.id) || 0
+      return popB - popA
+    })
+
+    // Create a list of topic occurrences (topics can appear multiple times)
+    const topicOccurrences: Topic[] = []
+    
+    for (const topic of sortedTopics) {
+      const demand = topicDemand.get(topic.id)
+      if (!demand || demand.sessionsNeeded === 0) {
+        // Topic has no demand, schedule it once if space allows
+        topicOccurrences.push(topic)
+      } else {
+        // Schedule topic multiple times based on sessions needed
+        const sessionsToSchedule = Math.min(demand.sessionsNeeded, numberOfRounds)
+        for (let i = 0; i < sessionsToSchedule; i++) {
+          topicOccurrences.push(topic)
+        }
+      }
+    }
+
+    // Distribute topic occurrences across rounds
+    // Strategy: Fill rounds in a round-robin fashion to spread topics evenly
+    let currentRound = 1
+    let topicsScheduledInRound = 0
+    
+    for (const topic of topicOccurrences.slice(0, totalSlots)) {
+      if (!schedule.has(currentRound)) {
+        schedule.set(currentRound, [])
+      }
+
+      const roundTopics = schedule.get(currentRound)!
+      
+      // Check if this topic is already scheduled in this round
+      if (!roundTopics.some(t => t.id === topic.id)) {
+        roundTopics.push(topic)
+        topicsScheduledInRound++
+      }
+
+      // Move to next round when we've filled the current round
+      if (topicsScheduledInRound >= discussionsPerRound) {
+        currentRound++
+        topicsScheduledInRound = 0
+        
+        // Wrap around if we've exceeded the number of rounds
+        if (currentRound > numberOfRounds) {
+          break
+        }
+      }
+    }
+
+    // Fill remaining slots with less popular topics if needed
+    for (let round = 1; round <= numberOfRounds; round++) {
+      const roundTopics = schedule.get(round) || []
+      
+      while (roundTopics.length < discussionsPerRound) {
+        // Find a topic that hasn't been scheduled in this round yet
+        const availableTopic = sortedTopics.find(topic => 
+          !roundTopics.some(t => t.id === topic.id)
+        )
+        
+        if (availableTopic) {
+          roundTopics.push(availableTopic)
+        } else {
+          // No more unique topics available, break
+          break
+        }
+      }
+      
+      schedule.set(round, roundTopics)
+    }
+
+    return schedule
   }
 
   /**
