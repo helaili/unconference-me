@@ -1,8 +1,21 @@
 import { userService } from '~/server/services'
+import { isAdminOrOrganizer } from '~/server/utils/access-control'
 
 export default defineEventHandler(async (event) => {
   try {
-    await requireUserSession(event)
+    const session = await requireUserSession(event)
+    
+    // Check if user is admin or organizer
+    if (!isAdminOrOrganizer(session)) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: 'Forbidden',
+        data: { 
+          success: false, 
+          message: 'Only admins and organizers can update users'
+        }
+      })
+    }
     
     const email = getRouterParam(event, 'email')
     if (!email) {

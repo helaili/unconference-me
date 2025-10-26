@@ -13,8 +13,12 @@ export default defineNuxtRouteMiddleware((to) => {
     }
 
     // check if the page requires admin role
-    if (to.meta.requiresAdmin && (user.value as User)?.role !== 'Admin') {
-        // if user is not an admin, redirect to dashboard or show access denied
-        return navigateTo('/dashboard')
+    if (to.meta.requiresAdmin) {
+        const userRole = (user.value as User)?.role
+        // Allow both Admin and Organizer roles for admin pages
+        if (userRole !== 'Admin' && userRole !== 'Organizer') {
+            // if user is not an admin or organizer, redirect to dashboard or show access denied
+            return navigateTo('/dashboard')
+        }
     }
 })

@@ -25,6 +25,14 @@ export function isAdmin(session: UserSession | null | undefined): boolean {
 }
 
 /**
+ * Check if a user has admin or organizer role (global permissions)
+ */
+export function isAdminOrOrganizer(session: UserSession | null | undefined): boolean {
+  if (!session?.user) return false
+  return session.user.role === 'Admin' || session.user.role === 'Organizer'
+}
+
+/**
  * Check if a user is an organizer for a specific event
  */
 export async function isOrganizer(
