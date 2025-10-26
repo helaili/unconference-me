@@ -27,15 +27,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Get and delete all assignments for this event
-    const assignments = await assignmentService.findByEventId(eventId)
-    let deletedCount = 0
-
-    for (const assignment of assignments) {
-      const deleted = await assignmentService.delete(assignment.id)
-      if (deleted) {
-        deletedCount++
-      }
-    }
+    const deletedCount = await assignmentService.deleteByEventId(eventId)
 
     console.log(`Deleted ${deletedCount} assignments for event ${eventId}`)
 
