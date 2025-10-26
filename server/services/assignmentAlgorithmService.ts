@@ -156,16 +156,41 @@ export class AssignmentAlgorithmService {
     // Calculate popularity scores for topics
     const topicPopularity = this.calculateTopicPopularity(rankings, approvedTopics)
 
+    // Calculate topic demand and create global schedule
+    const topicDemand = this.calculateTopicDemand(
+      approvedTopics,
+      preferenceMap,
+      activeParticipants,
+      event.numberOfRounds,
+      event.maxGroupSize
+    )
+
+    // Create global schedule: which topics are offered in which rounds
+    const globalSchedule = this.createGlobalSchedule(
+      approvedTopics,
+      topicDemand,
+      topicPopularity,
+      event.numberOfRounds,
+      event.discussionsPerRound
+    )
+
     // Generate assignments for each round
     const assignments: Omit<ParticipantAssignment, 'id'>[] = []
     const participantRoundAssignments = new Map<string, Set<string>>() // participant -> set of topic IDs they're assigned to
     const roundStats: RoundStatistics[] = []
 
     for (let round = 1; round <= event.numberOfRounds; round++) {
+      const roundTopics = globalSchedule.get(round) || []
+      
+      if (roundTopics.length === 0) {
+        warnings.push(`Round ${round}: No topics scheduled`)
+        continue
+      }
+
       const roundAssignments = this.assignRound(
         event,
         activeParticipants,
-        approvedTopics,
+        roundTopics,
         preferenceMap,
         topicPopularity,
         participantRoundAssignments,
@@ -335,6 +360,152 @@ export class AssignmentAlgorithmService {
     }
 
     return { assignments, statistics, warnings }
+  }
+
+  /**
+   * Calculate demand for each topic based on participant preferences
+   * Returns a map of topic ID to number of participants who want it in their top N choices
+   */
+  private calculateTopicDemand(
+    topics: Topic[],
+    preferenceMap: Map<string, Map<string, number>>,
+    participants: Participant[],
+    numberOfRounds: number,
+    maxGroupSize: number
+  ): Map<string, { demand: number; sessionsNeeded: number }> {
+    const topicDemand = new Map<string, { demand: number; sessionsNeeded: number }>()
+
+    // Initialize all topics with 0 demand
+    topics.forEach(topic => {
+      topicDemand.set(topic.id, { demand: 0, sessionsNeeded: 0 })
+    })
+
+    // Count how many participants want each topic in their top N preferences
+    for (const participant of participants) {
+      const preferences = preferenceMap.get(participant.id)
+      if (!preferences) continue
+
+      // Get participant's top N preferences (where N = numberOfRounds)
+      const topNPreferences = Array.from(preferences.entries())
+        .sort((a, b) => a[1] - b[1]) // Sort by rank (lower is better)
+        .slice(0, numberOfRounds)
+        .map(([topicId]) => topicId)
+
+      // Increment demand for each topic in top N
+      for (const topicId of topNPreferences) {
+        const current = topicDemand.get(topicId)
+        if (current) {
+          current.demand++
+        }
+      }
+    }
+
+    // Calculate sessions needed for each topic
+    for (const [_topicId, demandInfo] of topicDemand.entries()) {
+      if (demandInfo.demand > 0) {
+        // Sessions needed = ceil(demand / maxGroupSize)
+        demandInfo.sessionsNeeded = Math.ceil(demandInfo.demand / maxGroupSize)
+      }
+    }
+
+    return topicDemand
+  }
+
+  /**
+   * Create a global schedule of which topics are offered in which rounds
+   * This ensures popular topics are repeated appropriately across rounds
+   */
+  private createGlobalSchedule(
+    topics: Topic[],
+    topicDemand: Map<string, { demand: number; sessionsNeeded: number }>,
+    topicPopularity: Map<string, number>,
+    numberOfRounds: number,
+    discussionsPerRound: number
+  ): Map<number, Topic[]> {
+    const schedule = new Map<number, Topic[]>()
+
+    // Sort topics by demand and popularity
+    const sortedTopics = [...topics].sort((a, b) => {
+      const demandA = topicDemand.get(a.id)?.demand || 0
+      const demandB = topicDemand.get(b.id)?.demand || 0
+      
+      // First sort by demand
+      if (demandA !== demandB) {
+        return demandB - demandA
+      }
+      
+      // Then by popularity as tiebreaker
+      const popA = topicPopularity.get(a.id) || 0
+      const popB = topicPopularity.get(b.id) || 0
+      return popB - popA
+    })
+
+    // Initialize all rounds with empty arrays
+    for (let round = 1; round <= numberOfRounds; round++) {
+      schedule.set(round, [])
+    }
+
+    // Track how many times each topic has been scheduled
+    const topicScheduleCount = new Map<string, number>()
+    topics.forEach(topic => topicScheduleCount.set(topic.id, 0))
+
+    // Schedule topics round by round, prioritizing high-demand topics
+    for (let round = 1; round <= numberOfRounds; round++) {
+      const roundTopics = schedule.get(round)!
+
+      // For each slot in this round
+      for (let slot = 0; slot < discussionsPerRound; slot++) {
+        // Find the best topic to schedule:
+        // 1. Has demand for more sessions
+        // 2. Not already scheduled in this round
+        // 3. Highest priority (by demand/popularity)
+        
+        let bestTopic: Topic | null = null
+        
+        for (const topic of sortedTopics) {
+          const demand = topicDemand.get(topic.id)
+          const sessionsNeeded = demand?.sessionsNeeded || 1
+          const alreadyScheduled = topicScheduleCount.get(topic.id) || 0
+          const alreadyInThisRound = roundTopics.some(t => t.id === topic.id)
+
+          // Skip if already scheduled in this round (can't have same topic twice in one round)
+          if (alreadyInThisRound) {
+            continue
+          }
+
+          // Skip if already scheduled enough times
+          if (alreadyScheduled >= sessionsNeeded) {
+            continue
+          }
+
+          // This is our best candidate
+          bestTopic = topic
+          break
+        }
+
+        // Schedule the best topic or fall back to any unscheduled topic
+        if (bestTopic) {
+          roundTopics.push(bestTopic)
+          topicScheduleCount.set(bestTopic.id, (topicScheduleCount.get(bestTopic.id) || 0) + 1)
+        } else {
+          // All high-demand topics are scheduled, find any topic not in this round
+          const fallbackTopic = sortedTopics.find(t => 
+            !roundTopics.some(rt => rt.id === t.id)
+          )
+          if (fallbackTopic) {
+            roundTopics.push(fallbackTopic)
+            topicScheduleCount.set(fallbackTopic.id, (topicScheduleCount.get(fallbackTopic.id) || 0) + 1)
+          }
+        }
+
+        // If we've filled all slots, stop
+        if (roundTopics.length >= discussionsPerRound) {
+          break
+        }
+      }
+    }
+
+    return schedule
   }
 
   /**

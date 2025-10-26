@@ -222,6 +222,101 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
     }
   }
 
+  /**
+   * Batch delete assignments by their IDs
+   * @param ids Array of assignment IDs to delete
+   * @returns Object with total count, success count, and failed IDs
+   */
+  async batchDelete(ids: string[]): Promise<{ total: number; success: number; failed: string[] }> {
+    try {
+      let successCount = 0
+      const failedIds: string[] = []
+
+      if (await this.isUsingCosmosDB()) {
+        // For CosmosDB, we need to get the assignments first to obtain partition keys
+        const assignments = await Promise.all(
+          ids.map(async (id) => {
+            try {
+              return await this.findById(id)
+            } catch (error) {
+              console.warn(`Failed to find assignment ${id} for deletion`, { error })
+              return null
+            }
+          })
+        )
+
+        // Delete each assignment with its partition key
+        for (let i = 0; i < assignments.length; i++) {
+          const assignment = assignments[i]
+          const id = ids[i]!
+          
+          if (!assignment) {
+            failedIds.push(id)
+            continue
+          }
+
+          try {
+            const deleted = await this.cosmosDelete(id, assignment.eventId)
+            if (deleted) {
+              successCount++
+            } else {
+              failedIds.push(id)
+            }
+          } catch (error) {
+            console.error(`Failed to delete assignment ${id}`, { error })
+            failedIds.push(id)
+          }
+        }
+      } else {
+        // For mock data, delete each assignment
+        for (const id of ids) {
+          try {
+            const deleted = mockData.removeAssignment(id)
+            if (deleted) {
+              successCount++
+            } else {
+              failedIds.push(id)
+            }
+          } catch (error) {
+            console.error(`Failed to delete assignment ${id}`, { error })
+            failedIds.push(id)
+          }
+        }
+      }
+
+      return {
+        total: ids.length,
+        success: successCount,
+        failed: failedIds
+      }
+    } catch (error) {
+      console.error('Failed to batch delete assignments', { count: ids.length, error })
+      throw error
+    }
+  }
+
+  /**
+   * Delete all assignments for a specific event
+   * @param eventId Event ID
+   * @returns Number of deleted assignments
+   */
+  async deleteByEventId(eventId: string): Promise<number> {
+    try {
+      const assignments = await this.findByEventId(eventId)
+      const ids = assignments.map(a => a.id)
+      
+      if (ids.length === 0) {
+        return 0
+      }
+
+      const result = await this.batchDelete(ids)
+      return result.success
+    } catch (error) {
+      console.error('Failed to delete assignments by event ID', { eventId, error })
+      throw error
+    }
+  }
+
   private generateId(): string {
     return `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
   }

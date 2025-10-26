@@ -228,7 +228,18 @@ onMounted(() => {
                       </template>
                       
                       <v-list-item-title :class="$vuetify.display.smAndDown ? 'text-body-2' : ''">
-                        <strong>{{ assignment.topic?.title || 'Unknown Topic' }}</strong>
+                        <div class="d-flex align-center flex-wrap">
+                          <strong class="mr-2">{{ assignment.topic?.title || 'Unknown Topic' }}</strong>
+                          <v-chip 
+                            size="small" 
+                            color="primary"
+                            variant="tonal"
+                            class="font-weight-bold"
+                          >
+                            <v-icon icon="mdi-account-group" size="small" class="mr-1" />
+                            Group {{ assignment.groupNumber }}
+                          </v-chip>
+                        </div>
                       </v-list-item-title>
                       
                       <v-list-item-subtitle :class="$vuetify.display.smAndDown ? 'text-caption' : 'text-body-2'">
@@ -236,14 +247,6 @@ onMounted(() => {
                           {{ assignment.topic.description }}
                         </div>
                         <div class="d-flex align-center flex-wrap mt-1">
-                          <v-chip 
-                            size="x-small" 
-                            variant="outlined" 
-                            class="mr-1 mb-1"
-                          >
-                            <v-icon icon="mdi-account-group" size="x-small" class="mr-1" />
-                            Group {{ assignment.groupNumber }}
-                          </v-chip>
                           <v-chip
                             :color="getStatusColor(assignment.status)"
                             size="x-small"
