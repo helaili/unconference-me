@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { TopicRanking } from '../../types/topicRanking'
 
 export class TopicRankingService extends BaseService<TopicRanking> {
@@ -11,7 +11,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<TopicRanking>('SELECT * FROM c')
       } else {
-        return mockData.getTopicRankings()
+        return getMockDataStoreFromContext().getTopicRankings()
       }
     } catch (error) {
       console.error('Failed to fetch all topic rankings', { error })
@@ -30,7 +30,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         )
         return rankings.length > 0 ? rankings[0]! : null
       } else {
-        return mockData.getTopicRankingById(id) || null
+        return getMockDataStoreFromContext().getTopicRankingById(id) || null
       }
     } catch (error) {
       console.error('Failed to fetch topic ranking by id', { id, error })
@@ -50,7 +50,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         )
         return rankings.length > 0 ? rankings[0]! : null
       } else {
-        return mockData.getTopicRankingByParticipantAndEvent(participantId, eventId)
+        return getMockDataStoreFromContext().getTopicRankingByParticipantAndEvent(participantId, eventId)
       }
     } catch (error) {
       console.error('Failed to fetch topic ranking by participant and event', { participantId, eventId, error })
@@ -66,7 +66,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
           [{ name: '@eventId', value: eventId }]
         )
       } else {
-        return mockData.getTopicRankingsByEventId(eventId)
+        return getMockDataStoreFromContext().getTopicRankingsByEventId(eventId)
       }
     } catch (error) {
       console.error('Failed to fetch topic rankings by event id', { eventId, error })
@@ -86,7 +86,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(ranking)
       } else {
-        mockData.addTopicRanking(ranking)
+        getMockDataStoreFromContext().addTopicRanking(ranking)
         return ranking
       }
     } catch (error) {
@@ -112,12 +112,12 @@ export class TopicRankingService extends BaseService<TopicRanking> {
 
         return await this.cosmosUpsert(updatedRanking)
       } else {
-        const success = mockData.updateTopicRanking(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateTopicRanking(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Topic ranking with id ${id} not found`)
         }
         
-        const updatedRanking = mockData.getTopicRankingById(id)
+        const updatedRanking = getMockDataStoreFromContext().getTopicRankingById(id)
         if (!updatedRanking) {
           throw new Error('Failed to retrieve updated topic ranking')
         }
@@ -139,7 +139,7 @@ export class TopicRankingService extends BaseService<TopicRanking> {
         }
         return await this.cosmosDelete(id, ranking.eventId)
       } else {
-        return mockData.removeTopicRanking(id)
+        return getMockDataStoreFromContext().removeTopicRanking(id)
       }
     } catch (error) {
       console.error('Failed to delete topic ranking', { id, error })

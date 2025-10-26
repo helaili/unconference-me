@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { Participant } from '../../types/participant'
 
 export class ParticipantService extends BaseService<Participant> {
@@ -11,7 +11,7 @@ export class ParticipantService extends BaseService<Participant> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<Participant>('SELECT * FROM c')
       } else {
-        return mockData.getParticipants()
+        return getMockDataStoreFromContext().getParticipants()
       }
     } catch (error) {
       console.error('Failed to fetch all participants', { error })
@@ -30,7 +30,7 @@ export class ParticipantService extends BaseService<Participant> {
         )
         return participants.length > 0 ? participants[0]! : null
       } else {
-        return mockData.getParticipants().find(p => p.id === id) || null
+        return getMockDataStoreFromContext().getParticipants().find(p => p.id === id) || null
       }
     } catch (error) {
       console.error('Failed to fetch participant by id', { id, error })
@@ -46,7 +46,7 @@ export class ParticipantService extends BaseService<Participant> {
           [{ name: '@eventId', value: eventId }]
         )
       } else {
-        return mockData.getParticipants().filter(p => p.eventId === eventId)
+        return getMockDataStoreFromContext().getParticipants().filter(p => p.eventId === eventId)
       }
     } catch (error) {
       console.error('Failed to fetch participants by event id', { eventId, error })
@@ -62,7 +62,7 @@ export class ParticipantService extends BaseService<Participant> {
           [{ name: '@userId', value: userId }]
         )
       } else {
-        return mockData.getParticipants().filter(p => p.userId === userId)
+        return getMockDataStoreFromContext().getParticipants().filter(p => p.userId === userId)
       }
     } catch (error) {
       console.error('Failed to fetch participants by user id', { userId, error })
@@ -82,7 +82,7 @@ export class ParticipantService extends BaseService<Participant> {
         )
         return participants.length > 0 ? participants[0]! : null
       } else {
-        return mockData.getParticipants().find(p => p.eventId === eventId && p.email === email) || null
+        return getMockDataStoreFromContext().getParticipants().find(p => p.eventId === eventId && p.email === email) || null
       }
     } catch (error) {
       console.error('Failed to fetch participant by event id and email', { eventId, email, error })
@@ -98,7 +98,7 @@ export class ParticipantService extends BaseService<Participant> {
           [{ name: '@status', value: status }]
         )
       } else {
-        return mockData.getParticipants().filter(p => p.status === status)
+        return getMockDataStoreFromContext().getParticipants().filter(p => p.status === status)
       }
     } catch (error) {
       console.error('Failed to fetch participants by status', { status, error })
@@ -118,7 +118,7 @@ export class ParticipantService extends BaseService<Participant> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(participant)
       } else {
-        mockData.addParticipant(participant)
+        getMockDataStoreFromContext().addParticipant(participant)
         return participant
       }
     } catch (error) {
@@ -144,12 +144,12 @@ export class ParticipantService extends BaseService<Participant> {
 
         return await this.cosmosUpsert(updatedParticipant)
       } else {
-        const success = mockData.updateParticipant(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateParticipant(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Participant with id ${id} not found`)
         }
         
-        const updatedParticipant = mockData.getParticipants().find(p => p.id === id)
+        const updatedParticipant = getMockDataStoreFromContext().getParticipants().find(p => p.id === id)
         if (!updatedParticipant) {
           throw new Error('Failed to retrieve updated participant')
         }
@@ -171,7 +171,7 @@ export class ParticipantService extends BaseService<Participant> {
         }
         return await this.cosmosDelete(id, participant.eventId)
       } else {
-        return mockData.removeParticipant(id)
+        return getMockDataStoreFromContext().removeParticipant(id)
       }
     } catch (error) {
       console.error('Failed to delete participant', { id, error })

@@ -99,7 +99,7 @@ export abstract class BaseService<T extends { id: string }> {
 ```typescript
 // services/[entity]Service.ts
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { Entity } from '../types/[entity]'
 import logger from '../utils/logger'
 
@@ -112,7 +112,7 @@ export class EntityService extends BaseService<Entity> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<Entity>('SELECT * FROM c')
       } else {
-        return mockData.getEntities()
+        return getMockDataStoreFromContext().getEntities()
       }
     } catch (error) {
       logger.error('Failed to fetch all entities', { error })
@@ -125,7 +125,7 @@ export class EntityService extends BaseService<Entity> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosReadById(id, id) // or appropriate partition key
       } else {
-        return mockData.getEntityById(id) || null
+        return getMockDataStoreFromContext().getEntityById(id) || null
       }
     } catch (error) {
       logger.error('Failed to fetch entity by id', { id, error })
@@ -145,7 +145,7 @@ export class EntityService extends BaseService<Entity> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(entity)
       } else {
-        mockData.addEntity(entity)
+        getMockDataStoreFromContext().addEntity(entity)
         return entity
       }
     } catch (error) {
@@ -171,12 +171,12 @@ export class EntityService extends BaseService<Entity> {
 
         return await this.cosmosUpsert(updatedEntity)
       } else {
-        const success = mockData.updateEntity(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateEntity(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Entity with id ${id} not found`)
         }
         
-        const updatedEntity = mockData.getEntityById(id)
+        const updatedEntity = getMockDataStoreFromContext().getEntityById(id)
         if (!updatedEntity) {
           throw new Error('Failed to retrieve updated entity')
         }
@@ -193,7 +193,7 @@ export class EntityService extends BaseService<Entity> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosDelete(id, id) // or appropriate partition key
       } else {
-        return mockData.removeEntity(id)
+        return getMockDataStoreFromContext().removeEntity(id)
       }
     } catch (error) {
       logger.error('Failed to delete entity', { id, error })
@@ -297,23 +297,96 @@ When implementing CosmosDB operations:
 
 ### MockData Integration Requirements
 
-When implementing mock operations:
+**CRITICAL FOR SERVICES**: Services MUST use context-aware mock data access for test isolation.
 
-1. **Use MockDataManager** - Always use the centralized mock data manager
-2. **Maintain consistency** - Ensure mock data matches CosmosDB schema
-3. **Support filtering** - Implement proper filtering for mock operations
-4. **Handle relationships** - Properly handle entity relationships in mock data
-5. **Provide test data** - Include realistic test data for development
+When implementing mock operations in **services**:
+
+1. **Use getMockDataStoreFromContext()** - ALWAYS use the context-aware function instead of the singleton `mockData`
+   ```typescript
+   import { getMockDataStoreFromContext } from '../utils/mock-data-context'
+   
+   // In service methods:
+   const store = getMockDataStoreFromContext()
+   return store.getEntities()
+   ```
+
+2. **Never import mockData singleton in services** - The singleton is ONLY for manual developer testing
+   ```typescript
+   // ❌ WRONG - Do NOT do this in services
+   import { mockData } from '../../tests/helpers/mock-manager'
+   
+   // ✅ CORRECT - Use context-aware access
+   import { getMockDataStoreFromContext } from '../utils/mock-data-context'
+   ```
+
+3. **Maintain consistency** - Ensure mock data matches CosmosDB schema
+4. **Support filtering** - Implement proper filtering for mock operations
+5. **Handle relationships** - Properly handle entity relationships in mock data
+6. **Provide test data** - Include realistic test data for development
+
+### Test Isolation Requirements
+
+**CRITICAL FOR TESTS**: Tests MUST NOT use the singleton `mockData` directly to ensure proper test isolation.
+
+When writing tests:
+
+1. **Use the mockData fixture from test context** - Tests get isolated mock data via Playwright fixtures
+   ```typescript
+   import { test, expect } from './helpers/mock-test-utils'
+   
+   test('my test', async ({ mockData }) => {
+     // Use mockData from the test fixture
+     mockData.addTestUser({ ... })
+   })
+   ```
+
+2. **Tests work through API endpoints** - Prefer testing through HTTP API endpoints
+   ```typescript
+   // ✅ CORRECT - Test via API
+   await page.request.post('/api/users', { data: userData })
+   await page.goto('/users')
+   await expect(page.locator('text=New User')).toBeVisible()
+   ```
+
+3. **For direct service testing** - Use proper test fixtures and context setup
+   ```typescript
+   // If you must test services directly, ensure proper context
+   import { eventContext } from '../server/utils/mock-data-context'
+   
+   test('service test', async () => {
+     // Setup proper context for the service call
+     // Service will use context-aware mock data access
+   })
+   ```
+
+4. **The singleton mockData is for manual testing ONLY** - Not for automated tests
+   - Used by developers during manual testing and debugging
+   - Provides a shared mock data store for the development server
+   - Should NOT be imported or used in automated test files
+
+5. **Each test gets isolated data** - Tests automatically get fresh mock data via fixtures
+   - No shared state between tests
+   - Tests can run in parallel safely
+   - MockDataManager provides the default data, context provides isolation
 
 ### Prohibited Patterns
 
 GitHub Copilot MUST NOT create services that:
 
 - **Bypass the BaseService** - All services must extend BaseService
+- **Use singleton mockData directly** - Services must use `getMockDataStoreFromContext()` for test isolation
+- **Import from tests/helpers/mock-manager** - Services should never import the singleton mockData
 - **Mix data sources inappropriately** - Never mix CosmosDB and mock data in single operations
 - **Hardcode environment logic** - Use the isUsingCosmosDB() method for environment detection
 - **Ignore error handling** - Every operation must have proper error handling
 - **Skip logging** - All operations must include appropriate logging
+
+GitHub Copilot MUST NOT create tests that:
+
+- **Use singleton mockData directly** - Tests must use the mockData fixture from test context
+- **Import mockData from mock-manager** - Tests should use fixtures and test through API endpoints
+- **Share state between tests** - Each test should be isolated with its own mock data
+- **Call services without proper context** - If testing services directly, ensure context is set up properly
 
 ## Authentication & Authorization
 
@@ -838,7 +911,7 @@ export interface UpdateEntityInput {
 ```typescript
 // services/[entity]Service.ts
 import { BaseService } from './baseService'
-import { mockData } from '../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { Entity, CreateEntityInput, UpdateEntityInput } from '~/types/[entity]'
 import logger from '../utils/logger'
 
@@ -851,7 +924,7 @@ export class EntityService extends BaseService<Entity> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<Entity>('SELECT * FROM c')
       } else {
-        return mockData.getEntities()
+        return getMockDataStoreFromContext().getEntities()
       }
     } catch (error) {
       logger.error('Failed to fetch all entities', { error })
@@ -871,7 +944,7 @@ export class EntityService extends BaseService<Entity> {
           [{ name: '@criteria', value: criteria }]
         )
       } else {
-        return mockData.getEntities().filter(/* mock implementation */)
+        return getMockDataStoreFromContext().getEntities().filter(/* mock implementation */)
       }
     } catch (error) {
       logger.error('Failed to find entities by criteria', { criteria, error })

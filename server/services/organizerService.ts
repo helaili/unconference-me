@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { Organizer } from '../../types/organizer'
 
 export class OrganizerService extends BaseService<Organizer> {
@@ -11,7 +11,7 @@ export class OrganizerService extends BaseService<Organizer> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<Organizer>('SELECT * FROM c')
       } else {
-        return mockData.getOrganizers()
+        return getMockDataStoreFromContext().getOrganizers()
       }
     } catch (error) {
       console.error('Failed to fetch all organizers', { error })
@@ -30,7 +30,7 @@ export class OrganizerService extends BaseService<Organizer> {
         )
         return organizers.length > 0 ? organizers[0]! : null
       } else {
-        return mockData.getOrganizerById(id) || null
+        return getMockDataStoreFromContext().getOrganizerById(id) || null
       }
     } catch (error) {
       console.error('Failed to fetch organizer by id', { id, error })
@@ -46,7 +46,7 @@ export class OrganizerService extends BaseService<Organizer> {
           [{ name: '@eventId', value: eventId }]
         )
       } else {
-        return mockData.getOrganizersByEventId(eventId)
+        return getMockDataStoreFromContext().getOrganizersByEventId(eventId)
       }
     } catch (error) {
       console.error('Failed to fetch organizers by event id', { eventId, error })
@@ -62,7 +62,7 @@ export class OrganizerService extends BaseService<Organizer> {
           [{ name: '@userId', value: userId }]
         )
       } else {
-        return mockData.getOrganizersByUserId(userId)
+        return getMockDataStoreFromContext().getOrganizersByUserId(userId)
       }
     } catch (error) {
       console.error('Failed to fetch organizers by user id', { userId, error })
@@ -78,7 +78,7 @@ export class OrganizerService extends BaseService<Organizer> {
           [{ name: '@email', value: email }]
         )
       } else {
-        return mockData.getOrganizers().filter(o => o.email === email)
+        return getMockDataStoreFromContext().getOrganizers().filter(o => o.email === email)
       }
     } catch (error) {
       console.error('Failed to fetch organizers by email', { email, error })
@@ -94,7 +94,7 @@ export class OrganizerService extends BaseService<Organizer> {
           [{ name: '@status', value: status }]
         )
       } else {
-        return mockData.getOrganizers().filter(o => o.status === status)
+        return getMockDataStoreFromContext().getOrganizers().filter(o => o.status === status)
       }
     } catch (error) {
       console.error('Failed to fetch organizers by status', { status, error })
@@ -154,7 +154,7 @@ export class OrganizerService extends BaseService<Organizer> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(organizer)
       } else {
-        mockData.addOrganizer(organizer)
+        getMockDataStoreFromContext().addOrganizer(organizer)
         return organizer
       }
     } catch (error) {
@@ -180,12 +180,12 @@ export class OrganizerService extends BaseService<Organizer> {
 
         return await this.cosmosUpsert(updatedOrganizer)
       } else {
-        const success = mockData.updateOrganizer(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateOrganizer(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Organizer with id ${id} not found`)
         }
         
-        const updatedOrganizer = mockData.getOrganizerById(id)
+        const updatedOrganizer = getMockDataStoreFromContext().getOrganizerById(id)
         if (!updatedOrganizer) {
           throw new Error('Failed to retrieve updated organizer')
         }
@@ -207,7 +207,7 @@ export class OrganizerService extends BaseService<Organizer> {
         }
         return await this.cosmosDelete(id, organizer.eventId)
       } else {
-        return mockData.removeOrganizer(id)
+        return getMockDataStoreFromContext().removeOrganizer(id)
       }
     } catch (error) {
       console.error('Failed to delete organizer', { id, error })

@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { ParticipantAssignment } from '../../types/participant'
 
 export class AssignmentService extends BaseService<ParticipantAssignment> {
@@ -11,7 +11,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<ParticipantAssignment>('SELECT * FROM c')
       } else {
-        return mockData.getAssignments()
+        return getMockDataStoreFromContext().getAssignments()
       }
     } catch (error) {
       console.error('Failed to fetch all assignments', { error })
@@ -30,7 +30,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         )
         return assignments.length > 0 ? assignments[0]! : null
       } else {
-        return mockData.getAssignments().find(a => a.id === id) || null
+        return getMockDataStoreFromContext().getAssignments().find(a => a.id === id) || null
       }
     } catch (error) {
       console.error('Failed to fetch assignment by id', { id, error })
@@ -46,7 +46,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
           [{ name: '@eventId', value: eventId }]
         )
       } else {
-        return mockData.getAssignmentsByEventId(eventId)
+        return getMockDataStoreFromContext().getAssignmentsByEventId(eventId)
       }
     } catch (error) {
       console.error('Failed to fetch assignments by event id', { eventId, error })
@@ -62,7 +62,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
           [{ name: '@participantId', value: participantId }]
         )
       } else {
-        return mockData.getAssignments().filter(a => a.participantId === participantId)
+        return getMockDataStoreFromContext().getAssignments().filter(a => a.participantId === participantId)
       }
     } catch (error) {
       console.error('Failed to fetch assignments by participant id', { participantId, error })
@@ -78,7 +78,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
           [{ name: '@topicId', value: topicId }]
         )
       } else {
-        return mockData.getAssignments().filter(a => a.topicId === topicId)
+        return getMockDataStoreFromContext().getAssignments().filter(a => a.topicId === topicId)
       }
     } catch (error) {
       console.error('Failed to fetch assignments by topic id', { topicId, error })
@@ -97,7 +97,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
           ]
         )
       } else {
-        return mockData.getAssignments().filter(a => 
+        return getMockDataStoreFromContext().getAssignments().filter(a => 
           a.eventId === eventId && a.roundNumber === roundNumber
         )
       }
@@ -115,7 +115,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
           [{ name: '@status', value: status }]
         )
       } else {
-        return mockData.getAssignments().filter(a => a.status === status)
+        return getMockDataStoreFromContext().getAssignments().filter(a => a.status === status)
       }
     } catch (error) {
       console.error('Failed to fetch assignments by status', { status, error })
@@ -135,7 +135,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(assignment)
       } else {
-        mockData.addAssignment(assignment)
+        getMockDataStoreFromContext().addAssignment(assignment)
         return assignment
       }
     } catch (error) {
@@ -161,12 +161,12 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
 
         return await this.cosmosUpsert(updatedAssignment)
       } else {
-        const success = mockData.updateAssignment(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateAssignment(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Assignment with id ${id} not found`)
         }
         
-        const updatedAssignment = mockData.getAssignments().find(a => a.id === id)
+        const updatedAssignment = getMockDataStoreFromContext().getAssignments().find(a => a.id === id)
         if (!updatedAssignment) {
           throw new Error('Failed to retrieve updated assignment')
         }
@@ -188,7 +188,7 @@ export class AssignmentService extends BaseService<ParticipantAssignment> {
         }
         return await this.cosmosDelete(id, assignment.eventId)
       } else {
-        return mockData.removeAssignment(id)
+        return getMockDataStoreFromContext().removeAssignment(id)
       }
     } catch (error) {
       console.error('Failed to delete assignment', { id, error })

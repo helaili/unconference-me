@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { Event } from '../../types/event'
 
 export class EventService extends BaseService<Event> {
@@ -11,7 +11,7 @@ export class EventService extends BaseService<Event> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<Event>('SELECT * FROM c')
       } else {
-        return mockData.getEvents()
+        return getMockDataStoreFromContext().getEvents()
       }
     } catch (error) {
       console.error('Failed to fetch all events', error)
@@ -24,7 +24,7 @@ export class EventService extends BaseService<Event> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosReadById(id, id)
       } else {
-        return mockData.getEventById(id) || null
+        return getMockDataStoreFromContext().getEventById(id) || null
       }
     } catch (error) {
       console.error('Failed to fetch event by id', { id, error })
@@ -40,7 +40,7 @@ export class EventService extends BaseService<Event> {
           [{ name: '@status', value: status }]
         )
       } else {
-        return mockData.getEvents().filter(event => event.status === status)
+        return getMockDataStoreFromContext().getEvents().filter(event => event.status === status)
       }
     } catch (error) {
       console.error('Failed to fetch events by status', { status, error })
@@ -60,7 +60,7 @@ export class EventService extends BaseService<Event> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(event)
       } else {
-        mockData.addEvent(event)
+        getMockDataStoreFromContext().addEvent(event)
         return event
       }
     } catch (error) {
@@ -94,12 +94,12 @@ export class EventService extends BaseService<Event> {
         return await this.cosmosUpsert(updatedEvent)
       } else {
         console.log('Updating event in Mock Data', { id, updates })
-        const success = mockData.updateEvent(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateEvent(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Event with id ${id} not found`)
         }
         
-        const updatedEvent = mockData.getEventById(id)
+        const updatedEvent = getMockDataStoreFromContext().getEventById(id)
         if (!updatedEvent) {
           throw new Error('Failed to retrieve updated event')
         }
@@ -116,7 +116,7 @@ export class EventService extends BaseService<Event> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosDelete(id, id)
       } else {
-        return mockData.removeEvent(id)
+        return getMockDataStoreFromContext().removeEvent(id)
       }
     } catch (error) {
       console.error('Failed to delete event', { id, error })

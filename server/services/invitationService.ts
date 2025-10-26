@@ -1,5 +1,5 @@
 import { BaseService } from './baseService'
-import { mockData } from '../../tests/helpers/mock-manager'
+import { getMockDataStoreFromContext } from '../utils/mock-data-context'
 import type { Invitation } from '../../types/invitation'
 
 export class InvitationService extends BaseService<Invitation> {
@@ -11,7 +11,7 @@ export class InvitationService extends BaseService<Invitation> {
       if (await this.isUsingCosmosDB()) {
         return await this.executeCosmosQuery<Invitation>('SELECT * FROM c')
       } else {
-        return mockData.getInvitations()
+        return getMockDataStoreFromContext().getInvitations()
       }
     } catch (error) {
       console.error('Failed to fetch all invitations', { error })
@@ -28,7 +28,7 @@ export class InvitationService extends BaseService<Invitation> {
         )
         return invitations.length > 0 ? invitations[0]! : null
       } else {
-        return mockData.getInvitations().find(i => i.id === id) || null
+        return getMockDataStoreFromContext().getInvitations().find(i => i.id === id) || null
       }
     } catch (error) {
       console.error('Failed to fetch invitation by id', { id, error })
@@ -44,7 +44,7 @@ export class InvitationService extends BaseService<Invitation> {
           [{ name: '@eventId', value: eventId }]
         )
       } else {
-        return mockData.getInvitations().filter(i => i.eventId === eventId)
+        return getMockDataStoreFromContext().getInvitations().filter(i => i.eventId === eventId)
       }
     } catch (error) {
       console.error('Failed to fetch invitations by event id', { eventId, error })
@@ -60,7 +60,7 @@ export class InvitationService extends BaseService<Invitation> {
           [{ name: '@userId', value: userId }]
         )
       } else {
-        return mockData.getInvitations().filter(i => i.userId === userId)
+        return getMockDataStoreFromContext().getInvitations().filter(i => i.userId === userId)
       }
     } catch (error) {
       console.error('Failed to fetch invitations by user id', { userId, error })
@@ -79,7 +79,7 @@ export class InvitationService extends BaseService<Invitation> {
           ]
         )
       } else {
-        return mockData.getInvitations().filter(i => i.userId === userId && i.status === 'pending')
+        return getMockDataStoreFromContext().getInvitations().filter(i => i.userId === userId && i.status === 'pending')
       }
     } catch (error) {
       console.error('Failed to fetch pending invitations by user id', { userId, error })
@@ -99,7 +99,7 @@ export class InvitationService extends BaseService<Invitation> {
       if (await this.isUsingCosmosDB()) {
         return await this.cosmosUpsert(invitation)
       } else {
-        mockData.addInvitation(invitation)
+        getMockDataStoreFromContext().addInvitation(invitation)
         return invitation
       }
     } catch (error) {
@@ -125,12 +125,12 @@ export class InvitationService extends BaseService<Invitation> {
 
         return await this.cosmosUpsert(updatedInvitation)
       } else {
-        const success = mockData.updateInvitation(id, { ...updates, updatedAt: new Date() })
+        const success = getMockDataStoreFromContext().updateInvitation(id, { ...updates, updatedAt: new Date() })
         if (!success) {
           throw new Error(`Invitation with id ${id} not found`)
         }
         
-        const updatedInvitation = mockData.getInvitations().find(i => i.id === id)
+        const updatedInvitation = getMockDataStoreFromContext().getInvitations().find(i => i.id === id)
         if (!updatedInvitation) {
           throw new Error('Failed to retrieve updated invitation')
         }
@@ -151,7 +151,7 @@ export class InvitationService extends BaseService<Invitation> {
         }
         return await this.cosmosDelete(id, invitation.eventId)
       } else {
-        return mockData.removeInvitation(id)
+        return getMockDataStoreFromContext().removeInvitation(id)
       }
     } catch (error) {
       console.error('Failed to delete invitation', { id, error })
@@ -184,7 +184,7 @@ export class InvitationService extends BaseService<Invitation> {
         )
         return invitations.length > 0 ? invitations[0]! : null
       } else {
-        return mockData.getInvitations().find(
+        return getMockDataStoreFromContext().getInvitations().find(
           i => i.personalCode === personalCode && i.eventId === eventId
         ) || null
       }
